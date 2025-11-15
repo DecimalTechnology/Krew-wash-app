@@ -25,7 +25,9 @@ class SecureStorageService {
       if (UseraccessToken != null) {
         await _storage.write(key: _accessTokenKey, value: UseraccessToken);
         if (kDebugMode) {
-          print('🔐 Access token saved to secure storage');
+          print(
+            '🔐 Access token saved to secure storageeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+          );
         }
       }
 
@@ -72,6 +74,9 @@ class SecureStorageService {
   // Get access token
   static Future<String?> getAccessToken() async {
     try {
+      print(
+        "access tokennnnnnnnnnnnnnnnnnnnnnnnnn: ${await _storage.read(key: _accessTokenKey)}",
+      );
       return await _storage.read(key: _accessTokenKey);
     } catch (e) {
       if (kDebugMode) {

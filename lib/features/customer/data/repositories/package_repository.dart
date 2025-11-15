@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../../../core/constants/api.dart';
@@ -8,8 +9,15 @@ import '../../../../core/services/secure_storage_service.dart';
 class PackageRepository {
   const PackageRepository();
 
+  void _logToken(String source, String? token) {
+    if (kDebugMode) {
+      debugPrint('🔐 [$source] accessToken: ${token ?? 'null'}');
+    }
+  }
+
   Future<List<BuildingModel>> searchBuildings(String query) async {
     final token = await SecureStorageService.getAccessToken();
+    _logToken('PackageRepository.searchBuildings', token);
     final uri = Uri.parse(
       '$baseurl/buildings/search',
     ).replace(queryParameters: {'search': query});
@@ -29,6 +37,7 @@ class PackageRepository {
 
   Future<List<Map<String, String>>> getVehicleTypes() async {
     final token = await SecureStorageService.getAccessToken();
+    _logToken('PackageRepository.getVehicleTypes', token);
     final uri = Uri.parse('$baseurl/vehicle-types');
     final res = await http.get(
       uri,
@@ -36,7 +45,9 @@ class PackageRepository {
         if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
       },
     );
-    print("res: ${res.body}");
+    if (kDebugMode) {
+      debugPrint('📦 [PackageRepository.getVehicleTypes] res: ${res.body}');
+    }
 
     if (res.statusCode != 200) return [];
     final body = jsonDecode(res.body) as Map<String, dynamic>;
@@ -57,6 +68,7 @@ class PackageRepository {
     required String vehicleId,
   }) async {
     final token = await SecureStorageService.getAccessToken();
+    _logToken('PackageRepository.getPackages', token);
     final uri = Uri.parse('$baseurl/packages').replace(
       queryParameters: {'buildingId': buildingId, 'vehicleId': vehicleId},
     );

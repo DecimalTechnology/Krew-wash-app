@@ -1,11 +1,18 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../../../core/constants/api.dart';
 import '../../../../core/services/secure_storage_service.dart';
 
 class ProfileRepository {
   const ProfileRepository();
+
+  void _logToken(String source, String? token) {
+    if (kDebugMode) {
+      debugPrint('🔐 [$source] accessToken: ${token ?? 'null'}');
+    }
+  }
 
   // Update profile - PUT /profile
   Future<Map<String, dynamic>> updateProfile({
@@ -16,6 +23,7 @@ class ProfileRepository {
     String? apartmentNumber,
   }) async {
     final token = await SecureStorageService.getAccessToken();
+    _logToken('ProfileRepository.updateProfile', token);
     final uri = Uri.parse('$baseurl/profile');
 
     final body = <String, dynamic>{};
@@ -61,6 +69,7 @@ class ProfileRepository {
     required File imageFile,
   }) async {
     final token = await SecureStorageService.getAccessToken();
+    _logToken('ProfileRepository.uploadProfileImage', token);
     final uri = Uri.parse('$baseurl/profile/image');
 
     final req = http.MultipartRequest('PATCH', uri);

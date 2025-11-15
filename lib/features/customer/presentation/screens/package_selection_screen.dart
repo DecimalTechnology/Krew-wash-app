@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
+
+import '../../../../core/constants/route_constants.dart';
 import '../../presentation/providers/package_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/building_model.dart';
 import '../../data/repositories/package_repository.dart';
+import 'package_details_screen.dart';
 
 class PackageSelectionScreen extends StatefulWidget {
   const PackageSelectionScreen({super.key});
@@ -225,6 +228,10 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
         : verticalSpacing;
     final adjustedFontSize = isWideScreen ? fontSize * 1.1 : fontSize;
 
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    final bottomScrollPadding =
+        bottomInset + kBottomNavigationBarHeight + adjustedVerticalSpacing;
+
     return CupertinoPageScaffold(
       backgroundColor: Colors.black,
       child: Container(
@@ -314,7 +321,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                         fontSize: adjustedFontSize,
                       ),
 
-                      SizedBox(height: adjustedVerticalSpacing),
+                      SizedBox(height: bottomScrollPadding),
 
                       // Proceed Button (scrollable) - positioned above bottom nav bar
                     ],
@@ -400,6 +407,10 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
         ? verticalSpacing * 0.8
         : verticalSpacing;
     final adjustedFontSize = isWideScreen ? fontSize * 1.1 : fontSize;
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    final bottomScrollPadding =
+        bottomInset + kBottomNavigationBarHeight + adjustedVerticalSpacing;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Container(
@@ -489,7 +500,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                         fontSize: adjustedFontSize,
                       ),
 
-                      SizedBox(height: adjustedVerticalSpacing),
+                      SizedBox(height: bottomScrollPadding),
 
                       // Proceed Button (scrollable) - positioned above bottom nav bar
                     ],
@@ -660,6 +671,9 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
       }
 
       return addOns.map((addOn) {
+        final addOnId = addOn['id']?.toString() ?? '';
+        final isSelected =
+            addOnId.isNotEmpty && provider.isAddOnSelected(addOnId);
         final name = addOn['name']?.toString() ?? 'ADD-ON';
         final description = addOn['description']?.toString() ?? '';
         final frequency = addOn['frequency']?.toString() ?? '';
@@ -667,85 +681,102 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
 
         return Padding(
           padding: EdgeInsets.only(bottom: fontSize * 0.8),
-          child: Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF01061C),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF04CDFE), width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF04CDFE).withOpacity(0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+          child: GestureDetector(
+            onTap: addOnId.isEmpty
+                ? null
+                : () {
+                    provider.toggleAddOn(addOnId);
+                  },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? const Color(0xFF041227)
+                    : const Color(0xFF01061C),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isSelected
+                      ? const Color(0xFF04CDFE)
+                      : Colors.white.withOpacity(0.1),
+                  width: isSelected ? 2 : 1,
                 ),
-              ],
-            ),
-            padding: cardPadding,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(
+                      0xFF04CDFE,
+                    ).withOpacity(isSelected ? 0.3 : 0.2),
+                    blurRadius: isSelected ? 14 : 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              padding: cardPadding,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name.toUpperCase(),
+                          style: TextStyle(
+                            color: const Color(0xFF04CDFE),
+                            fontSize: fontSize * 1.1,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        if (frequency.isNotEmpty) ...[
+                          SizedBox(height: fontSize * 0.3),
+                          Text(
+                            frequency,
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: fontSize * 0.75,
+                            ),
+                          ),
+                        ],
+                        if (description.isNotEmpty) ...[
+                          SizedBox(height: fontSize * 0.4),
+                          Text(
+                            description,
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: fontSize * 0.75,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        name.toUpperCase(),
+                        'EACH SERVICE',
                         style: TextStyle(
-                          color: const Color(0xFF04CDFE),
-                          fontSize: fontSize * 1.1,
-                          fontWeight: FontWeight.bold,
+                          color: Colors.white70,
+                          fontSize: fontSize * 0.7,
+                          fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
                         ),
                       ),
-                      if (frequency.isNotEmpty) ...[
-                        SizedBox(height: fontSize * 0.3),
-                        Text(
-                          frequency,
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: fontSize * 0.75,
-                          ),
+                      SizedBox(height: fontSize * 0.3),
+                      Text(
+                        price,
+                        style: TextStyle(
+                          color: const Color(0xFF04CDFE),
+                          fontSize: fontSize * 1.2,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.8,
                         ),
-                      ],
-                      if (description.isNotEmpty) ...[
-                        SizedBox(height: fontSize * 0.4),
-                        Text(
-                          description,
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: fontSize * 0.75,
-                            height: 1.3,
-                          ),
-                        ),
-                      ],
+                      ),
                     ],
                   ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'EACH SERVICE',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: fontSize * 0.7,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    SizedBox(height: fontSize * 0.3),
-                    Text(
-                      price,
-                      style: TextStyle(
-                        color: const Color(0xFF04CDFE),
-                        fontSize: fontSize * 1.2,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -1262,17 +1293,22 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
     required double fontSize,
   }) {
     final provider = context.watch<PackageProvider>();
-    final hasPackageSelected = provider.packages.isNotEmpty;
+    final hasPackageSelected =
+        provider.selectedPackageIndex >= 0 && provider.selectedPackage != null;
+    final hasAddOnSelected = provider.selectedAddOnIds.isNotEmpty;
+    final shouldShowButton = hasPackageSelected || hasAddOnSelected;
+
+    if (!shouldShowButton) {
+      return const SizedBox.shrink();
+    }
 
     final button = SizedBox(
       width: double.infinity,
       height: fontSize * 3.2,
       child: ElevatedButton(
-        onPressed: hasPackageSelected ? _handleNext : null,
+        onPressed: _handleNext,
         style: ElevatedButton.styleFrom(
-          backgroundColor: hasPackageSelected
-              ? const Color(0xFF04CDFE)
-              : Colors.grey[700],
+          backgroundColor: const Color(0xFF04CDFE),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -1296,7 +1332,24 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
   }
 
   void _handleNext() {
-    // TODO: Implement navigation to the next step in the booking flow
+    final provider = context.read<PackageProvider>();
+    final selectedPackage = provider.selectedPackage;
+    final selectedAddOns = provider.addOns.where((addOn) {
+      final id = addOn['id']?.toString();
+      if (id == null) return false;
+      return provider.selectedAddOnIds.contains(id);
+    }).toList();
+
+    Navigator.pushNamed(
+      context,
+      Routes.customerPackageDetails,
+      arguments: PackageDetailsArguments(
+        package: selectedPackage,
+        selectedAddOns: selectedAddOns,
+        buildingName: provider.selectedBuildingName,
+        vehicleTypeName: provider.selectedCarType,
+      ),
+    );
   }
 
   double _getResponsiveValue({

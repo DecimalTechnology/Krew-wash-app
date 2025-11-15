@@ -10,6 +10,7 @@ import 'package:carwash_app/features/customer/presentation/screens/choose_slot_s
 import 'package:carwash_app/features/customer/presentation/screens/car_list_screen.dart';
 import 'package:carwash_app/features/customer/presentation/screens/add_new_car_screen.dart';
 import 'package:carwash_app/features/customer/presentation/screens/my_package_screen.dart';
+import 'package:carwash_app/features/customer/presentation/screens/package_details_screen.dart';
 import 'package:carwash_app/features/auth/presentation/screens/auth_screen.dart';
 import 'package:carwash_app/features/auth/presentation/screens/otp_verification_screen.dart';
 import 'package:flutter/material.dart';
@@ -42,6 +43,7 @@ class Routes {
   static const String customerCarList = '/customer/car-list';
   static const String customerAddNewCar = '/customer/add-new-car';
   static const String customerMyPackage = '/customer/my-package';
+  static const String customerPackageDetails = '/customer/package-details';
 
   // Staff routes
   static const String staffHome = '/staff/home';
@@ -77,6 +79,12 @@ class AppRoutes {
     Routes.customerCarList: (context) => const CarListScreen(),
     Routes.customerAddNewCar: (context) => const AddNewCarScreen(),
     Routes.customerMyPackage: (context) => const MyPackageScreen(),
+    Routes.customerPackageDetails: (context) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments
+              as PackageDetailsArguments?;
+      return PackageDetailsScreen(arguments: args);
+    },
     // Other routes will be added when screens are implemented
   };
 

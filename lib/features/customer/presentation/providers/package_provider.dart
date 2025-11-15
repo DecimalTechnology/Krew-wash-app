@@ -7,9 +7,10 @@ class PackageProvider extends ChangeNotifier {
 
   String? _selectedCarTypeName;
   String? _selectedVehicleTypeId;
-  int _selectedPackageIndex = 0;
+  int _selectedPackageIndex = -1;
   List<Map<String, dynamic>> _packages = [];
   List<Map<String, dynamic>> _addOns = [];
+  final Set<String> _selectedAddOnIds = {};
 
   // Vehicle types
   List<Map<String, String>> _vehicleTypes = [];
@@ -32,9 +33,13 @@ class PackageProvider extends ChangeNotifier {
   List<Map<String, String>> get vehicleTypes => _vehicleTypes;
   bool get isFetchingVehicleTypes => _isFetchingVehicleTypes;
   Map<String, dynamic>? get selectedPackage =>
-      _packages.isNotEmpty && _selectedPackageIndex < _packages.length
+      _packages.isNotEmpty &&
+          _selectedPackageIndex >= 0 &&
+          _selectedPackageIndex < _packages.length
       ? _packages[_selectedPackageIndex]
       : null;
+  Set<String> get selectedAddOnIds => _selectedAddOnIds;
+  bool isAddOnSelected(String id) => _selectedAddOnIds.contains(id);
   List<BuildingModel> get buildingResults => _buildingResults;
   String? get selectedBuildingId => _selectedBuildingId;
   String? get selectedBuildingName => _selectedBuildingName;
@@ -63,7 +68,8 @@ class PackageProvider extends ChangeNotifier {
   void selectCarType({required String id, required String name}) {
     _selectedVehicleTypeId = id;
     _selectedCarTypeName = name;
-    _selectedPackageIndex = 0;
+    _selectedPackageIndex = -1;
+    _selectedAddOnIds.clear();
     notifyListeners();
   }
 
@@ -72,6 +78,16 @@ class PackageProvider extends ChangeNotifier {
       _selectedPackageIndex = index;
       notifyListeners();
     }
+  }
+
+  void toggleAddOn(String addOnId) {
+    if (addOnId.isEmpty) return;
+    if (_selectedAddOnIds.contains(addOnId)) {
+      _selectedAddOnIds.remove(addOnId);
+    } else {
+      _selectedAddOnIds.add(addOnId);
+    }
+    notifyListeners();
   }
 
   void resetSelection() {
@@ -83,9 +99,10 @@ class PackageProvider extends ChangeNotifier {
       _selectedVehicleTypeId = null;
       _selectedCarTypeName = null;
     }
-    _selectedPackageIndex = 0;
+    _selectedPackageIndex = -1;
     _packages = [];
     _addOns = [];
+    _selectedAddOnIds.clear();
     notifyListeners();
   }
 
@@ -97,6 +114,8 @@ class PackageProvider extends ChangeNotifier {
       _lastQuery = '';
       _packages = [];
       _addOns = [];
+      _selectedAddOnIds.clear();
+      _selectedPackageIndex = -1;
       notifyListeners();
       return;
     }
@@ -104,6 +123,8 @@ class PackageProvider extends ChangeNotifier {
     _lastQuery = trimmed;
     _packages = [];
     _addOns = [];
+    _selectedAddOnIds.clear();
+    _selectedPackageIndex = -1;
     notifyListeners();
     try {
       _buildingResults = await _repo.searchBuildings(trimmed);
@@ -118,6 +139,8 @@ class PackageProvider extends ChangeNotifier {
     _selectedBuildingName = name;
     _packages = [];
     _addOns = [];
+    _selectedAddOnIds.clear();
+    _selectedPackageIndex = -1;
     notifyListeners();
   }
 
@@ -146,7 +169,8 @@ class PackageProvider extends ChangeNotifier {
       );
       _packages = response['packages'] ?? [];
       _addOns = response['addOns'] ?? [];
-      _selectedPackageIndex = 0;
+      _selectedPackageIndex = -1;
+      _selectedAddOnIds.clear();
     } finally {
       _isFetchingPackages = false;
       notifyListeners();
