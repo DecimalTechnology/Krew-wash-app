@@ -11,6 +11,7 @@ import 'package:carwash_app/features/customer/presentation/screens/car_list_scre
 import 'package:carwash_app/features/customer/presentation/screens/add_new_car_screen.dart';
 import 'package:carwash_app/features/customer/presentation/screens/my_package_screen.dart';
 import 'package:carwash_app/features/customer/presentation/screens/package_details_screen.dart';
+import 'package:carwash_app/features/customer/presentation/screens/booking_summary_screen.dart';
 import 'package:carwash_app/features/auth/presentation/screens/auth_screen.dart';
 import 'package:carwash_app/features/auth/presentation/screens/otp_verification_screen.dart';
 import 'package:flutter/material.dart';
@@ -44,6 +45,7 @@ class Routes {
   static const String customerAddNewCar = '/customer/add-new-car';
   static const String customerMyPackage = '/customer/my-package';
   static const String customerPackageDetails = '/customer/package-details';
+  static const String customerBookingSummary = '/customer/booking-summary';
 
   // Staff routes
   static const String staffHome = '/staff/home';
@@ -84,6 +86,12 @@ class AppRoutes {
           ModalRoute.of(context)?.settings.arguments
               as PackageDetailsArguments?;
       return PackageDetailsScreen(arguments: args);
+    },
+    Routes.customerBookingSummary: (context) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments
+              as BookingSummaryArguments?;
+      return BookingSummaryScreen(arguments: args);
     },
     // Other routes will be added when screens are implemented
   };

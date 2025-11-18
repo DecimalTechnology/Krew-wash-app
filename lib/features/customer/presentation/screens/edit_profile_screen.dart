@@ -1133,10 +1133,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         newPhone.isNotEmpty && newPhone != ((current?.phone?.toString()) ?? '');
 
     // Get building ID from selected building, package provider, or current user
+    // Only use a new buildingId if explicitly selected, otherwise preserve existing
     final buildingId =
-        _selectedBuildingId ??
-        packageProvider.selectedBuildingId ??
-        current?.buildingId;
+        _selectedBuildingId ?? packageProvider.selectedBuildingId;
+    // If no new building selected, preserve the existing one (don't pass null)
+    final buildingIdToSave = buildingId ?? current?.buildingId;
 
     Future<void> doSave() async {
       final success = await ep.saveProfile(
@@ -1146,7 +1147,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             : _nameController.text.trim(),
         phone: newPhone.isEmpty ? null : newPhone,
         email: newEmail.isEmpty ? null : newEmail,
-        buildingId: buildingId,
+        buildingId: buildingIdToSave,
         apartmentName: _apartmentNameController.text.trim().isEmpty
             ? null
             : _apartmentNameController.text.trim(),

@@ -26,11 +26,13 @@ class EditProfileProvider extends ChangeNotifier {
   }) async {
     final current = authProvider.user;
     if (current != null) {
+      // Only update buildingId if a new one is explicitly provided
+      // Preserve existing buildingId if null is passed
       final updatedUser = current.copyWith(
         name: name,
         phone: phone != null ? int.tryParse(phone) : null,
         email: email,
-        buildingId: buildingId,
+        buildingId: buildingId ?? current.buildingId,
       );
       await SecureStorageService.saveUserData(jsonEncode(updatedUser.toMap()));
       authProvider.setUser(updatedUser);
@@ -67,6 +69,46 @@ class EditProfileProvider extends ChangeNotifier {
         _isSaving = false;
         notifyListeners();
         return false;
+      }
+
+      // Check if backend returned new tokens and save them
+      // This is important as the backend might invalidate old tokens after profile update
+      try {
+        // Check multiple possible locations for tokens in the response
+        final accessToken =
+            result['accessToken'] as String? ??
+            result['data']?['accessToken'] as String? ??
+            (result['data'] is Map
+                ? (result['data'] as Map)['accessToken']?.toString()
+                : null);
+        final refreshToken =
+            result['refreshToken'] as String? ??
+            result['data']?['refreshToken'] as String? ??
+            (result['data'] is Map
+                ? (result['data'] as Map)['refreshToken']?.toString()
+                : null);
+
+        if (accessToken != null || refreshToken != null) {
+          await SecureStorageService.saveTokens(
+            UseraccessToken: accessToken,
+            UserrefreshToken: refreshToken,
+          );
+          if (kDebugMode) {
+            print('🔐 New tokens saved after profile update');
+            print(
+              '   Access token: ${accessToken != null ? "updated" : "not provided"}',
+            );
+            print(
+              '   Refresh token: ${refreshToken != null ? "updated" : "not provided"}',
+            );
+          }
+        } else if (kDebugMode) {
+          print('ℹ️ No new tokens in profile update response');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('⚠️ Error saving tokens from profile update response: $e');
+        }
       }
 
       // If backend returns updated user data, persist it

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../data/repositories/vehicle_repository.dart';
 import '../../presentation/providers/vehicle_provider.dart';
 import '../../../../core/constants/route_constants.dart';
+import 'booking_summary_screen.dart';
 
 class PackageDetailsArguments {
   const PackageDetailsArguments({
@@ -787,24 +788,67 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
     final hasDates = _selectedDates.isNotEmpty;
     final isEnabled =
         _selectedVehicleId != null && (!requiresDates || hasDates);
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isEnabled ? const Color(0xFF04CDFE) : Colors.grey[800],
-        foregroundColor: Colors.white,
-        minimumSize: const Size(double.infinity, 52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      ),
-      onPressed: isEnabled
-          ? () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Checkout coming soon')),
-              );
-            }
-          : null,
-      child: const Text(
-        'CHECKOUT',
-        style: TextStyle(letterSpacing: 1.2, fontWeight: FontWeight.bold),
-      ),
+    return Consumer<VehicleProvider>(
+      builder: (context, vehicleProvider, _) {
+        return ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isEnabled
+                ? const Color(0xFF04CDFE)
+                : Colors.grey[800],
+            foregroundColor: Colors.white,
+            minimumSize: const Size(double.infinity, 52),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          onPressed: isEnabled
+              ? () {
+                  final vehicles = vehicleProvider.vehicles;
+                  final selectedVehicle = vehicles.firstWhere(
+                    (vehicle) =>
+                        vehicle['_id']?.toString() == _selectedVehicleId,
+                    orElse: () => <String, dynamic>{},
+                  );
+
+                  if (selectedVehicle.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please select a vehicle')),
+                    );
+                    return;
+                  }
+
+                  if (_package == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Package information is missing'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  // Use selected dates or empty list if not required
+                  final datesToUse = requiresDates
+                      ? _selectedDates
+                      : <DateTime>[];
+
+                  Navigator.pushNamed(
+                    context,
+                    Routes.customerBookingSummary,
+                    arguments: BookingSummaryArguments(
+                      package: _package!,
+                      selectedAddOns: _selectedAddOns,
+                      selectedDates: datesToUse,
+                      selectedVehicle: selectedVehicle,
+                    ),
+                  );
+                }
+              : null,
+          child: const Text(
+            'CHECKOUT',
+            style: TextStyle(letterSpacing: 1.2, fontWeight: FontWeight.bold),
+          ),
+        );
+      },
     );
   }
 }
