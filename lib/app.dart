@@ -8,6 +8,7 @@ import 'features/customer/presentation/providers/package_provider.dart';
 import 'features/shared/presentation/screens/splash_screen.dart';
 import 'features/customer/presentation/screens/main_navigation_screen.dart';
 import 'features/auth/presentation/screens/auth_screen.dart';
+import 'features/staff/presentation/screens/staff_main_navigation_screen.dart';
 import 'core/constants/route_constants.dart';
 
 class MyApp extends StatelessWidget {
@@ -53,7 +54,7 @@ class AuthWrapper extends StatelessWidget {
           if (role == 'user') {
             return const MainNavigationScreen();
           } else if (role == 'staff') {
-            return const StaffHomeScreen();
+            return const StaffMainNavigationScreen();
           } else {
             return const RoleSelectionScreen();
           }
@@ -75,17 +76,6 @@ class RoleSelectionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(child: Text('Role Selection Screen - To be implemented')),
-    );
-  }
-}
-
-class StaffHomeScreen extends StatelessWidget {
-  const StaffHomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Staff Portal - To be implemented')),
     );
   }
 }

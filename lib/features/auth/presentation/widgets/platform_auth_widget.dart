@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../screens/otp_verification_screen.dart';
 import '../../../../core/widgets/country_code_picker.dart';
+import '../../../../core/constants/route_constants.dart';
 
 class PlatformAuthWidget extends StatefulWidget {
   const PlatformAuthWidget({super.key});
@@ -66,6 +68,10 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
 
               // Toggle Text
               _buildToggleText(isIOS),
+              const SizedBox(height: 24),
+
+              // Login as Cleaner Button
+              _buildLoginAsCleanerButton(isIOS),
 
               // Error Message
               if (authProvider.errorMessage != null) ...[
@@ -646,6 +652,115 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
               ),
             ),
           );
+  }
+
+  Widget _buildLoginAsCleanerButton(bool isIOS) {
+    return Center(
+      child: isIOS
+          ? CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: () {
+                Navigator.pushNamed(context, Routes.cleanerLogin);
+              },
+              child: Column(
+                children: [
+                  Text(
+                    'LOGIN AS CLEANER',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF04CDFE),
+                      letterSpacing: 1.2,
+                      shadows: [
+                        Shadow(
+                          color: const Color(0xFF04CDFE).withOpacity(0.5),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  // Double underline
+                  Stack(
+                    children: [
+                      Container(
+                        height: 2,
+                        width: 140,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF04CDFE).withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(1),
+                        ),
+                      ),
+                      Positioned(
+                        top: 3,
+                        child: Container(
+                          height: 2,
+                          width: 140,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF04CDFE).withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(1),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            )
+          : TextButton(
+              onPressed: () {
+                Navigator.pushNamed(context, Routes.cleanerLogin);
+              },
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'LOGIN AS CLEANER',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF04CDFE),
+                      letterSpacing: 1.2,
+                      shadows: [
+                        Shadow(
+                          color: const Color(0xFF04CDFE).withOpacity(0.5),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  // Double underline
+                  Stack(
+                    children: [
+                      Container(
+                        height: 2,
+                        width: 140,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF04CDFE).withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(1),
+                        ),
+                      ),
+                      Positioned(
+                        top: 3,
+                        child: Container(
+                          height: 2,
+                          width: 140,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF04CDFE).withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(1),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+    );
   }
 
   Widget _buildErrorMessage(bool isIOS, String message) {

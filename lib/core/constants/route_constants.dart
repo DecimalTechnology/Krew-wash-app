@@ -14,6 +14,8 @@ import 'package:carwash_app/features/customer/presentation/screens/package_detai
 import 'package:carwash_app/features/customer/presentation/screens/booking_summary_screen.dart';
 import 'package:carwash_app/features/auth/presentation/screens/auth_screen.dart';
 import 'package:carwash_app/features/auth/presentation/screens/otp_verification_screen.dart';
+import 'package:carwash_app/features/staff/presentation/screens/cleaner_login_screen.dart';
+import 'package:carwash_app/features/staff/presentation/screens/staff_main_navigation_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:carwash_app/app.dart';
 
@@ -48,6 +50,7 @@ class Routes {
   static const String customerBookingSummary = '/customer/booking-summary';
 
   // Staff routes
+  static const String cleanerLogin = '/staff/cleaner-login';
   static const String staffHome = '/staff/home';
   static const String staffJobDetails = '/staff/job-details';
   static const String staffJobCompletion = '/staff/job-completion';
@@ -93,6 +96,8 @@ class AppRoutes {
               as BookingSummaryArguments?;
       return BookingSummaryScreen(arguments: args);
     },
+    Routes.cleanerLogin: (context) => const CleanerLoginScreen(),
+    Routes.staffHome: (context) => const StaffMainNavigationScreen(),
     // Other routes will be added when screens are implemented
   };
 

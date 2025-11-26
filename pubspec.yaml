@@ -89,6 +89,7 @@ flutter:
     - assets/ProTips/
     - assets/CustomerProfile/
     - assets/ChooseSlot/
+    - assets/cleaner/
  
 
   # An image asset can refer to one or more resolution-specific "variants", see
