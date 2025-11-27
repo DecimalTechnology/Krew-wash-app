@@ -444,16 +444,10 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Image.asset(
-                        'assets/google_logo.png',
-                        width: 20,
-                        height: 20,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(
-                              Icons.g_mobiledata,
-                              color: Colors.white,
-                              size: 24,
-                            ),
+                      const Icon(
+                        Icons.g_mobiledata,
+                        color: Colors.white,
+                        size: 24,
                       ),
                       const SizedBox(width: 12),
                       const Text(
@@ -483,16 +477,10 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Image.asset(
-                            'assets/google_logo.png',
-                            width: 20,
-                            height: 20,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(
-                                  Icons.g_mobiledata,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
+                          const Icon(
+                            Icons.g_mobiledata,
+                            color: Colors.white,
+                            size: 24,
                           ),
                           const SizedBox(width: 12),
                           const Text(

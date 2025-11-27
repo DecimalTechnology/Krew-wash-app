@@ -63,17 +63,10 @@ class GoogleAuthWidget extends StatelessWidget {
                             ),
                           ),
                         )
-                      : Image.asset(
-                          'assets/images/google_logo.png',
-                          height: 20,
-                          width: 20,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.g_mobiledata,
-                              color: Color(0xFFDB4437),
-                              size: 20,
-                            );
-                          },
+                      : const Icon(
+                          Icons.g_mobiledata,
+                          color: Color(0xFFDB4437),
+                          size: 24,
                         ),
                   label: Text(
                     authProvider.isLoading

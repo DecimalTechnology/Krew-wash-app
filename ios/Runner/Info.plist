@@ -51,5 +51,18 @@
 	<string>This app needs access to location when open to show nearby car wash stations.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>This app needs access to location to show nearby car wash stations and provide location-based services.</string>
+	
+	<!-- URL Schemes for Firebase Auth -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.532581665819-p56s1lh4mnf94lde8bk1b71ppno9ef6c</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

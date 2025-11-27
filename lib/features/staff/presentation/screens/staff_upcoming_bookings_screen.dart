@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import '../../../../core/theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import '../providers/cleaner_booking_provider.dart';
 
 class StaffUpcomingBookingsScreen extends StatefulWidget {
   const StaffUpcomingBookingsScreen({super.key});
@@ -12,6 +15,14 @@ class StaffUpcomingBookingsScreen extends StatefulWidget {
 class _StaffUpcomingBookingsScreenState
     extends State<StaffUpcomingBookingsScreen> {
   final _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CleanerBookingProvider>().fetchAssignedBookings(force: true);
+    });
+  }
 
   @override
   void dispose() {
@@ -57,91 +68,80 @@ class _StaffUpcomingBookingsScreenState
             ? 32.0
             : 20.0;
 
-        return CustomScrollView(
-          slivers: [
-            // Search Bar Sliver
-            SliverToBoxAdapter(
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    horizontalPadding,
-                    20,
-                    horizontalPadding,
-                    20,
-                  ),
-                  child: _buildSearchBar(isIOS, isSmallScreen),
-                ),
-              ),
-            ),
-            // Section Title Sliver
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'UPCOMING BOOKINGS',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: isSmallScreen ? 16 : 18,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                      fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
+        return Consumer<CleanerBookingProvider>(
+          builder: (context, bookingProvider, _) {
+            return RefreshIndicator(
+              color: const Color(0xFF04CDFE),
+              onRefresh: () =>
+                  bookingProvider.fetchAssignedBookings(force: true),
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          horizontalPadding,
+                          20,
+                          horizontalPadding,
+                          20,
+                        ),
+                        child: _buildSearchBar(isIOS, isSmallScreen),
+                      ),
                     ),
                   ),
-                ),
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 16)),
-            // Bookings List Sliver
-            SliverPadding(
-              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  if (index == 0) {
-                    return _buildBookingCard(
-                      vehicleModel: 'CHEVROLET AVEO U-VA',
-                      vehicleNumber: 'JFM 624 J 12',
-                      bookingId: 'BOOKING 01',
-                      status: 'PENDING',
-                      service: 'MONTHLY CAR WASH + INTERIOR CLEANING',
-                      location: 'PARKING A15',
-                      dateTime: 'NOV 19, 10:00 AM',
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: horizontalPadding,
+                      ),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'UPCOMING BOOKINGS',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: isSmallScreen ? 16 : 18,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                            fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                    ),
+                    sliver: _buildBookingsSliver(
+                      bookingProvider: bookingProvider,
                       isIOS: isIOS,
                       isSmallScreen: isSmallScreen,
                       isTablet: isTablet,
-                    );
-                  } else if (index == 1) {
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 16),
-                      child: _buildBookingCard(
-                        vehicleModel: 'CHEVROLET OPTRA SRV',
-                        vehicleNumber: 'JFM 004 H 32',
-                        bookingId: 'BOOKING 02',
-                        status: 'PENDING',
-                        service: 'MONTHLY CAR WASH + INTERIOR CLEANING',
-                        location: 'PARKING A18',
-                        dateTime: 'NOV 21, 11:00 AM',
-                        isIOS: isIOS,
-                        isSmallScreen: isSmallScreen,
-                        isTablet: isTablet,
-                      ),
-                    );
-                  }
-                  return null;
-                }, childCount: 2),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                ],
               ),
-            ),
-            // Bottom padding for navigation bar
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-          ],
+            );
+          },
         );
       },
     );
   }
 
   Widget _buildSearchBar(bool isIOS, bool isSmallScreen) {
+    void handleSearch() {
+      final query = _searchController.text.trim();
+      context.read<CleanerBookingProvider>().fetchAssignedBookings(
+        force: true,
+        search: query,
+      );
+    }
+
     return isIOS
         ? CupertinoTextField(
             controller: _searchController,
@@ -168,10 +168,17 @@ class _StaffUpcomingBookingsScreenState
               ),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            onSubmitted: (_) => handleSearch(),
+            suffix: CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: handleSearch,
+              child: const Text('Search'),
+            ),
           )
         : TextField(
             controller: _searchController,
             style: const TextStyle(color: Colors.white),
+            onSubmitted: (_) => handleSearch(),
             decoration: InputDecoration(
               hintText: 'SEARCH BOOKING ID OR VEHICLE',
               hintStyle: TextStyle(
@@ -210,13 +217,83 @@ class _StaffUpcomingBookingsScreenState
                 horizontal: 16,
                 vertical: 12,
               ),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.search, color: Colors.white70),
+                onPressed: handleSearch,
+              ),
             ),
           );
   }
 
+  SliverList _buildBookingsSliver({
+    required CleanerBookingProvider bookingProvider,
+    required bool isIOS,
+    required bool isSmallScreen,
+    required bool isTablet,
+  }) {
+    if (bookingProvider.isAssignedLoading &&
+        bookingProvider.assignedBookings.isEmpty) {
+      return SliverList(
+        delegate: SliverChildListDelegate([
+          const SizedBox(height: 40),
+          const Center(child: CupertinoActivityIndicator(color: Colors.white)),
+        ]),
+      );
+    }
+
+    if (bookingProvider.assignedError != null &&
+        bookingProvider.assignedBookings.isEmpty) {
+      return SliverList(
+        delegate: SliverChildListDelegate([
+          _buildErrorState(
+            message: bookingProvider.assignedError!,
+            isIOS: isIOS,
+            onRetry: () => bookingProvider.fetchAssignedBookings(force: true),
+          ),
+        ]),
+      );
+    }
+
+    if (bookingProvider.assignedBookings.isEmpty) {
+      return SliverList(
+        delegate: SliverChildListDelegate([_buildEmptyState(isIOS)]),
+      );
+    }
+
+    return SliverList(
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final booking = bookingProvider.assignedBookings[index];
+        final packageName =
+            booking.package?.packageId?.name ?? 'Assigned Package';
+        final customer = booking.user?.name ?? 'Customer';
+        final location =
+            booking.buildingInfo?.name ??
+            booking.user?.apartmentNumber ??
+            'N/A';
+        final schedule = _formatDate(booking.startDate);
+
+        return Padding(
+          padding: EdgeInsets.only(top: index == 0 ? 0 : 16),
+          child: _buildBookingCard(
+            title: packageName,
+            subtitle: customer,
+            bookingId: booking.bookingId,
+            status: booking.status,
+            service: booking.package?.packageId?.description ?? 'Not available',
+            location: location,
+            dateTime: schedule,
+            isIOS: isIOS,
+            isSmallScreen: isSmallScreen,
+            isTablet: isTablet,
+          ),
+        );
+      }, childCount: bookingProvider.assignedBookings.length),
+    );
+  }
+
   Widget _buildBookingCard({
-    required String vehicleModel,
-    required String vehicleNumber,
+    required String title,
+    required String subtitle,
     required String bookingId,
     required String status,
     required String service,
@@ -227,11 +304,14 @@ class _StaffUpcomingBookingsScreenState
     required bool isTablet,
   }) {
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 18 : 24,
+        vertical: isSmallScreen ? 20 : 26,
+      ),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(isIOS ? 20 : 16),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        color: Colors.black.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(isIOS ? 26 : 22),
+        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,7 +325,7 @@ class _StaffUpcomingBookingsScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      vehicleModel,
+                      title,
                       style: TextStyle(
                         color: const Color(0xFF04CDFE),
                         fontSize: isSmallScreen ? 14 : 16,
@@ -256,7 +336,7 @@ class _StaffUpcomingBookingsScreenState
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      vehicleNumber,
+                      subtitle,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: isSmallScreen ? 12 : 14,
@@ -292,16 +372,16 @@ class _StaffUpcomingBookingsScreenState
               // Status badge
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
+                  horizontal: 14,
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF04CDFE).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(30),
                   border: Border.all(color: const Color(0xFF04CDFE), width: 1),
                 ),
                 child: Text(
-                  status,
+                  status.toUpperCase(),
                   style: TextStyle(
                     color: const Color(0xFF04CDFE),
                     fontSize: isSmallScreen ? 10 : 12,
@@ -313,7 +393,9 @@ class _StaffUpcomingBookingsScreenState
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
+          Divider(color: Colors.white.withOpacity(0.08), thickness: 1),
+          const SizedBox(height: 18),
           // Service details
           _buildDetailRow('SERVICE', service, isIOS, isSmallScreen),
           const SizedBox(height: 12),
@@ -328,48 +410,47 @@ class _StaffUpcomingBookingsScreenState
           ),
           const SizedBox(height: 20),
           // View Details Button
-          SizedBox(
-            width: double.infinity,
-            height: isSmallScreen ? 44 : 48,
-            child: isIOS
-                ? CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    color: const Color(0xFF04CDFE),
-                    borderRadius: BorderRadius.circular(12),
-                    onPressed: () {
-                      // TODO: Navigate to booking details
-                    },
-                    child: Text(
-                      'VIEW DETAILS',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: isSmallScreen ? 14 : 16,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
+          Align(
+            alignment: Alignment.center,
+            child: SizedBox(
+              width: isTablet ? 260 : 220,
+              height: isSmallScreen ? 40 : 44,
+              child: isIOS
+                  ? CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      color: const Color(0xFF04CDFE),
+                      borderRadius: BorderRadius.circular(24),
+                      onPressed: () {},
+                      child: Text(
+                        'VIEW DETAILS',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: isSmallScreen ? 13 : 15,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
+                    )
+                  : ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF04CDFE),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: () {},
+                      child: Text(
+                        'VIEW DETAILS',
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 13 : 15,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
+                        ),
                       ),
                     ),
-                  )
-                : ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF04CDFE),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    onPressed: () {
-                      // TODO: Navigate to booking details
-                    },
-                    child: Text(
-                      'VIEW DETAILS',
-                      style: TextStyle(
-                        fontSize: isSmallScreen ? 14 : 16,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
+            ),
           ),
         ],
       ),
@@ -405,10 +486,116 @@ class _StaffUpcomingBookingsScreenState
               fontSize: isSmallScreen ? 12 : 14,
               fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.normal,
               fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+              height: 1.4,
             ),
+            textAlign: TextAlign.right,
           ),
         ),
       ],
     );
+  }
+
+  Widget _buildErrorState({
+    required String message,
+    required bool isIOS,
+    required VoidCallback onRetry,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor,
+        borderRadius: BorderRadius.circular(isIOS ? 20 : 16),
+        border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Unable to load bookings',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+            ),
+          ),
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(onPressed: onRetry, child: const Text('Retry')),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(bool isIOS) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor,
+        borderRadius: BorderRadius.circular(isIOS ? 20 : 16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'No bookings found',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Assigned bookings will appear here. Try refreshing to check for new tasks.',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'Schedule pending';
+    final d = date.toLocal();
+    final month = _monthShort(d.month);
+    final time =
+        '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+    return '${month.toUpperCase()} ${d.day}, $time';
+  }
+
+  String _monthShort(int month) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return months[(month - 1).clamp(0, 11)];
   }
 }

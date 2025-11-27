@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/constants/route_constants.dart';
-// TODO: Uncomment when implementing actual login
-// import '../../../auth/presentation/providers/auth_provider.dart';
-// import 'package:provider/provider.dart';
+import '../providers/staff_provider.dart';
 
 class CleanerLoginScreen extends StatefulWidget {
   const CleanerLoginScreen({super.key});
@@ -117,9 +115,6 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
               SizedBox(height: buttonSpacing),
               // LOGIN Button
               _buildLoginButton(isIOS, isSmallScreen: isSmallScreen),
-              const SizedBox(height: 16),
-              // Temporary button for testing
-              _buildTempTestButton(isIOS, isSmallScreen: isSmallScreen),
               const SizedBox(height: 24),
             ],
           ),
@@ -192,6 +187,7 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
                 controller: _cleanerIdController,
                 placeholder: '',
                 style: const TextStyle(color: Colors.white),
+                textInputAction: TextInputAction.next,
                 decoration: BoxDecoration(
                   color: Colors.black,
                   borderRadius: BorderRadius.circular(borderRadius),
@@ -205,6 +201,7 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
             : TextField(
                 controller: _cleanerIdController,
                 style: const TextStyle(color: Colors.white),
+                textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.black,
@@ -266,6 +263,8 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
                 placeholder: '',
                 obscureText: _obscurePassword,
                 style: const TextStyle(color: Colors.white),
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _handleLogin(),
                 decoration: BoxDecoration(
                   color: Colors.black,
                   borderRadius: BorderRadius.circular(borderRadius),
@@ -296,6 +295,8 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
                 controller: _passwordController,
                 obscureText: _obscurePassword,
                 style: const TextStyle(color: Colors.white),
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _handleLogin(),
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.black,
@@ -398,56 +399,6 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
     );
   }
 
-  Widget _buildTempTestButton(bool isIOS, {required bool isSmallScreen}) {
-    final buttonHeight = isSmallScreen ? 44.0 : 48.0;
-    final fontSize = isSmallScreen ? 12.0 : 14.0;
-    final borderRadius = isSmallScreen ? 10.0 : 12.0;
-
-    return SizedBox(
-      width: double.infinity,
-      height: buttonHeight,
-      child: isIOS
-          ? CupertinoButton(
-              padding: EdgeInsets.zero,
-              color: Colors.green.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(borderRadius),
-              onPressed: () {
-                Navigator.pushReplacementNamed(context, Routes.staffHome);
-              },
-              child: Text(
-                'TEST - GO TO STAFF HOME',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.0,
-                ),
-              ),
-            )
-          : ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.withOpacity(0.8),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(borderRadius),
-                ),
-                elevation: 0,
-              ),
-              onPressed: () {
-                Navigator.pushReplacementNamed(context, Routes.staffHome);
-              },
-              child: Text(
-                'TEST - GO TO STAFF HOME',
-                style: TextStyle(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.0,
-                ),
-              ),
-            ),
-    );
-  }
-
   Future<void> _handleLogin() async {
     if (_cleanerIdController.text.trim().isEmpty) {
       _showError('Please enter your Cleaner ID');
@@ -464,22 +415,27 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
     });
 
     try {
-      // TODO: Implement cleaner/staff login API call
-      // final authProvider = context.read<AuthProvider>();
-      // final result = await authProvider.loginAsStaff(
-      //   cleanerId: _cleanerIdController.text.trim(),
-      //   password: _passwordController.text,
-      // );
-
-      // For now, this is a placeholder
-      await Future.delayed(const Duration(seconds: 1));
+      final staffProvider = context.read<StaffProvider>();
+      final result = await staffProvider.loginCleaner(
+        cleanerId: _cleanerIdController.text.trim(),
+        password: _passwordController.text,
+      );
 
       if (!mounted) return;
 
-      // TODO: Navigate to staff home screen on success
-      // Navigator.pushReplacementNamed(context, Routes.staffHome);
+      if (result['success'] == true) {
+        // Show success message
+        _showSuccess('Login successful!');
 
-      _showError('Login functionality to be implemented');
+        // Navigate to staff home screen
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          Routes.staffHome,
+          (route) => false,
+        );
+      } else {
+        _showError(result['message'] ?? 'Login failed');
+      }
     } catch (e) {
       if (!mounted) return;
       _showError('Login failed: ${e.toString()}');
@@ -511,6 +467,32 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message), backgroundColor: Colors.red[700]),
+      );
+    }
+  }
+
+  void _showSuccess(String message) {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    if (isIOS) {
+      showCupertinoDialog(
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: const Text('Success'),
+          content: Text(message),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('OK'),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: const Color(0xFF04CDFE),
+        ),
       );
     }
   }

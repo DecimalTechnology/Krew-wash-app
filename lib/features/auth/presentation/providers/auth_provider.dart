@@ -15,6 +15,8 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool _isInitializing = true;
   String? _errorMessage;
+  bool _isVerifyingAuth =
+      false; // Flag to prevent premature user setting during verification
 
   // Getters
   UserModel? get user => _user;
@@ -32,9 +34,10 @@ class AuthProvider extends ChangeNotifier {
     await _restoreUserFromStorage();
 
     // Also listen to auth state changes (Firebase)
+    // But don't auto-set user during verification flow - wait for backend confirmation
     _authService.authStateChanges.listen((UserModel? user) {
-      // Only update if we don't have a user from storage
-      if (_user == null && user != null) {
+      // Only update if we don't have a user from storage AND not during verification
+      if (_user == null && user != null && !_isVerifyingAuth) {
         _user = user;
         notifyListeners();
       }
@@ -120,6 +123,7 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     _setLoading(true);
     _clearError();
+    _isVerifyingAuth = true; // Prevent Firebase auth state from setting user
 
     try {
       final result = await _authService.sendPhoneVerificationCode(
@@ -128,6 +132,7 @@ class AuthProvider extends ChangeNotifier {
 
       if (!result.isSuccess) {
         _setError(result.errorMessage ?? 'Failed to send verification code');
+        _isVerifyingAuth = false;
       }
 
       _setLoading(false);
@@ -135,6 +140,7 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       _setError('An unexpected error occurred');
       _setLoading(false);
+      _isVerifyingAuth = false;
       return PhoneAuthResult.failure(
         errorMessage: 'An unexpected error occurred',
       );
@@ -155,18 +161,23 @@ class AuthProvider extends ChangeNotifier {
       );
 
       if (result.isSuccess) {
-        _user = result.user;
+        // DON'T set _user here - let the OTP screen handle navigation
+        // after backend login/registration is confirmed
+        // _user = result.user; // Removed to prevent premature navigation
         _setLoading(false);
-        notifyListeners();
+        // Don't call notifyListeners() to avoid triggering AuthWrapper
+        // Keep _isVerifyingAuth = true until backend confirms login
       } else {
         _setError(result.errorMessage ?? 'Phone verification failed');
         _setLoading(false);
+        _isVerifyingAuth = false; // Reset flag on failure
       }
 
       return result;
     } catch (e) {
       _setError('An unexpected error occurred');
       _setLoading(false);
+      _isVerifyingAuth = false; // Reset flag on error
       return AuthResult.failure(
         errorMessage: 'An unexpected error occurred',
         method: AuthMethod.phone,
@@ -319,15 +330,20 @@ class AuthProvider extends ChangeNotifier {
           if (userData != null) {
             await SecureStorageService.saveUserData(jsonEncode(userData));
             _user = UserModel.fromMap(userData as Map<String, dynamic>);
+            _isVerifyingAuth =
+                false; // Reset flag after successful registration
             notifyListeners();
           }
         } catch (_) {}
+      } else {
+        _isVerifyingAuth = false; // Reset flag on registration failure
       }
       _setLoading(false);
       return result;
     } catch (e) {
       _setError('Failed to register user');
       _setLoading(false);
+      _isVerifyingAuth = false; // Reset flag on error
       return {'success': false, 'message': 'Failed to register user'};
     }
   }
@@ -396,15 +412,19 @@ class AuthProvider extends ChangeNotifier {
           if (userData != null) {
             await SecureStorageService.saveUserData(jsonEncode(userData));
             _user = UserModel.fromMap(userData as Map<String, dynamic>);
+            _isVerifyingAuth = false; // Reset flag after successful login
             notifyListeners();
           }
         } catch (_) {}
+      } else {
+        _isVerifyingAuth = false; // Reset flag on login failure
       }
       _setLoading(false);
       return result;
     } catch (e) {
       _setError('Failed to login user');
       _setLoading(false);
+      _isVerifyingAuth = false; // Reset flag on error
       return {'success': false, 'message': 'Failed to login user'};
     }
   }

@@ -65,7 +65,7 @@ class DefaultFirebaseOptions {
     projectId: 'krew-wash-faa79',
     storageBucket: 'krew-wash-faa79.firebasestorage.app',
     iosClientId: '532581665819-p56s1lh4mnf94lde8bk1b71ppno9ef6c.apps.googleusercontent.com',
-    iosBundleId: 'com.example.carwashApp',
+    iosBundleId: 'com.decimaltechnology.krewwash',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -75,7 +75,7 @@ class DefaultFirebaseOptions {
     projectId: 'krew-wash-faa79',
     storageBucket: 'krew-wash-faa79.firebasestorage.app',
     iosClientId: '532581665819-p56s1lh4mnf94lde8bk1b71ppno9ef6c.apps.googleusercontent.com',
-    iosBundleId: 'com.example.carwashApp',
+    iosBundleId: 'com.decimaltechnology.krewwash',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

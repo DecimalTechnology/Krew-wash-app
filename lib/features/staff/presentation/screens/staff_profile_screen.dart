@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../providers/staff_provider.dart';
 
 class StaffProfileScreen extends StatelessWidget {
   const StaffProfileScreen({super.key});
@@ -106,11 +107,11 @@ class StaffProfileScreen extends StatelessWidget {
   }
 
   Widget _buildUserInfo(bool isIOS, bool isSmallScreen, bool isTablet) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, _) {
-        final user = authProvider.user;
-        final userName = user?.name?.toUpperCase() ?? 'CLEANER';
-        final userId = user?.uid ?? 'KFM-EPM-0003';
+    return Consumer<StaffProvider>(
+      builder: (context, staffProvider, _) {
+        final staff = staffProvider.staff;
+        final userName = staff?.name.toUpperCase() ?? 'CLEANER';
+        final cleanerId = staff?.cleanerId ?? 'KFM-EPM-0003';
 
         return Column(
           children: [
@@ -130,7 +131,7 @@ class StaffProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              userId,
+              cleanerId,
               style: TextStyle(
                 color: const Color(0xFF04CDFE),
                 fontSize: isSmallScreen ? 14 : 16,
@@ -151,11 +152,11 @@ class StaffProfileScreen extends StatelessWidget {
     bool isSmallScreen,
     bool isTablet,
   ) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, _) {
-        final user = authProvider.user;
-        final phone = user?.phone?.toString() ?? '+721 5888 368';
-        final email = user?.email?.toUpperCase() ?? 'ROYALLX@GMAIL.COM';
+    return Consumer<StaffProvider>(
+      builder: (context, staffProvider, _) {
+        final staff = staffProvider.staff;
+        final phone = staff?.phone ?? '+721 5888 368';
+        final email = staff?.email.toUpperCase() ?? 'ROYALLX@GMAIL.COM';
 
         return Container(
           padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
@@ -266,20 +267,23 @@ class StaffProfileScreen extends StatelessWidget {
     if (isIOS) {
       showCupertinoDialog(
         context: context,
-        builder: (context) => CupertinoAlertDialog(
+        builder: (dialogContext) => CupertinoAlertDialog(
           title: const Text('Logout'),
           content: const Text('Are you sure you want to logout?'),
           actions: [
             CupertinoDialogAction(
               isDestructiveAction: true,
-              onPressed: () {
-                Navigator.pop(context);
-                Provider.of<AuthProvider>(context, listen: false).signOut();
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                await Provider.of<StaffProvider>(
+                  context,
+                  listen: false,
+                ).logout();
               },
               child: const Text('Logout'),
             ),
             CupertinoDialogAction(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cancel'),
             ),
           ],
@@ -288,8 +292,8 @@ class StaffProfileScreen extends StatelessWidget {
     } else {
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: const Color(0xFF1A1A1A),
+        builder: (dialogContext) => AlertDialog(
+          backgroundColor: AppTheme.cardColor,
           title: const Text('Logout', style: TextStyle(color: Colors.white)),
           content: const Text(
             'Are you sure you want to logout?',
@@ -297,13 +301,16 @@ class StaffProfileScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Provider.of<AuthProvider>(context, listen: false).signOut();
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                await Provider.of<StaffProvider>(
+                  context,
+                  listen: false,
+                ).logout();
               },
               child: const Text('Logout', style: TextStyle(color: Colors.red)),
             ),

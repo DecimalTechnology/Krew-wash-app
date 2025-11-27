@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class BookingSummaryArguments {
   const BookingSummaryArguments({
@@ -293,7 +294,7 @@ class BookingSummaryScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -335,7 +336,7 @@ class BookingSummaryScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -385,7 +386,7 @@ class BookingSummaryScreen extends StatelessWidget {
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
+                color: AppTheme.cardColor,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -415,7 +416,7 @@ class BookingSummaryScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -484,7 +485,7 @@ class BookingSummaryScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(

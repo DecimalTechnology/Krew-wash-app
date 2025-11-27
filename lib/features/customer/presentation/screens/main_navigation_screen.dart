@@ -120,15 +120,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     return CupertinoPageScaffold(
       backgroundColor: Colors.black,
       child: Stack(
+        fit: StackFit.expand,
         children: [
-          // Main content
-          _screens[_currentIndex],
+          // Main content - fills entire space
+          Positioned.fill(child: _screens[_currentIndex]),
 
-          // Positioned bottom navigation bar
+          // Positioned bottom navigation bar - fixed at bottom
           Positioned(
             left: navBarMargin,
             right: navBarMargin,
-            bottom: navBarMargin,
+            bottom: navBarMargin + MediaQuery.of(context).padding.bottom,
             child: Container(
               height: navBarHeight,
               decoration: BoxDecoration(
@@ -207,15 +208,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          // Main content
-          _screens[_currentIndex],
+          // Main content - fills entire space
+          Positioned.fill(child: _screens[_currentIndex]),
 
-          // Positioned bottom navigation bar
+          // Positioned bottom navigation bar - fixed at bottom
           Positioned(
             left: navBarMargin,
             right: navBarMargin,
-            bottom: navBarMargin,
+            bottom: navBarMargin + MediaQuery.of(context).padding.bottom,
             child: Container(
               height: navBarHeight,
               decoration: BoxDecoration(

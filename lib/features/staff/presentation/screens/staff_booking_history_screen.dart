@@ -1,8 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import '../../../../core/theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import '../providers/cleaner_booking_provider.dart';
 
-class StaffBookingHistoryScreen extends StatelessWidget {
+class StaffBookingHistoryScreen extends StatefulWidget {
   const StaffBookingHistoryScreen({super.key});
+
+  @override
+  State<StaffBookingHistoryScreen> createState() =>
+      _StaffBookingHistoryScreenState();
+}
+
+class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
+  final _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CleanerBookingProvider>().fetchCompletedBookings(
+        force: true,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +56,6 @@ class StaffBookingHistoryScreen extends StatelessWidget {
       builder: (context) {
         final screenWidth = MediaQuery.of(context).size.width;
 
-        // Responsive calculations
         final isSmallScreen = screenWidth < 400;
         final isMediumScreen = screenWidth >= 400 && screenWidth < 500;
         final isTablet = screenWidth > 600;
@@ -45,7 +71,6 @@ class StaffBookingHistoryScreen extends StatelessWidget {
         return SafeArea(
           child: Column(
             children: [
-              // Header Title
               Padding(
                 padding: EdgeInsets.all(horizontalPadding),
                 child: Center(
@@ -61,39 +86,77 @@ class StaffBookingHistoryScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-              // Bookings List
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                  vertical: 8,
+                ),
+                child: _buildSearchBar(isIOS, isSmallScreen),
+              ),
+              const SizedBox(height: 12),
               Expanded(
-                child: ListView(
-                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                  children: [
-                    _buildBookingCard(
-                      vehicleModel: 'CHEVROLET AVED U-VA',
-                      vehicleNumber: 'JFM 624 J12',
-                      bookingId: 'BOOKING 01',
-                      status: 'COMPLETED',
-                      service: 'MONTHLY CAR WASH + INTERIOR CLEANING',
-                      location: 'PARKING A 15',
-                      dateTime: 'NOV 15, 10:00 AM',
-                      isIOS: isIOS,
-                      isSmallScreen: isSmallScreen,
-                      isTablet: isTablet,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildBookingCard(
-                      vehicleModel: 'CHEVROLET OPTRA SRV',
-                      vehicleNumber: 'JPM 034 H 32',
-                      bookingId: 'BOOKING 02',
-                      status: 'COMPLETED',
-                      service: 'MONTHLY CAR WASH + INTERIOR CLEANING',
-                      location: 'PARKING A 16',
-                      dateTime: 'NOV 21, 11:00 AM',
-                      isIOS: isIOS,
-                      isSmallScreen: isSmallScreen,
-                      isTablet: isTablet,
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+                child: Consumer<CleanerBookingProvider>(
+                  builder: (context, bookingProvider, _) {
+                    if (bookingProvider.isCompletedLoading &&
+                        bookingProvider.completedBookings.isEmpty) {
+                      return const Center(
+                        child: CupertinoActivityIndicator(color: Colors.white),
+                      );
+                    }
+
+                    if (bookingProvider.completedError != null &&
+                        bookingProvider.completedBookings.isEmpty) {
+                      return _buildErrorState(
+                        message: bookingProvider.completedError!,
+                        isIOS: isIOS,
+                        onRetry: () =>
+                            bookingProvider.fetchCompletedBookings(force: true),
+                      );
+                    }
+
+                    if (bookingProvider.completedBookings.isEmpty) {
+                      return _buildEmptyState(isIOS);
+                    }
+
+                    return RefreshIndicator(
+                      color: const Color(0xFF04CDFE),
+                      onRefresh: () =>
+                          bookingProvider.fetchCompletedBookings(force: true),
+                      child: ListView.separated(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: horizontalPadding,
+                          vertical: 8,
+                        ),
+                        itemBuilder: (context, index) {
+                          final booking =
+                              bookingProvider.completedBookings[index];
+                          return _buildBookingCard(
+                            title:
+                                booking.package?.packageId?.name ??
+                                'Completed Package',
+                            subtitle: booking.user?.name ?? 'Customer',
+                            bookingId: booking.bookingId,
+                            status: booking.status,
+                            service:
+                                booking.package?.packageId?.description ?? '',
+                            location:
+                                booking.buildingInfo?.name ??
+                                booking.user?.apartmentNumber ??
+                                'N/A',
+                            dateTime:
+                                _formatDate(booking.endDate) ??
+                                _formatDate(booking.startDate) ??
+                                'Completed',
+                            isIOS: isIOS,
+                            isSmallScreen: isSmallScreen,
+                            isTablet: isTablet,
+                          );
+                        },
+                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        itemCount: bookingProvider.completedBookings.length,
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -103,9 +166,98 @@ class StaffBookingHistoryScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildSearchBar(bool isIOS, bool isSmallScreen) {
+    void handleSearch() {
+      final query = _searchController.text.trim();
+      context.read<CleanerBookingProvider>().fetchCompletedBookings(
+        force: true,
+        search: query,
+      );
+    }
+
+    return isIOS
+        ? CupertinoTextField(
+            controller: _searchController,
+            placeholder: 'SEARCH BOOKING ID',
+            placeholderStyle: TextStyle(
+              color: Colors.white.withOpacity(0.5),
+              fontSize: isSmallScreen ? 12 : 14,
+            ),
+            style: const TextStyle(color: Colors.white),
+            prefix: const Padding(
+              padding: EdgeInsets.only(left: 12),
+              child: Icon(
+                CupertinoIcons.search,
+                color: Colors.white70,
+                size: 20,
+              ),
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            onSubmitted: (_) => handleSearch(),
+            suffix: CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: handleSearch,
+              child: const Text('Search'),
+            ),
+          )
+        : TextField(
+            controller: _searchController,
+            style: const TextStyle(color: Colors.white),
+            onSubmitted: (_) => handleSearch(),
+            decoration: InputDecoration(
+              hintText: 'SEARCH BOOKING ID',
+              hintStyle: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: isSmallScreen ? 12 : 14,
+              ),
+              prefixIcon: const Icon(
+                Icons.search,
+                color: Colors.white70,
+                size: 20,
+              ),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.search, color: Colors.white70),
+                onPressed: handleSearch,
+              ),
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.1),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(12)),
+                borderSide: BorderSide(color: Color(0xFF04CDFE), width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+            ),
+          );
+  }
+
   Widget _buildBookingCard({
-    required String vehicleModel,
-    required String vehicleNumber,
+    required String title,
+    required String subtitle,
     required String bookingId,
     required String status,
     required String service,
@@ -118,7 +270,7 @@ class StaffBookingHistoryScreen extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(isIOS ? 20 : 16),
         border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
       ),
@@ -134,7 +286,7 @@ class StaffBookingHistoryScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      vehicleModel,
+                      title,
                       style: TextStyle(
                         color: const Color(0xFF04CDFE),
                         fontSize: isSmallScreen ? 14 : 16,
@@ -145,7 +297,7 @@ class StaffBookingHistoryScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      vehicleNumber,
+                      subtitle,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: isSmallScreen ? 12 : 14,
@@ -190,7 +342,7 @@ class StaffBookingHistoryScreen extends StatelessWidget {
                   border: Border.all(color: Colors.green, width: 1),
                 ),
                 child: Text(
-                  status,
+                  status.toUpperCase(),
                   style: TextStyle(
                     color: Colors.green,
                     fontSize: isSmallScreen ? 10 : 12,
@@ -299,5 +451,54 @@ class StaffBookingHistoryScreen extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Widget _buildErrorState({
+    required String message,
+    required bool isIOS,
+    required VoidCallback onRetry,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextButton(onPressed: onRetry, child: const Text('Retry')),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(bool isIOS) {
+    return Center(
+      child: Text(
+        'No completed bookings yet.',
+        style: TextStyle(
+          color: Colors.white70,
+          fontSize: 16,
+          fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+        ),
+      ),
+    );
+  }
+
+  String? _formatDate(DateTime? dateTime) {
+    if (dateTime == null) return null;
+    final local = dateTime.toLocal();
+    final day =
+        '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}/${local.year}';
+    final time =
+        '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    return '$day • $time';
   }
 }

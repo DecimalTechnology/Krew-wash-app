@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:io';
 import '../../../../../core/constants/route_constants.dart';
+import '../../../../core/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
@@ -365,7 +366,7 @@ class CustomerProfileScreen extends StatelessWidget {
       ),
       padding: EdgeInsets.all(isLargeScreen ? 20.0 : 16.0),
       decoration: BoxDecoration(
-        color: const Color(0xFF01031C).withValues(alpha: 0.9),
+        color: AppTheme.cardColor.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: const Color(0xFF04CDFE).withValues(alpha: 0.3),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../../core/constants/route_constants.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../presentation/providers/package_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/building_model.dart';
@@ -551,7 +552,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                 height: textSize,
                 width: fontSize * 8,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
+                  color: AppTheme.cardColor,
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
@@ -578,7 +579,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
               child: Container(
                 height: fieldHeight,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
+                  color: AppTheme.cardColor,
                   borderRadius: BorderRadius.circular(cornerRadius),
                 ),
               ),
@@ -933,7 +934,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                 child: Container(
                   height: buttonHeight,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A1A),
+                    color: AppTheme.cardColor,
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
@@ -1101,7 +1102,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                     child: Container(
                       padding: EdgeInsets.all(cardPadding),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1A1A1A),
+                        color: AppTheme.cardColor,
                         borderRadius: BorderRadius.circular(16),
                         border: isSelected
                             ? Border.all(
@@ -1213,7 +1214,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
               child: Container(
                 padding: EdgeInsets.all(cardPadding),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
+                  color: AppTheme.cardColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(

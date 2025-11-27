@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/theme/app_theme.dart';
 import '../../data/repositories/vehicle_repository.dart';
 import '../../presentation/providers/vehicle_provider.dart';
 import '../../../../core/constants/route_constants.dart';
@@ -311,7 +312,7 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF01031C),
+        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFF04CDFE).withOpacity(0.3)),
         boxShadow: [

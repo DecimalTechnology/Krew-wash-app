@@ -9,11 +9,15 @@ class SecureStorageService {
     ),
   );
 
-  // Token keys
+  // Token keys for customers
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
   static const String _idTokenKey = 'id_token';
   static const String _userDataKey = 'user_data';
+
+  // Token keys for staff/cleaners
+  static const String _staffAccessTokenKey = 'staff_access_token';
+  static const String _staffDataKey = 'staff_data';
 
   // Save tokens
   static Future<void> saveTokens({
@@ -189,6 +193,90 @@ class SecureStorageService {
         print('❌ Error checking login status: $e');
       }
       return false;
+    }
+  }
+
+  // ============================================
+  // STAFF/CLEANER STORAGE METHODS
+  // ============================================
+
+  // Save staff tokens
+  static Future<void> saveStaffTokens({required String accessToken}) async {
+    try {
+      await _storage.write(key: _staffAccessTokenKey, value: accessToken);
+      if (kDebugMode) {
+        print('🔐 Staff access token saved to secure storage');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error saving staff tokens: $e');
+      }
+    }
+  }
+
+  // Get staff access token
+  static Future<String?> getStaffAccessToken() async {
+    try {
+      return await _storage.read(key: _staffAccessTokenKey);
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error reading staff access token: $e');
+      }
+      return null;
+    }
+  }
+
+  // Save staff data
+  static Future<void> saveStaffData(String staffData) async {
+    try {
+      await _storage.write(key: _staffDataKey, value: staffData);
+      if (kDebugMode) {
+        print('👷 Staff data saved to secure storage');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error saving staff data: $e');
+      }
+    }
+  }
+
+  // Get staff data
+  static Future<String?> getStaffData() async {
+    try {
+      return await _storage.read(key: _staffDataKey);
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error reading staff data: $e');
+      }
+      return null;
+    }
+  }
+
+  // Check if staff is logged in
+  static Future<bool> isStaffLoggedIn() async {
+    try {
+      final token = await getStaffAccessToken();
+      return token != null && token.isNotEmpty;
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error checking staff login status: $e');
+      }
+      return false;
+    }
+  }
+
+  // Clear staff data
+  static Future<void> clearStaffData() async {
+    try {
+      await _storage.delete(key: _staffAccessTokenKey);
+      await _storage.delete(key: _staffDataKey);
+      if (kDebugMode) {
+        print('🗑️ Staff data cleared from secure storage');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error clearing staff data: $e');
+      }
     }
   }
 }

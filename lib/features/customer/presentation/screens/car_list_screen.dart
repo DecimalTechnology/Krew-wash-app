@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../../core/constants/route_constants.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../data/repositories/vehicle_repository.dart';
 import '../../presentation/providers/vehicle_provider.dart';
 
@@ -507,7 +508,7 @@ class _VehicleCard extends StatelessWidget {
       ),
       padding: EdgeInsets.all(screenWidth > 400 ? 24.0 : 20.0),
       decoration: BoxDecoration(
-        color: const Color(0xFF01031C).withValues(alpha: 0.9),
+        color: AppTheme.cardColor.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: const Color(0xFF04CDFE).withValues(alpha: 0.3),

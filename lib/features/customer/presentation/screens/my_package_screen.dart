@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/text_styles.dart';
 
 class MyPackageScreen extends StatelessWidget {
@@ -314,7 +315,7 @@ class MyPackageScreen extends StatelessWidget {
             : 18.0,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFF01031C).withValues(alpha: 0.9),
+        color: AppTheme.cardColor.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(isVeryLargeScreen ? 20 : 16),
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.2),

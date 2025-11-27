@@ -45,28 +45,60 @@ class StaffHomeScreen extends StatelessWidget {
             : 20.0;
 
         return SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
-                // Welcome Header
-                _buildWelcomeHeader(context, isIOS, isSmallScreen, isTablet),
-                const SizedBox(height: 24),
-                // Summary Cards
-                _buildSummaryCards(context, isIOS, isSmallScreen, isTablet),
-                const SizedBox(height: 32),
-                // Today's Schedule Section
-                _buildTodaysScheduleSection(
-                  context,
-                  isIOS,
-                  isSmallScreen,
-                  isTablet,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
                 ),
-                const SizedBox(height: 24),
-              ],
-            ),
+                padding: EdgeInsets.zero,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
+                      // Welcome Header
+                      _buildWelcomeHeader(
+                        context,
+                        isIOS,
+                        isSmallScreen,
+                        isTablet,
+                        horizontalPadding,
+                      ),
+                      const SizedBox(height: 24),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: horizontalPadding,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Summary Cards
+                            _buildSummaryCards(
+                              context,
+                              isIOS,
+                              isSmallScreen,
+                              isTablet,
+                            ),
+                            const SizedBox(height: 32),
+                            // Today's Schedule Section
+                            _buildTodaysScheduleSection(
+                              context,
+                              isIOS,
+                              isSmallScreen,
+                              isTablet,
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: MediaQuery.of(context).padding.bottom),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         );
       },
@@ -78,31 +110,69 @@ class StaffHomeScreen extends StatelessWidget {
     bool isIOS,
     bool isSmallScreen,
     bool isTablet,
+    double horizontalPadding,
   ) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
         final user = authProvider.user;
         final userName = user?.name?.toUpperCase() ?? 'CLEANER';
         final userId = user?.uid ?? 'ID: N/A';
+        final headerHeight = isSmallScreen
+            ? 240.0
+            : isTablet
+            ? 320.0
+            : 270.0;
 
-        return Container(
-          padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1A1A1A),
-            borderRadius: BorderRadius.circular(isIOS ? 20 : 16),
-          ),
-          child: Row(
+        return SizedBox(
+          height: headerHeight,
+          width: MediaQuery.of(context).size.width,
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              Expanded(
+              Align(
+                alignment: Alignment.centerRight,
+                child: FractionallySizedBox(
+                  widthFactor: 0.75,
+                  heightFactor: 1,
+                  alignment: Alignment.centerRight,
+                  child: FittedBox(
+                    fit: BoxFit.cover,
+                    alignment: Alignment.centerRight,
+                    child: Image.asset(
+                      'assets/cleaner/homescreen.png',
+                      height: headerHeight,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        Colors.black.withOpacity(0.92),
+                        Colors.black.withOpacity(0.5),
+                        Colors.black.withOpacity(0.15),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: horizontalPadding,
+                top: isSmallScreen ? 22 : 30,
+                right: horizontalPadding + (isSmallScreen ? 120 : 180),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'WELCOME BACK',
                       style: TextStyle(
-                        color: Colors.white70,
+                        color: const Color(0xFF7FB6D4),
                         fontSize: isSmallScreen ? 12 : 14,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                         letterSpacing: 1.2,
                         fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                       ),
@@ -113,49 +183,27 @@ class StaffHomeScreen extends StatelessWidget {
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: isSmallScreen
-                            ? 20
+                            ? 24
                             : isTablet
-                            ? 28
-                            : 24,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.0,
+                            ? 36
+                            : 30,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.1,
                         fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       'ID : $userId',
                       style: TextStyle(
                         color: const Color(0xFF04CDFE),
                         fontSize: isSmallScreen ? 12 : 14,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.5,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.8,
                         fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                       ),
                     ),
                   ],
-                ),
-              ),
-              // Car image placeholder
-              Container(
-                width: isSmallScreen
-                    ? 80
-                    : isTablet
-                    ? 120
-                    : 100,
-                height: isSmallScreen
-                    ? 60
-                    : isTablet
-                    ? 90
-                    : 75,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.white.withOpacity(0.1),
-                ),
-                child: const Icon(
-                  Icons.directions_car,
-                  color: Colors.white24,
-                  size: 40,
                 ),
               ),
             ],
@@ -207,40 +255,43 @@ class StaffHomeScreen extends StatelessWidget {
     bool isTablet,
   ) {
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+      height: isSmallScreen ? 110 : 120,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(isIOS ? 20 : 16),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        color: Colors.black.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.15), width: 1.2),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            number,
-            style: TextStyle(
-              color: const Color(0xFF04CDFE),
-              fontSize: isSmallScreen
-                  ? 32
-                  : isTablet
-                  ? 48
-                  : 40,
-              fontWeight: FontWeight.bold,
-              fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              number,
+              style: TextStyle(
+                color: const Color(0xFF04CDFE),
+                fontSize: isSmallScreen
+                    ? 36
+                    : isTablet
+                    ? 54
+                    : 44,
+                fontWeight: FontWeight.w700,
+                fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
+                letterSpacing: 0.5,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isSmallScreen ? 12 : 14,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.0,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isSmallScreen ? 12 : 14,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.3,
+                fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -277,11 +328,14 @@ class StaffHomeScreen extends StatelessWidget {
     bool isTablet,
   ) {
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 18 : 24,
+        vertical: isSmallScreen ? 20 : 26,
+      ),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(isIOS ? 20 : 16),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        color: Colors.black.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(isIOS ? 26 : 22),
+        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,12 +396,12 @@ class StaffHomeScreen extends StatelessWidget {
               // Status badge
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
+                  horizontal: 14,
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF04CDFE).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(30),
                   border: Border.all(color: const Color(0xFF04CDFE), width: 1),
                 ),
                 child: Text(
@@ -363,7 +417,9 @@ class StaffHomeScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
+          Divider(color: Colors.white.withOpacity(0.08), thickness: 1),
+          const SizedBox(height: 18),
           // Service details
           _buildDetailRow(
             context,
@@ -391,48 +447,47 @@ class StaffHomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           // View Details Button
-          SizedBox(
-            width: double.infinity,
-            height: isSmallScreen ? 44 : 48,
-            child: isIOS
-                ? CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    color: const Color(0xFF04CDFE),
-                    borderRadius: BorderRadius.circular(12),
-                    onPressed: () {
-                      // TODO: Navigate to booking details
-                    },
-                    child: Text(
-                      'VIEW DETAILS',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: isSmallScreen ? 14 : 16,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
+          Align(
+            alignment: Alignment.center,
+            child: SizedBox(
+              width: isTablet ? 260 : 220,
+              height: isSmallScreen ? 40 : 44,
+              child: isIOS
+                  ? CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      color: const Color(0xFF04CDFE),
+                      borderRadius: BorderRadius.circular(24),
+                      onPressed: () {},
+                      child: Text(
+                        'VIEW DETAILS',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: isSmallScreen ? 13 : 15,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
+                    )
+                  : ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF04CDFE),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: () {},
+                      child: Text(
+                        'VIEW DETAILS',
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 13 : 15,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
+                        ),
                       ),
                     ),
-                  )
-                : ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF04CDFE),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    onPressed: () {
-                      // TODO: Navigate to booking details
-                    },
-                    child: Text(
-                      'VIEW DETAILS',
-                      style: TextStyle(
-                        fontSize: isSmallScreen ? 14 : 16,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
+            ),
           ),
         ],
       ),
@@ -469,7 +524,9 @@ class StaffHomeScreen extends StatelessWidget {
               fontSize: isSmallScreen ? 12 : 14,
               fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.normal,
               fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+              height: 1.4,
             ),
+            textAlign: TextAlign.right,
           ),
         ),
       ],

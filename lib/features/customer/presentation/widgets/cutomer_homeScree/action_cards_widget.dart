@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../../../../core/constants/route_constants.dart';
 import '../../../../../core/constants/size_constants.dart';
+import '../../../../../core/theme/app_theme.dart';
 
 class ActionCardsWidget extends StatelessWidget {
   const ActionCardsWidget({super.key});
@@ -86,7 +87,7 @@ class ActionCardsWidget extends StatelessWidget {
           SizeConstants.getResponsivePadding(screenWidth),
         ),
         decoration: BoxDecoration(
-          color: const Color(0xFF01031C).withValues(alpha: 0.8),
+          color: AppTheme.cardColor.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 16),
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.2),
@@ -226,7 +227,7 @@ class ActionCardsWidget extends StatelessWidget {
               : 16,
         ),
         decoration: BoxDecoration(
-          color: const Color(0xFF01031C).withValues(alpha: 0.8),
+          color: AppTheme.cardColor.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 16),
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.2),

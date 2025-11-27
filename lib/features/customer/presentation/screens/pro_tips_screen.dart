@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:io';
+import '../../../../core/theme/app_theme.dart';
 
 class ProTipsScreen extends StatelessWidget {
   const ProTipsScreen({super.key});
@@ -190,7 +191,7 @@ class ProTipsScreen extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(isLargeScreen ? 32 : 20),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.6),
+        color: AppTheme.cardColor.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
         border: Border.all(color: const Color(0xFF04CDFE), width: 1),
       ),

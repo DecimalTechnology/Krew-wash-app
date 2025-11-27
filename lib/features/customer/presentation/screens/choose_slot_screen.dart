@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:io';
+import '../../../../core/theme/app_theme.dart';
 
 class ChooseSlotScreen extends StatefulWidget {
   const ChooseSlotScreen({super.key});
@@ -546,7 +547,7 @@ class _ChooseSlotScreenState extends State<ChooseSlotScreen> {
             colorScheme: const ColorScheme.dark(
               primary: Color(0xFF04CDFE),
               onPrimary: Colors.white,
-              surface: Color(0xFF01031C),
+              surface: AppTheme.cardColor,
               onSurface: Colors.white,
             ),
           ),

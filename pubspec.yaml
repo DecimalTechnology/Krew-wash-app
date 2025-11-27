@@ -86,10 +86,11 @@ flutter:
     - assets/
     - assets/Package/
     - assets/CustomerHome/
-    - assets/ProTips/
+    # - assets/ProTips/  # TODO: Add ProTips images (protipsbg.png, tip1.png, tip2.png, tip3.png)
     - assets/CustomerProfile/
     - assets/ChooseSlot/
     - assets/cleaner/
+    - assets/cleaner/homescreen.png
  
 
   # An image asset can refer to one or more resolution-specific "variants", see

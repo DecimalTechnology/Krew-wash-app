@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../widgets/cutomer_homeScree/top_section_widget.dart';
 import '../widgets/cutomer_homeScree/user_info_card_widget.dart';
 import '../widgets/cutomer_homeScree/book_button_widget.dart';
@@ -218,7 +219,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen>
     return Container(
       height: 80,
       decoration: BoxDecoration(
-        color: const Color(0x8001031C),
+        color: AppTheme.cardColor.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFF04CDFE), width: 1),
       ),
@@ -246,7 +247,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen>
       child: Container(
         height: 80,
         decoration: BoxDecoration(
-          color: const Color(0x8001031C),
+          color: AppTheme.cardColor.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: const Color(0xFF04CDFE).withValues(alpha: 0.3),
