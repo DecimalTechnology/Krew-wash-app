@@ -3,6 +3,8 @@ import 'package:flutter/cupertino.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../providers/cleaner_booking_provider.dart';
+import '../../domain/models/booking_model.dart';
+import 'staff_booking_details_screen.dart';
 
 class StaffUpcomingBookingsScreen extends StatefulWidget {
   const StaffUpcomingBookingsScreen({super.key});
@@ -68,6 +70,27 @@ class _StaffUpcomingBookingsScreenState
             ? 32.0
             : 20.0;
 
+        // Calculate navigation bar dimensions (matching navigation screen)
+        final navBarMargin = isSmallScreen
+            ? 12.0
+            : isMediumScreen
+            ? 14.0
+            : isTablet
+            ? 20.0
+            : 16.0;
+        final navBarHeight = isSmallScreen
+            ? 60.0
+            : isMediumScreen
+            ? 65.0
+            : isTablet
+            ? 80.0
+            : 70.0;
+
+        // Calculate bottom padding to allow scrolling above nav bar
+        final systemBottomPadding = MediaQuery.of(context).padding.bottom;
+        final bottomPadding =
+            navBarMargin + navBarHeight + systemBottomPadding + 16;
+
         return Consumer<CleanerBookingProvider>(
           builder: (context, bookingProvider, _) {
             return RefreshIndicator(
@@ -123,7 +146,7 @@ class _StaffUpcomingBookingsScreenState
                       isTablet: isTablet,
                     ),
                   ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  SliverToBoxAdapter(child: SizedBox(height: bottomPadding)),
                 ],
               ),
             );
@@ -151,14 +174,6 @@ class _StaffUpcomingBookingsScreenState
               fontSize: isSmallScreen ? 12 : 14,
             ),
             style: const TextStyle(color: Colors.white),
-            prefix: const Padding(
-              padding: EdgeInsets.only(left: 12),
-              child: Icon(
-                CupertinoIcons.search,
-                color: Colors.white70,
-                size: 20,
-              ),
-            ),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
@@ -169,10 +184,18 @@ class _StaffUpcomingBookingsScreenState
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             onSubmitted: (_) => handleSearch(),
-            suffix: CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: handleSearch,
-              child: const Text('Search'),
+            suffix: Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: CupertinoButton(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minSize: 0,
+                onPressed: handleSearch,
+                child: const Icon(
+                  CupertinoIcons.search,
+                  color: Color(0xFF04CDFE),
+                  size: 20,
+                ),
+              ),
             ),
           )
         : TextField(
@@ -184,11 +207,6 @@ class _StaffUpcomingBookingsScreenState
               hintStyle: TextStyle(
                 color: Colors.white.withOpacity(0.5),
                 fontSize: isSmallScreen ? 12 : 14,
-              ),
-              prefixIcon: const Icon(
-                Icons.search,
-                color: Colors.white70,
-                size: 20,
               ),
               filled: true,
               fillColor: Colors.white.withOpacity(0.1),
@@ -218,7 +236,7 @@ class _StaffUpcomingBookingsScreenState
                 vertical: 12,
               ),
               suffixIcon: IconButton(
-                icon: const Icon(Icons.search, color: Colors.white70),
+                icon: const Icon(Icons.search, color: Color(0xFF04CDFE)),
                 onPressed: handleSearch,
               ),
             ),
@@ -275,6 +293,7 @@ class _StaffUpcomingBookingsScreenState
         return Padding(
           padding: EdgeInsets.only(top: index == 0 ? 0 : 16),
           child: _buildBookingCard(
+            booking: booking,
             title: packageName,
             subtitle: customer,
             bookingId: booking.bookingId,
@@ -292,6 +311,7 @@ class _StaffUpcomingBookingsScreenState
   }
 
   Widget _buildBookingCard({
+    required CleanerBooking booking,
     required String title,
     required String subtitle,
     required String bookingId,
@@ -309,9 +329,12 @@ class _StaffUpcomingBookingsScreenState
         vertical: isSmallScreen ? 20 : 26,
       ),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.12),
+        color: Colors.black.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(isIOS ? 26 : 22),
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.2),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1.2,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -420,7 +443,14 @@ class _StaffUpcomingBookingsScreenState
                       padding: EdgeInsets.zero,
                       color: const Color(0xFF04CDFE),
                       borderRadius: BorderRadius.circular(24),
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          CupertinoPageRoute(
+                            builder: (_) =>
+                                StaffBookingDetailsScreen(booking: booking),
+                          ),
+                        );
+                      },
                       child: Text(
                         'VIEW DETAILS',
                         style: TextStyle(
@@ -440,7 +470,14 @@ class _StaffUpcomingBookingsScreenState
                         ),
                         elevation: 0,
                       ),
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                StaffBookingDetailsScreen(booking: booking),
+                          ),
+                        );
+                      },
                       child: Text(
                         'VIEW DETAILS',
                         style: TextStyle(

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import '../../../../core/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../providers/cleaner_booking_provider.dart';
+import '../../domain/models/booking_model.dart';
+import 'staff_booking_details_screen.dart';
 
 class StaffBookingHistoryScreen extends StatefulWidget {
   const StaffBookingHistoryScreen({super.key});
@@ -68,7 +69,29 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
             ? 32.0
             : 20.0;
 
+        // Calculate navigation bar dimensions (matching navigation screen)
+        final navBarMargin = isSmallScreen
+            ? 12.0
+            : isMediumScreen
+            ? 14.0
+            : isTablet
+            ? 20.0
+            : 16.0;
+        final navBarHeight = isSmallScreen
+            ? 60.0
+            : isMediumScreen
+            ? 65.0
+            : isTablet
+            ? 80.0
+            : 70.0;
+
+        // Calculate bottom padding to allow scrolling above nav bar
+        final systemBottomPadding = MediaQuery.of(context).padding.bottom;
+        final bottomPadding =
+            navBarMargin + navBarHeight + systemBottomPadding + 16;
+
         return SafeArea(
+          bottom: false,
           child: Column(
             children: [
               Padding(
@@ -123,14 +146,17 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
                       onRefresh: () =>
                           bookingProvider.fetchCompletedBookings(force: true),
                       child: ListView.separated(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: horizontalPadding,
-                          vertical: 8,
+                        padding: EdgeInsets.fromLTRB(
+                          horizontalPadding,
+                          8,
+                          horizontalPadding,
+                          bottomPadding,
                         ),
                         itemBuilder: (context, index) {
                           final booking =
                               bookingProvider.completedBookings[index];
                           return _buildBookingCard(
+                            booking: booking,
                             title:
                                 booking.package?.packageId?.name ??
                                 'Completed Package',
@@ -184,14 +210,6 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
               fontSize: isSmallScreen ? 12 : 14,
             ),
             style: const TextStyle(color: Colors.white),
-            prefix: const Padding(
-              padding: EdgeInsets.only(left: 12),
-              child: Icon(
-                CupertinoIcons.search,
-                color: Colors.white70,
-                size: 20,
-              ),
-            ),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
@@ -202,10 +220,18 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             onSubmitted: (_) => handleSearch(),
-            suffix: CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: handleSearch,
-              child: const Text('Search'),
+            suffix: Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: CupertinoButton(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minSize: 0,
+                onPressed: handleSearch,
+                child: const Icon(
+                  CupertinoIcons.search,
+                  color: Color(0xFF04CDFE),
+                  size: 20,
+                ),
+              ),
             ),
           )
         : TextField(
@@ -218,13 +244,8 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
                 color: Colors.white.withOpacity(0.5),
                 fontSize: isSmallScreen ? 12 : 14,
               ),
-              prefixIcon: const Icon(
-                Icons.search,
-                color: Colors.white70,
-                size: 20,
-              ),
               suffixIcon: IconButton(
-                icon: const Icon(Icons.search, color: Colors.white70),
+                icon: const Icon(Icons.search, color: Color(0xFF04CDFE)),
                 onPressed: handleSearch,
               ),
               filled: true,
@@ -256,6 +277,7 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
   }
 
   Widget _buildBookingCard({
+    required CleanerBooking booking,
     required String title,
     required String subtitle,
     required String bookingId,
@@ -268,11 +290,17 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
     required bool isTablet,
   }) {
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 18 : 24,
+        vertical: isSmallScreen ? 20 : 26,
+      ),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(isIOS ? 20 : 16),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        color: Colors.black.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(isIOS ? 26 : 22),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1.2,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,21 +358,21 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
                   ],
                 ),
               ),
-              // Status badge - Green for completed
+              // Status badge
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
+                  horizontal: 14,
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.green, width: 1),
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: const Color(0xFF04CDFE), width: 1),
                 ),
                 child: Text(
                   status.toUpperCase(),
                   style: TextStyle(
-                    color: Colors.green,
+                    color: const Color(0xFF04CDFE),
                     fontSize: isSmallScreen ? 10 : 12,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.5,
@@ -354,7 +382,9 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
+          Divider(color: Colors.white.withOpacity(0.08), thickness: 1),
+          const SizedBox(height: 18),
           // Service details
           _buildDetailRow('SERVICE', service, isIOS, isSmallScreen),
           const SizedBox(height: 12),
@@ -369,48 +399,61 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
           ),
           const SizedBox(height: 20),
           // View Details Button
-          SizedBox(
-            width: double.infinity,
-            height: isSmallScreen ? 44 : 48,
-            child: isIOS
-                ? CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    color: const Color(0xFF04CDFE),
-                    borderRadius: BorderRadius.circular(12),
-                    onPressed: () {
-                      // TODO: Navigate to booking details
-                    },
-                    child: Text(
-                      'VIEW DETAILS',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: isSmallScreen ? 14 : 16,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
+          Align(
+            alignment: Alignment.center,
+            child: SizedBox(
+              width: isTablet ? 260 : 220,
+              height: isSmallScreen ? 40 : 44,
+              child: isIOS
+                  ? CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      color: const Color(0xFF04CDFE),
+                      borderRadius: BorderRadius.circular(24),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          CupertinoPageRoute(
+                            builder: (_) =>
+                                StaffBookingDetailsScreen(booking: booking),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'VIEW DETAILS',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: isSmallScreen ? 13 : 15,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
+                    )
+                  : ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF04CDFE),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                StaffBookingDetailsScreen(booking: booking),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'VIEW DETAILS',
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 13 : 15,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
+                        ),
                       ),
                     ),
-                  )
-                : ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF04CDFE),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    onPressed: () {
-                      // TODO: Navigate to booking details
-                    },
-                    child: Text(
-                      'VIEW DETAILS',
-                      style: TextStyle(
-                        fontSize: isSmallScreen ? 14 : 16,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
+            ),
           ),
         ],
       ),
@@ -446,7 +489,9 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
               fontSize: isSmallScreen ? 12 : 14,
               fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.normal,
               fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+              height: 1.4,
             ),
+            textAlign: TextAlign.right,
           ),
         ),
       ],

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
+import '../providers/staff_provider.dart';
+import '../providers/cleaner_booking_provider.dart';
+import 'staff_booking_details_screen.dart';
 
 class StaffHomeScreen extends StatelessWidget {
   const StaffHomeScreen({super.key});
@@ -44,14 +46,36 @@ class StaffHomeScreen extends StatelessWidget {
             ? 32.0
             : 20.0;
 
+        // Calculate navigation bar dimensions (matching navigation screen)
+        final navBarMargin = isSmallScreen
+            ? 12.0
+            : isMediumScreen
+            ? 14.0
+            : isTablet
+            ? 20.0
+            : 16.0;
+        final navBarHeight = isSmallScreen
+            ? 60.0
+            : isMediumScreen
+            ? 65.0
+            : isTablet
+            ? 80.0
+            : 70.0;
+
+        // Calculate bottom padding to allow scrolling above nav bar
+        final systemBottomPadding = MediaQuery.of(context).padding.bottom;
+        final bottomPadding =
+            navBarMargin + navBarHeight + systemBottomPadding + 16;
+
         return SafeArea(
+          bottom: false,
           child: LayoutBuilder(
             builder: (context, constraints) {
               return SingleChildScrollView(
                 physics: const BouncingScrollPhysics(
                   parent: AlwaysScrollableScrollPhysics(),
                 ),
-                padding: EdgeInsets.zero,
+                padding: EdgeInsets.only(bottom: bottomPadding),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: Column(
@@ -93,7 +117,6 @@ class StaffHomeScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      SizedBox(height: MediaQuery.of(context).padding.bottom),
                     ],
                   ),
                 ),
@@ -112,11 +135,11 @@ class StaffHomeScreen extends StatelessWidget {
     bool isTablet,
     double horizontalPadding,
   ) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, _) {
-        final user = authProvider.user;
-        final userName = user?.name?.toUpperCase() ?? 'CLEANER';
-        final userId = user?.uid ?? 'ID: N/A';
+    return Consumer<StaffProvider>(
+      builder: (context, staffProvider, _) {
+        final staff = staffProvider.staff;
+        final userName = staff?.name.toUpperCase() ?? 'CLEANER';
+        final userId = staff?.cleanerId ?? 'ID: N/A';
         final headerHeight = isSmallScreen
             ? 240.0
             : isTablet
@@ -183,10 +206,10 @@ class StaffHomeScreen extends StatelessWidget {
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: isSmallScreen
-                            ? 24
+                            ? 28
                             : isTablet
-                            ? 36
-                            : 30,
+                            ? 42
+                            : 34,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1.1,
                         fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
@@ -197,7 +220,7 @@ class StaffHomeScreen extends StatelessWidget {
                       'ID : $userId',
                       style: TextStyle(
                         color: const Color(0xFF04CDFE),
-                        fontSize: isSmallScreen ? 12 : 14,
+                        fontSize: isSmallScreen ? 14 : 16,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.8,
                         fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
@@ -452,41 +475,70 @@ class StaffHomeScreen extends StatelessWidget {
             child: SizedBox(
               width: isTablet ? 260 : 220,
               height: isSmallScreen ? 40 : 44,
-              child: isIOS
-                  ? CupertinoButton(
-                      padding: EdgeInsets.zero,
-                      color: const Color(0xFF04CDFE),
-                      borderRadius: BorderRadius.circular(24),
-                      onPressed: () {},
-                      child: Text(
-                        'VIEW DETAILS',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: isSmallScreen ? 13 : 15,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.1,
-                        ),
-                      ),
-                    )
-                  : ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF04CDFE),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
+              child: Consumer<CleanerBookingProvider>(
+                builder: (context, bookingProvider, _) {
+                  final firstBooking =
+                      bookingProvider.assignedBookings.isNotEmpty
+                      ? bookingProvider.assignedBookings.first
+                      : null;
+
+                  return isIOS
+                      ? CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          color: const Color(0xFF04CDFE),
                           borderRadius: BorderRadius.circular(24),
-                        ),
-                        elevation: 0,
-                      ),
-                      onPressed: () {},
-                      child: Text(
-                        'VIEW DETAILS',
-                        style: TextStyle(
-                          fontSize: isSmallScreen ? 13 : 15,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.1,
-                        ),
-                      ),
-                    ),
+                          onPressed: () {
+                            if (firstBooking != null) {
+                              Navigator.of(context).push(
+                                CupertinoPageRoute(
+                                  builder: (_) => StaffBookingDetailsScreen(
+                                    booking: firstBooking,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          child: Text(
+                            'VIEW DETAILS',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: isSmallScreen ? 13 : 15,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.1,
+                            ),
+                          ),
+                        )
+                      : ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF04CDFE),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            elevation: 0,
+                          ),
+                          onPressed: () {
+                            if (firstBooking != null) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => StaffBookingDetailsScreen(
+                                    booking: firstBooking,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          child: Text(
+                            'VIEW DETAILS',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 13 : 15,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.1,
+                            ),
+                          ),
+                        );
+                },
+              ),
             ),
           ),
         ],

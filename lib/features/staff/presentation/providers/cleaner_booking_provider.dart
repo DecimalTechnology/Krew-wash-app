@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -27,6 +28,7 @@ class CleanerBookingProvider extends ChangeNotifier {
   bool _isAssignedLoading = false;
   bool _isCompletedLoading = false;
   bool _isDetailsLoading = false;
+  String? _updatingSessionId; // Track which specific session is being updated
 
   bool _hasLoadedAssigned = false;
   bool _hasLoadedCompleted = false;
@@ -51,6 +53,7 @@ class CleanerBookingProvider extends ChangeNotifier {
   bool get isAssignedLoading => _isAssignedLoading;
   bool get isCompletedLoading => _isCompletedLoading;
   bool get isDetailsLoading => _isDetailsLoading;
+  bool isUpdatingSession(String sessionId) => _updatingSessionId == sessionId;
 
   String? get assignedError => _assignedError;
   String? get completedError => _completedError;
@@ -208,6 +211,87 @@ class CleanerBookingProvider extends ChangeNotifier {
     _selectedBooking = null;
     _detailsError = null;
     notifyListeners();
+  }
+
+  Future<Map<String, dynamic>> updateSession({
+    required String bookingId,
+    required String sessionId,
+    required String sessionType,
+    String? addonId,
+  }) async {
+    if (_updatingSessionId != null) {
+      return {'success': false, 'message': 'Update already in progress'};
+    }
+
+    _updatingSessionId = sessionId;
+    notifyListeners();
+
+    final token = await SecureStorageService.getStaffAccessToken();
+    if (token == null) {
+      _updatingSessionId = null;
+      notifyListeners();
+      return {
+        'success': false,
+        'message': 'Missing access token. Please login again.',
+      };
+    }
+
+    final response = await CleanerBookingRepository.updateSession(
+      accessToken: token,
+      bookingId: bookingId,
+      sessionId: sessionId,
+      sessionType: sessionType,
+      addonId: addonId,
+    );
+
+    if (response['success'] == true && response['data'] != null) {
+      try {
+        // Handle case where data might be a String that needs parsing
+        dynamic data = response['data'];
+        Map<String, dynamic> bookingData;
+
+        if (data is String) {
+          bookingData = jsonDecode(data) as Map<String, dynamic>;
+        } else if (data is Map<String, dynamic>) {
+          bookingData = data;
+        } else {
+          throw Exception('Invalid data type: ${data.runtimeType}');
+        }
+
+        // Update the selected booking if it matches
+        if (_selectedBooking?.id == bookingId) {
+          _selectedBooking = CleanerBooking.fromMap(bookingData);
+        }
+        // Also update in the assigned/completed lists if present
+        _updateBookingInList(_assignedBookings, bookingId, bookingData);
+        _updateBookingInList(_completedBookings, bookingId, bookingData);
+      } catch (e) {
+        if (kDebugMode) {
+          print('❌ Error parsing booking data: $e');
+        }
+        _detailsError = 'Failed to parse updated booking data';
+      }
+    } else {
+      // Store error message for snackbar display
+      _detailsError =
+          response['message']?.toString() ?? 'Failed to update session';
+    }
+
+    _updatingSessionId = null;
+    notifyListeners();
+
+    return response;
+  }
+
+  void _updateBookingInList(
+    List<CleanerBooking> list,
+    String bookingId,
+    dynamic data,
+  ) {
+    final index = list.indexWhere((b) => b.id == bookingId);
+    if (index != -1 && data != null) {
+      list[index] = CleanerBooking.fromMap(data as Map<String, dynamic>);
+    }
   }
 
   Future<void> refreshAll() async {

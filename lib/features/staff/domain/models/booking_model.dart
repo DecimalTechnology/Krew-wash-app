@@ -55,7 +55,9 @@ class CleanerBooking {
           ? BookingPayment.fromMap(map['payment'] as Map<String, dynamic>)
           : null,
       user: map['userId'] != null
-          ? BookingUser.fromMap(map['userId'] as Map<String, dynamic>)
+          ? (map['userId'] is Map<String, dynamic>
+                ? BookingUser.fromMap(map['userId'] as Map<String, dynamic>)
+                : null)
           : null,
       package: map['package'] != null
           ? BookingPackage.fromMap(map['package'] as Map<String, dynamic>)
@@ -281,11 +283,22 @@ class PackageSession {
   final List<String> images;
 
   factory PackageSession.fromMap(Map<String, dynamic> map) {
+    // Handle completedBy as either string or array
+    String? completedByStr;
+    if (map['completedBy'] != null) {
+      if (map['completedBy'] is List) {
+        final list = map['completedBy'] as List;
+        completedByStr = list.isNotEmpty ? list.first.toString() : null;
+      } else {
+        completedByStr = map['completedBy']?.toString();
+      }
+    }
+
     return PackageSession(
       id: map['_id']?.toString() ?? '',
       isCompleted: map['isCompleted'] == true,
       date: CleanerBooking._parseDate(map['date']),
-      completedBy: map['completedBy']?.toString(),
+      completedBy: completedByStr,
       images: List<String>.from(
         (map['images'] as List<dynamic>? ?? []).map((e) => '$e'),
       ),
