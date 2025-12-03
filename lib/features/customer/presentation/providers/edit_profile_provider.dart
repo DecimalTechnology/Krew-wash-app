@@ -185,11 +185,18 @@ class EditProfileProvider extends ChangeNotifier {
       if (updated != null && updated is Map<String, dynamic>) {
         try {
           final map = updated;
+          // Ensure 'image' field is preserved if present
+          if (map['image'] != null && map['photo'] == null) {
+            map['photo'] = map['image'];
+          }
           await SecureStorageService.saveUserData(jsonEncode(map));
           authProvider.setUser(UserModel.fromMap(map));
 
           if (kDebugMode) {
             print('✅ Profile image updated and saved to local storage');
+            print(
+              '📸 Image URL: ${map['image'] ?? map['photo'] ?? 'NOT FOUND'}',
+            );
           }
         } catch (e) {
           if (kDebugMode) {

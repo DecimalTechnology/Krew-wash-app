@@ -338,23 +338,59 @@ class CustomerProfileScreen extends StatelessWidget {
   }
 
   Widget _buildProfileAvatar(bool isLargeScreen) {
-    return Container(
-      width: isLargeScreen ? 100 : 80,
-      height: isLargeScreen ? 100 : 80,
-      margin: EdgeInsets.symmetric(vertical: isLargeScreen ? 20.0 : 10.0),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(isLargeScreen ? 50 : 40),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.3),
-          width: 2,
-        ),
-      ),
-      child: Icon(
-        Icons.person,
-        color: Colors.white,
-        size: isLargeScreen ? 50 : 40,
-      ),
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, _) {
+        final user = authProvider.user;
+        final photoUrl = user?.photo;
+
+        return Container(
+          width: isLargeScreen ? 100 : 80,
+          height: isLargeScreen ? 100 : 80,
+          margin: EdgeInsets.symmetric(vertical: isLargeScreen ? 20.0 : 10.0),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(isLargeScreen ? 50 : 40),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.3),
+              width: 2,
+            ),
+          ),
+          child: photoUrl != null && photoUrl.isNotEmpty
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(isLargeScreen ? 50 : 40),
+                  child: Image.network(
+                    photoUrl,
+                    width: isLargeScreen ? 100 : 80,
+                    height: isLargeScreen ? 100 : 80,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                              : null,
+                          color: Colors.white,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(
+                        Icons.person,
+                        color: Colors.white,
+                        size: isLargeScreen ? 50 : 40,
+                      );
+                    },
+                  ),
+                )
+              : Icon(
+                  Icons.person,
+                  color: Colors.white,
+                  size: isLargeScreen ? 50 : 40,
+                ),
+        );
+      },
     );
   }
 

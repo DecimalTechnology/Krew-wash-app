@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
 import 'core/theme/app_theme.dart';
@@ -50,8 +51,15 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  bool _hasNavigated = false;
 
   @override
   Widget build(BuildContext context) {
@@ -72,12 +80,34 @@ class AuthWrapper extends StatelessWidget {
           // Show appropriate portal based on user role
           final role = authProvider.user?.role;
           if (role == 'user') {
+            // Check if profile is complete before going to home
+            if (!authProvider.isProfileComplete() && !_hasNavigated) {
+              // Navigate to profile details screen if profile is incomplete
+              _hasNavigated = true;
+              SchedulerBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    Routes.customerProfileDetails,
+                    (route) => false,
+                  );
+                }
+              });
+              // Show a temporary screen while navigating
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
             return const MainNavigationScreen();
           } else if (role == 'staff') {
             return const StaffMainNavigationScreen();
           } else {
             return const RoleSelectionScreen();
           }
+        }
+
+        // Reset navigation flag when logged out
+        if (!authProvider.isAuthenticated) {
+          _hasNavigated = false;
         }
 
         // Show authentication screen if not logged in

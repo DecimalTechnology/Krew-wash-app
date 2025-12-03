@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/edit_profile_provider.dart';
 import '../../../auth/presentation/screens/otp_verification_screen.dart';
@@ -35,6 +37,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   String? _selectedBuildingId;
   String? _selectedBuildingName;
+  File? _selectedImageFile;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -88,59 +92,69 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return CupertinoPageScaffold(
       backgroundColor: Colors.black,
       child: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            _buildIOSHeader(),
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    // Profile Picture Section
-                    _buildProfilePictureSection(isIOS: true),
-                    const SizedBox(height: 40),
-                    // Name Field
-                    _buildNameField(isIOS: true),
-                    const SizedBox(height: 24),
-                    // Apartment Name Field
-                    _buildApartmentNameField(isIOS: true),
-                    const SizedBox(height: 24),
-                    // Phone Field
-                    _buildPhoneField(isIOS: true),
-                    const SizedBox(height: 24),
-                    // Email Field
-                    _buildEmailField(isIOS: true),
-                    // Contact Save Button (shows when phone or email is being edited)
-                    if (_isEditingPhone || _isEditingEmail) ...[
-                      const SizedBox(height: 12),
-                      Builder(
-                        builder: (context) => _buildSaveFieldButton(
-                          text: 'SAVE',
-                          onPressed: () => _handleContactSave(context),
-                          isIOS: true,
+        child: Builder(
+          builder: (builderContext) => Column(
+            children: [
+              // Header
+              _buildIOSHeader(),
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Builder(
+                    builder: (context) => Column(
+                      children: [
+                        const SizedBox(height: 20),
+                        // Profile Picture Section
+                        Consumer<EditProfileProvider>(
+                          builder: (context, editProfileProvider, child) =>
+                              _buildProfilePictureSection(
+                                isIOS: true,
+                                editProfileProvider: editProfileProvider,
+                              ),
                         ),
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                    // Building ID Field
-                    _buildBuildingIdField(isIOS: true),
-                    const SizedBox(height: 40),
-                    // Save Button
-                    Builder(
-                      builder: (context) => _buildSaveButton(
-                        isIOS: true,
-                        onSave: () => _handleSave(context),
-                      ),
+                        const SizedBox(height: 40),
+                        // Name Field
+                        _buildNameField(isIOS: true),
+                        const SizedBox(height: 24),
+                        // Apartment Name Field
+                        _buildApartmentNameField(isIOS: true),
+                        const SizedBox(height: 24),
+                        // Phone Field
+                        _buildPhoneField(isIOS: true),
+                        const SizedBox(height: 24),
+                        // Email Field
+                        _buildEmailField(isIOS: true),
+                        // Contact Save Button (shows when phone or email is being edited)
+                        if (_isEditingPhone || _isEditingEmail) ...[
+                          const SizedBox(height: 12),
+                          Builder(
+                            builder: (context) => _buildSaveFieldButton(
+                              text: 'SAVE',
+                              onPressed: () => _handleContactSave(context),
+                              isIOS: true,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 24),
+                        // Building ID Field
+                        _buildBuildingIdField(isIOS: true),
+                        const SizedBox(height: 40),
+                        // Save Button
+                        Builder(
+                          builder: (context) => _buildSaveButton(
+                            isIOS: true,
+                            onSave: () => _handleSave(context),
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                      ],
                     ),
-                    const SizedBox(height: 40),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -150,59 +164,69 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            _buildAndroidHeader(),
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    // Profile Picture Section
-                    _buildProfilePictureSection(isIOS: false),
-                    const SizedBox(height: 40),
-                    // Name Field
-                    _buildNameField(isIOS: false),
-                    const SizedBox(height: 24),
-                    // Apartment Name Field
-                    _buildApartmentNameField(isIOS: false),
-                    const SizedBox(height: 24),
-                    // Phone Field
-                    _buildPhoneField(isIOS: false),
-                    const SizedBox(height: 24),
-                    // Email Field
-                    _buildEmailField(isIOS: false),
-                    // Contact Save Button (shows when phone or email is being edited)
-                    if (_isEditingPhone || _isEditingEmail) ...[
-                      const SizedBox(height: 12),
-                      Builder(
-                        builder: (context) => _buildSaveFieldButton(
-                          text: 'SAVE',
-                          onPressed: () => _handleContactSave(context),
-                          isIOS: false,
+        child: Builder(
+          builder: (builderContext) => Column(
+            children: [
+              // Header
+              _buildAndroidHeader(),
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Builder(
+                    builder: (context) => Column(
+                      children: [
+                        const SizedBox(height: 20),
+                        // Profile Picture Section
+                        Consumer<EditProfileProvider>(
+                          builder: (context, editProfileProvider, child) =>
+                              _buildProfilePictureSection(
+                                isIOS: false,
+                                editProfileProvider: editProfileProvider,
+                              ),
                         ),
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                    // Building ID Field
-                    _buildBuildingIdField(isIOS: false),
-                    const SizedBox(height: 40),
-                    // Save Button
-                    Builder(
-                      builder: (context) => _buildSaveButton(
-                        isIOS: false,
-                        onSave: () => _handleSave(context),
-                      ),
+                        const SizedBox(height: 40),
+                        // Name Field
+                        _buildNameField(isIOS: false),
+                        const SizedBox(height: 24),
+                        // Apartment Name Field
+                        _buildApartmentNameField(isIOS: false),
+                        const SizedBox(height: 24),
+                        // Phone Field
+                        _buildPhoneField(isIOS: false),
+                        const SizedBox(height: 24),
+                        // Email Field
+                        _buildEmailField(isIOS: false),
+                        // Contact Save Button (shows when phone or email is being edited)
+                        if (_isEditingPhone || _isEditingEmail) ...[
+                          const SizedBox(height: 12),
+                          Builder(
+                            builder: (context) => _buildSaveFieldButton(
+                              text: 'SAVE',
+                              onPressed: () => _handleContactSave(context),
+                              isIOS: false,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 24),
+                        // Building ID Field
+                        _buildBuildingIdField(isIOS: false),
+                        const SizedBox(height: 40),
+                        // Save Button
+                        Builder(
+                          builder: (context) => _buildSaveButton(
+                            isIOS: false,
+                            onSave: () => _handleSave(context),
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                      ],
                     ),
-                    const SizedBox(height: 40),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -291,10 +315,35 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildProfilePictureSection({required bool isIOS}) {
+  Widget _buildProfilePictureSection({
+    required bool isIOS,
+    required EditProfileProvider editProfileProvider,
+  }) {
     final authProvider = context.watch<AuthProvider>();
     final user = authProvider.user;
     final photoUrl = user?.photo;
+
+    // Show selected image if available, otherwise show network image or default
+    Widget imageWidget;
+    if (_selectedImageFile != null) {
+      imageWidget = Image.file(_selectedImageFile!, fit: BoxFit.cover);
+    } else if (photoUrl != null && photoUrl.isNotEmpty) {
+      imageWidget = Image.network(
+        photoUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset(
+            'assets/CustomerProfile/image1.png',
+            fit: BoxFit.cover,
+          );
+        },
+      );
+    } else {
+      imageWidget = Image.asset(
+        'assets/CustomerProfile/image1.png',
+        fit: BoxFit.cover,
+      );
+    }
 
     return Column(
       children: [
@@ -304,16 +353,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 3),
-            image: photoUrl != null && photoUrl.isNotEmpty
-                ? DecorationImage(
-                    image: NetworkImage(photoUrl),
-                    fit: BoxFit.cover,
-                  )
-                : const DecorationImage(
-                    image: AssetImage('assets/CustomerProfile/image1.png'),
-                    fit: BoxFit.cover,
-                  ),
           ),
+          child: ClipOval(child: imageWidget),
         ),
         const SizedBox(height: 16),
         Row(
@@ -322,19 +363,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             _buildActionButton(
               text: 'CHANGE',
               color: const Color(0xFF00D4AA),
-              onPressed: () {
-                // TODO: Implement image picker
-              },
+              onPressed: () => _pickImage(isIOS),
               isIOS: isIOS,
             ),
             const SizedBox(width: 16),
             _buildActionButton(
-              text: 'SAVE',
+              text: editProfileProvider.isSaving ? 'SAVING...' : 'SAVE',
               color: const Color(0xFF04CDFE),
-              onPressed: () {
-                // TODO: Implement save image
-              },
+              onPressed:
+                  _selectedImageFile != null && !editProfileProvider.isSaving
+                  ? () => _saveProfileImage(
+                      editProfileProvider: editProfileProvider,
+                    )
+                  : () {}, // Empty function if disabled
               isIOS: isIOS,
+              isEnabled:
+                  _selectedImageFile != null && !editProfileProvider.isSaving,
             ),
           ],
         ),
@@ -342,27 +386,212 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  Future<void> _pickImage(bool isIOS) async {
+    if (!mounted) return;
+
+    // Show action sheet/dialog to choose between camera and gallery
+    if (isIOS) {
+      showCupertinoModalPopup(
+        context: context,
+        builder: (context) => CupertinoActionSheet(
+          title: const Text('Select Image Source'),
+          actions: [
+            CupertinoActionSheetAction(
+              onPressed: () {
+                Navigator.pop(context);
+                _pickImageFromSource(ImageSource.camera, isIOS);
+              },
+              child: const Text('Camera'),
+            ),
+            CupertinoActionSheetAction(
+              onPressed: () {
+                Navigator.pop(context);
+                _pickImageFromSource(ImageSource.gallery, isIOS);
+              },
+              child: const Text('Photo Library'),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context),
+            isDestructiveAction: true,
+            child: const Text('Cancel'),
+          ),
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        builder: (context) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Camera'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImageFromSource(ImageSource.camera, isIOS);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Photo Library'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImageFromSource(ImageSource.gallery, isIOS);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.cancel),
+                title: const Text('Cancel'),
+                onTap: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _pickImageFromSource(ImageSource source, bool isIOS) async {
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 800,
+        maxHeight: 800,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImageFile = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error picking image: $e');
+      }
+      if (mounted) {
+        final isIOSPlatform = Theme.of(context).platform == TargetPlatform.iOS;
+        if (isIOSPlatform) {
+          showCupertinoDialog(
+            context: context,
+            builder: (context) => CupertinoAlertDialog(
+              title: const Text('Error'),
+              content: Text('Failed to pick image: ${e.toString()}'),
+              actions: [
+                CupertinoDialogAction(
+                  child: const Text('OK'),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to pick image: ${e.toString()}'),
+              backgroundColor: Colors.red[700],
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _saveProfileImage({
+    required EditProfileProvider editProfileProvider,
+  }) async {
+    if (_selectedImageFile == null) return;
+
+    final authProvider = context.read<AuthProvider>();
+
+    final success = await editProfileProvider.uploadProfileImage(
+      authProvider: authProvider,
+      filePath: _selectedImageFile!.path,
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      setState(() {
+        _selectedImageFile =
+            null; // Clear selected image after successful upload
+      });
+
+      final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+      if (isIOS) {
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: const Text('Success'),
+            content: const Text('Profile image updated successfully'),
+            actions: [
+              CupertinoDialogAction(
+                child: const Text('OK'),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile image updated successfully'),
+            backgroundColor: Color(0xFF00D4AA),
+          ),
+        );
+      }
+    } else {
+      final error =
+          editProfileProvider.error ?? 'Failed to update profile image';
+      final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+      if (isIOS) {
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: const Text('Error'),
+            content: Text(error),
+            actions: [
+              CupertinoDialogAction(
+                child: const Text('OK'),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: Colors.red[700]),
+        );
+      }
+    }
+  }
+
   Widget _buildActionButton({
     required String text,
     required Color color,
     required VoidCallback onPressed,
     required bool isIOS,
+    bool isEnabled = true,
   }) {
     return Container(
       width: 100,
       height: 40,
       decoration: BoxDecoration(
-        color: color,
+        color: isEnabled ? color : color.withOpacity(0.5),
         borderRadius: BorderRadius.circular(isIOS ? 20 : 12),
       ),
       child: isIOS
           ? CupertinoButton(
               padding: EdgeInsets.zero,
-              onPressed: onPressed,
+              onPressed: isEnabled ? onPressed : null,
               child: Text(
                 text,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: isEnabled
+                      ? Colors.white
+                      : Colors.white.withOpacity(0.6),
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                 ),
@@ -372,12 +601,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
-                onTap: onPressed,
+                onTap: isEnabled ? onPressed : null,
                 child: Center(
                   child: Text(
                     text,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: isEnabled
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.6),
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),

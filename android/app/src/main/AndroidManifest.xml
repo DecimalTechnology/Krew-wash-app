@@ -3,6 +3,13 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     
+    <!-- Image picker permissions -->
+    <!-- For Android 12 and below -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <!-- Camera permission -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- For Android 13+ (API 33+), image_picker handles storage permissions automatically -->
+    
     <application
         android:label="carwash_app"
         android:name="${applicationName}"

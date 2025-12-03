@@ -61,6 +61,7 @@ class UserModel {
       'name': name,
       'phone': phone,
       'photo': photo,
+      'image': photo, // Also save as 'image' for API compatibility
       'buildingId': buildingId,
       'isVerified': isVerified,
       'verificationMethod': verificationMethod,
@@ -92,12 +93,15 @@ class UserModel {
       return null;
     }
 
+    // Check for both 'image' and 'photo' fields (API uses 'image', model uses 'photo')
+    final imageUrl = safeStringOrNull('image') ?? safeStringOrNull('photo');
+
     return UserModel(
       uid: safeString('_id').isEmpty ? safeString('uid') : safeString('_id'),
       email: safeStringOrNull('email'),
       name: safeStringOrNull('name'),
       phone: safePhone(),
-      photo: safeStringOrNull('photo'),
+      photo: imageUrl,
       buildingId: safeStringOrNull('buildingId'),
       isVerified: map['isVerified'] as bool?,
       verificationMethod: safeStringOrNull('verificationMethod'),

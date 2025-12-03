@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -95,9 +96,9 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
   }
 
   void _showBuildingSuggestions() {
+    if (!mounted) return;
     _buildingOverlay?.remove();
     final overlay = Overlay.of(context);
-    if (overlay == null) return;
 
     final screenWidth = MediaQuery.of(context).size.width;
     final maxWidth = screenWidth - 40;
@@ -230,6 +231,10 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
       _showError('Please enter your phone number');
       return;
     }
+    if (email.isEmpty) {
+      _showError('Please enter your email');
+      return;
+    }
 
     final authProvider = context.read<AuthProvider>();
     final editProfileProvider = context.read<EditProfileProvider>();
@@ -238,7 +243,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
       authProvider: authProvider,
       name: name,
       phone: phone,
-      email: email.isEmpty ? null : email,
+      email: email,
       buildingId: _selectedBuildingId,
       apartmentName: apartment,
     );
@@ -246,17 +251,41 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
     if (!mounted) return;
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile updated successfully'),
-          backgroundColor: Color(0xFF00D4AA),
-        ),
-      );
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        Routes.customerHome,
-        (route) => false,
-      );
+      final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+      if (isIOS) {
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: const Text('Success'),
+            content: const Text('Profile updated successfully'),
+            actions: [
+              CupertinoDialogAction(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    Routes.customerHome,
+                    (route) => false,
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile updated successfully'),
+            backgroundColor: Color(0xFF00D4AA),
+          ),
+        );
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          Routes.customerHome,
+          (route) => false,
+        );
+      }
     } else {
       final message = editProfileProvider.error ?? 'Failed to update profile';
       _showError(message);
@@ -265,157 +294,239 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red[700]),
-    );
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    if (isIOS) {
+      showCupertinoDialog(
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('OK'),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red[700]),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+
     return ChangeNotifierProvider(
       create: (_) => EditProfileProvider(const ProfileRepository()),
-      child: Scaffold(
+      child: isIOS ? _buildIOSScreen() : _buildAndroidScreen(),
+    );
+  }
+
+  Widget _buildIOSScreen() {
+    return CupertinoPageScaffold(
+      backgroundColor: Colors.black,
+      navigationBar: CupertinoNavigationBar(
         backgroundColor: Colors.black,
-        appBar: AppBar(
-          backgroundColor: Colors.black,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          centerTitle: true,
-          title: const Text(
-            'PROFILE DETAILS',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-            ),
+        border: null,
+        leading: CupertinoNavigationBarBackButton(
+          color: Colors.white,
+          onPressed: () => Navigator.pop(context),
+        ),
+        middle: const Text(
+          'PROFILE DETAILS',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
           ),
         ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: _buildForm(context),
+      ),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Builder(
+            builder: (builderContext) =>
+                _buildForm(builderContext, isIOS: true),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildForm(BuildContext context) {
+  Widget _buildAndroidScreen() {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        centerTitle: true,
+        title: const Text(
+          'PROFILE DETAILS',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Builder(
+            builder: (builderContext) =>
+                _buildForm(builderContext, isIOS: false),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForm(BuildContext context, {required bool isIOS}) {
     final editProfileProvider = context.watch<EditProfileProvider>();
 
     return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
-      ),
       padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLabel('NAME'),
+          _buildLabel('NAME *'),
+          const SizedBox(height: 10),
           _buildTextField(
             controller: _nameController,
             hintText: 'Enter your name',
+            isIOS: isIOS,
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 32),
 
           _buildLabel('BUILDING NAME *'),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           CompositedTransformTarget(
             link: _buildingFieldLink,
-            child: TextField(
-              controller: _buildingController,
-              style: const TextStyle(color: Colors.white),
-              cursorColor: const Color(0xFF00D4AA),
-              decoration: _inputDecoration(
-                hintText: 'Select your building',
-                suffixIcon: const Icon(
-                  Icons.arrow_drop_down,
-                  color: Colors.white,
-                ),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _selectedBuildingId = null;
-                  _selectedBuildingName = null;
-                });
-                _searchDebounce?.cancel();
-                _searchDebounce = Timer(
-                  const Duration(milliseconds: 300),
-                  () async {
-                    await context.read<PackageProvider>().searchBuildings(
-                      value,
-                    );
-                    _showBuildingSuggestions();
-                  },
-                );
-              },
-              onTap: () {
-                _showBuildingSuggestions();
-              },
-            ),
+            child: isIOS
+                ? CupertinoTextField(
+                    controller: _buildingController,
+                    placeholder: 'Select your building',
+                    style: const TextStyle(color: Colors.white),
+                    placeholderStyle: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0x8001031C),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    suffix: const Icon(
+                      CupertinoIcons.chevron_down,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedBuildingId = null;
+                        _selectedBuildingName = null;
+                      });
+                      _searchDebounce?.cancel();
+                      _searchDebounce = Timer(
+                        const Duration(milliseconds: 300),
+                        () async {
+                          await context.read<PackageProvider>().searchBuildings(
+                            value,
+                          );
+                          _showBuildingSuggestions();
+                        },
+                      );
+                    },
+                    onTap: () {
+                      _showBuildingSuggestions();
+                    },
+                  )
+                : TextField(
+                    controller: _buildingController,
+                    style: const TextStyle(color: Colors.white),
+                    cursorColor: const Color(0xFF00D4AA),
+                    decoration: _inputDecoration(
+                      hintText: 'Select your building',
+                      suffixIcon: const Icon(
+                        Icons.arrow_drop_down,
+                        color: Colors.white,
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedBuildingId = null;
+                        _selectedBuildingName = null;
+                      });
+                      _searchDebounce?.cancel();
+                      _searchDebounce = Timer(
+                        const Duration(milliseconds: 300),
+                        () async {
+                          await context.read<PackageProvider>().searchBuildings(
+                            value,
+                          );
+                          _showBuildingSuggestions();
+                        },
+                      );
+                    },
+                    onTap: () {
+                      _showBuildingSuggestions();
+                    },
+                  ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 32),
 
           _buildLabel('APARTMENT NUMBER *'),
+          const SizedBox(height: 10),
+
           _buildTextField(
             controller: _apartmentController,
             hintText: 'Enter apartment number',
+            isIOS: isIOS,
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 32),
 
           _buildLabel('PHONE NUMBER *'),
+          const SizedBox(height: 10),
+
           _buildTextField(
             controller: _phoneController,
             hintText: '+971',
             keyboardType: TextInputType.phone,
+            isIOS: isIOS,
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 32),
 
-          _buildLabel('EMAIL'),
+          _buildLabel('EMAIL *'),
+          const SizedBox(height: 10),
+
           _buildTextField(
             controller: _emailController,
             hintText: 'Enter email',
             keyboardType: TextInputType.emailAddress,
+            isIOS: isIOS,
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 40),
 
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: editProfileProvider.isSaving
-                  ? null
-                  : () => _handleSave(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF04CDFE),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: editProfileProvider.isSaving
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text(
-                      'SAVE',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-            ),
+          _buildSaveButton(
+            context: context,
+            editProfileProvider: editProfileProvider,
+            isIOS: isIOS,
           ),
         ],
       ),
@@ -438,14 +549,97 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
     required TextEditingController controller,
     required String hintText,
     TextInputType? keyboardType,
+    required bool isIOS,
   }) {
-    return TextField(
-      controller: controller,
-      style: const TextStyle(color: Colors.white),
-      keyboardType: keyboardType,
-      cursorColor: const Color(0xFF00D4AA),
-      decoration: _inputDecoration(hintText: hintText),
-    );
+    if (isIOS) {
+      return CupertinoTextField(
+        controller: controller,
+        placeholder: hintText,
+        keyboardType: keyboardType,
+        style: const TextStyle(color: Colors.white),
+        placeholderStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+        decoration: BoxDecoration(
+          color: const Color(0x8001031C),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      );
+    } else {
+      return TextField(
+        controller: controller,
+        style: const TextStyle(color: Colors.white),
+        keyboardType: keyboardType,
+        cursorColor: const Color(0xFF00D4AA),
+        decoration: _inputDecoration(hintText: hintText),
+      );
+    }
+  }
+
+  Widget _buildSaveButton({
+    required BuildContext context,
+    required EditProfileProvider editProfileProvider,
+    required bool isIOS,
+  }) {
+    if (isIOS) {
+      return SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: CupertinoButton(
+          padding: EdgeInsets.zero,
+          color: const Color(0xFF04CDFE),
+          borderRadius: BorderRadius.circular(16),
+          onPressed: editProfileProvider.isSaving
+              ? null
+              : () => _handleSave(context),
+          child: editProfileProvider.isSaving
+              ? const CupertinoActivityIndicator(color: Colors.white)
+              : const Text(
+                  'SAVE',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+        ),
+      );
+    } else {
+      return SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: ElevatedButton(
+          onPressed: editProfileProvider.isSaving
+              ? null
+              : () => _handleSave(context),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF04CDFE),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          child: editProfileProvider.isSaving
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : const Text(
+                  'SAVE',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+        ),
+      );
+    }
   }
 
   InputDecoration _inputDecoration({
@@ -459,15 +653,15 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
       fillColor: const Color(0x8001031C),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         borderSide: BorderSide(color: Colors.white.withOpacity(0.3), width: 1),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         borderSide: BorderSide(color: Colors.white.withOpacity(0.3), width: 1),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         borderSide: const BorderSide(color: Color(0xFF00D4AA), width: 1.5),
       ),
       suffixIcon: suffixIcon,

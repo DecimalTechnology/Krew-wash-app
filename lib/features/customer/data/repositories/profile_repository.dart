@@ -64,6 +64,45 @@ class ProfileRepository {
     }
   }
 
+  // Get profile - GET /profile
+  Future<Map<String, dynamic>> getProfile() async {
+    final token = await SecureStorageService.getAccessToken();
+    _logToken('ProfileRepository.getProfile', token);
+    final uri = Uri.parse('$baseurl/profile');
+
+    final res = await http.get(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      try {
+        return jsonDecode(res.body) as Map<String, dynamic>;
+      } catch (_) {
+        return {
+          'success': false,
+          'message': 'Failed to parse profile response',
+        };
+      }
+    }
+
+    try {
+      final err = jsonDecode(res.body) as Map<String, dynamic>;
+      return {
+        'success': false,
+        'message': err['message'] ?? 'Failed to get profile',
+      };
+    } catch (_) {
+      return {
+        'success': false,
+        'message': 'Failed to get profile: ${res.statusCode}',
+      };
+    }
+  }
+
   // Update profile picture - PATCH /profile/image (multipart, field: image)
   Future<Map<String, dynamic>> uploadProfileImage({
     required File imageFile,

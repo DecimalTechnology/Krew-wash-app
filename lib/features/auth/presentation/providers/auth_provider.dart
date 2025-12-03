@@ -219,6 +219,20 @@ class AuthProvider extends ChangeNotifier {
   // Setter to update user object from external providers
   void setUser(UserModel user) {
     _user = user;
+    // Save to local storage whenever user is updated
+    SecureStorageService.saveUserData(jsonEncode(user.toMap()))
+        .then((_) {
+          if (kDebugMode) {
+            print(
+              '✅ User data saved to secure storage (including image: ${user.photo})',
+            );
+          }
+        })
+        .catchError((e) {
+          if (kDebugMode) {
+            print('⚠️ Error saving user data: $e');
+          }
+        });
     notifyListeners();
   }
 
@@ -507,6 +521,19 @@ class AuthProvider extends ChangeNotifier {
 
   String formatPhoneNumber(String phone) {
     return AuthRepository.formatPhoneNumber(phone);
+  }
+
+  // Check if user profile is complete
+  bool isProfileComplete() {
+    if (_user == null) return false;
+
+    // Check if essential fields are filled
+    final hasName = _user!.name != null && _user!.name!.isNotEmpty;
+    final hasBuildingId =
+        _user!.buildingId != null && _user!.buildingId!.isNotEmpty;
+    final hasPhone = _user!.phone != null;
+
+    return hasName && hasBuildingId && hasPhone;
   }
 
   // Email OTP Methods

@@ -620,13 +620,23 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
             if (loginResult['success'] == true) {
               _showSuccessMessage('Login successful!');
-              // Navigate to home screen
+              // Check if profile is complete before navigating
               if (mounted) {
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  Routes.customerHome,
-                  (route) => false,
-                );
+                final isProfileComplete = authProvider.isProfileComplete();
+                if (isProfileComplete) {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    Routes.customerHome,
+                    (route) => false,
+                  );
+                } else {
+                  // Navigate to profile details screen if profile is incomplete
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    Routes.customerProfileDetails,
+                    (route) => false,
+                  );
+                }
               }
             } else {
               _showErrorMessage(loginResult['message'] ?? 'Failed to login');
@@ -697,13 +707,23 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
             if (loginResult['success'] == true) {
               _showSuccessMessage('Login successful!');
-              // Navigate to home screen
+              // Check if profile is complete before navigating
               if (mounted) {
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  Routes.customerHome,
-                  (route) => false,
-                );
+                final isProfileComplete = authProvider.isProfileComplete();
+                if (isProfileComplete) {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    Routes.customerHome,
+                    (route) => false,
+                  );
+                } else {
+                  // Navigate to profile details screen if profile is incomplete
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    Routes.customerProfileDetails,
+                    (route) => false,
+                  );
+                }
               }
             } else {
               final errorMessage = loginResult['message'] ?? 'Failed to login';

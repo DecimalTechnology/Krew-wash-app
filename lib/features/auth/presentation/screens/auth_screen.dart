@@ -12,6 +12,8 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
+  bool _isSignUp = false;
+
   @override
   Widget build(BuildContext context) {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
@@ -32,131 +34,83 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Widget _buildUnifiedAuthScreen() {
     final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final topPadding = MediaQuery.of(context).padding.top;
     final viewInsetsBottom = MediaQuery.of(context).viewInsets.bottom;
 
-    return Material(
-      color: Colors.black,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final availableHeight = constraints.hasBoundedHeight
-              ? constraints.maxHeight
-              : screenHeight;
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Container(
+        width: screenWidth,
+        height: screenHeight,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: const AssetImage('assets/bmw.jpg'),
+            fit: BoxFit.fill,
+            alignment: Alignment.center,
+          ),
+        ),
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.7),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final availableHeight = constraints.hasBoundedHeight
+                  ? constraints.maxHeight
+                  : screenHeight;
 
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              // Background image - absolutely positioned to fill
-              Positioned.fill(
-                child: Image.asset(
-                  'assets/loginScreen/car.png',
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: double.infinity,
-                ),
-              ),
-              // Dark overlay
-              Positioned.fill(
-                child: Container(color: Colors.black.withValues(alpha: 0.7)),
-              ),
-              // Content
-              Positioned.fill(
-                child: SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  padding: EdgeInsets.only(bottom: viewInsetsBottom),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: availableHeight),
-                    child: Consumer<AuthProvider>(
-                      builder: (context, authProvider, child) {
-                        return IntrinsicHeight(
-                          child: Column(
-                            children: [
-                              // Top safe area spacer
-                              SizedBox(height: topPadding),
-                              // Header with Logo
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  top: 40,
-                                  left: 24,
-                                  right: 24,
-                                ),
-                                child: Column(
-                                  children: [
-                                    // Logo with consistent styling across platforms
-                                    Container(
-                                      width: 60,
-                                      height: 60,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(12),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: const Color(
-                                              0xFF00D4AA,
-                                            ).withValues(alpha: 0.3),
-                                            blurRadius: 20,
-                                            offset: const Offset(0, 8),
-                                          ),
-                                        ],
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: Image.asset(
-                                          'assets/Logo.png',
-                                          width: 60,
-                                          height: 60,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Content
+                  Positioned.fill(
+                    child: SingleChildScrollView(
+                      physics: const ClampingScrollPhysics(),
+                      padding: EdgeInsets.only(bottom: viewInsetsBottom),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: availableHeight),
+                        child: Consumer<AuthProvider>(
+                          builder: (context, authProvider, child) {
+                            return IntrinsicHeight(
+                              child: Column(
+                                children: [
+                                  // Top safe area spacer
+                                  SizedBox(height: topPadding),
+
+                                  // Spacer to push auth form to bottom
+                                  const Spacer(),
+
+                                  // Auth Form at Bottom
+                                  Container(
+                                    margin: EdgeInsets.only(
+                                      left: 24,
+                                      right: 24,
+                                      top: 24,
+                                      bottom: 24 + bottomPadding,
                                     ),
-                                    const SizedBox(height: 20),
-                                    const Text(
-                                      'KREW',
-                                      style: TextStyle(
-                                        fontSize: 32,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                        letterSpacing: 2,
-                                      ),
+                                    child: PlatformAuthWidget(
+                                      onSignUpStateChanged: (isSignUp) {
+                                        setState(() {
+                                          _isSignUp = isSignUp;
+                                        });
+                                      },
                                     ),
-                                    const SizedBox(height: 8),
-                                    const Text(
-                                      'CAR WASH',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w300,
-                                        color: Colors.white70,
-                                        letterSpacing: 4,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-
-                              // Spacer to push auth form to bottom
-                              const Spacer(),
-
-                              // Auth Form at Bottom
-                              Container(
-                                margin: EdgeInsets.only(
-                                  left: 24,
-                                  right: 24,
-                                  top: 24,
-                                  bottom: 24 + bottomPadding,
-                                ),
-                                child: const PlatformAuthWidget(),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-            ],
-          );
-        },
+
+                  // Title at top-left
+                ],
+              );
+            },
+          ),
+        ),
       ),
     );
   }
