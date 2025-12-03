@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../screens/otp_verification_screen.dart';
 import '../../../../core/widgets/country_code_picker.dart';
 import '../../../../core/constants/route_constants.dart';
+import '../../../../core/utils/network_error_utils.dart';
 
 class PlatformAuthWidget extends StatefulWidget {
   final Function(bool)? onSignUpStateChanged;
@@ -1004,17 +1005,52 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
 
     // For phone sign-in, check if user exists
     if (isPhone) {
-      final phoneExists = await authProvider.checkPhoneExists(
-        authProvider.formatPhoneNumber(input),
-        '', // Empty email for phone-only sign-in
-      );
+      try {
+        final phoneExists = await authProvider.checkPhoneExists(
+          authProvider.formatPhoneNumber(input),
+          '', // Empty email for phone-only sign-in
+        );
 
-      if (phoneExists['success'] == true) {
-        // Phone is registered, proceed with OTP for login
-        await _sendPhoneOtpForSignIn(input);
-      } else {
-        // Phone is not registered, show error
-        _showPhoneNotRegisteredError();
+        if (phoneExists['success'] == true) {
+          // Phone is registered, proceed with OTP for login
+          await _sendPhoneOtpForSignIn(input);
+        } else {
+          // Check if it's a network error
+          final errorMessage = phoneExists['message'] ?? '';
+          // Debug: print error message to verify detection
+          if (kDebugMode) {
+            print('🔍 Checking error message: $errorMessage');
+            print(
+              '🔍 Is network error: ${NetworkErrorUtils.isNetworkErrorString(errorMessage)}',
+            );
+          }
+          if (NetworkErrorUtils.isNetworkErrorString(errorMessage)) {
+            // Network error - show network error message
+            if (kDebugMode) {
+              print('✅ Network error detected, showing network error message');
+            }
+            _showErrorMessage(NetworkErrorUtils.getNetworkErrorMessage());
+          } else {
+            // Phone is not registered, show error
+            if (kDebugMode) {
+              print('❌ Not a network error, showing phone not registered');
+            }
+            _showPhoneNotRegisteredError();
+          }
+        }
+      } catch (e) {
+        // Check if it's a network error
+        if (NetworkErrorUtils.isNetworkError(e)) {
+          // Network error - show network error message
+          if (kDebugMode) {
+            print(
+              '✅ Network error detected in catch block, showing network error message',
+            );
+          }
+          _showErrorMessage(NetworkErrorUtils.getNetworkErrorMessage());
+        } else {
+          _showErrorMessage('Failed to check phone number. Please try again.');
+        }
       }
     } else if (isEmail) {
       // For email sign-in, send OTP directly (API will handle email lookup)

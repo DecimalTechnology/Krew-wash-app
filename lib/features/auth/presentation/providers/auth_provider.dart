@@ -278,7 +278,8 @@ class AuthProvider extends ChangeNotifier {
       return exists;
     } catch (e) {
       _setLoading(false);
-      return {'success': false, 'message': 'Failed to check email existence'};
+      // Pass the actual exception message so network errors can be detected
+      return {'success': false, 'message': e.toString()};
     }
   }
 

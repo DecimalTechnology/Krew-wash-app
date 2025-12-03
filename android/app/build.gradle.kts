@@ -25,7 +25,7 @@ android {
         applicationId = "com.example.carwash_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion  // Updated to support Firebase Auth
+        minSdk = 23  // Updated to 23 to support Firebase Auth 23.2.1
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
