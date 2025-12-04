@@ -299,4 +299,58 @@ class CleanerBookingProvider extends ChangeNotifier {
     _hasLoadedCompleted = false;
     await loadInitialData();
   }
+
+  // Get session details
+  Future<Map<String, dynamic>> getSession({
+    required String bookingId,
+    required String sessionId,
+    required String sessionType,
+    String? addonId,
+  }) async {
+    final token = await SecureStorageService.getStaffAccessToken();
+    if (token == null) {
+      return {
+        'success': false,
+        'message': 'Missing access token. Please login again.',
+      };
+    }
+
+    final response = await CleanerBookingRepository.getSession(
+      accessToken: token,
+      bookingId: bookingId,
+      sessionId: sessionId,
+      sessionType: sessionType,
+      addonId: addonId,
+    );
+
+    return response;
+  }
+
+  // Upload session image
+  Future<Map<String, dynamic>> uploadSessionImage({
+    required String bookingId,
+    required String sessionId,
+    required String sessionType,
+    required String imagePath,
+    String? addonId,
+  }) async {
+    final token = await SecureStorageService.getStaffAccessToken();
+    if (token == null) {
+      return {
+        'success': false,
+        'message': 'Missing access token. Please login again.',
+      };
+    }
+
+    final response = await CleanerBookingRepository.uploadSessionImage(
+      accessToken: token,
+      bookingId: bookingId,
+      sessionId: sessionId,
+      sessionType: sessionType,
+      imagePath: imagePath,
+      addonId: addonId,
+    );
+
+    return response;
+  }
 }

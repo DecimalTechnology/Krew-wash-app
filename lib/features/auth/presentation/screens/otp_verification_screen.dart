@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:carwash_app/core/constants/route_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -620,6 +621,22 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
             if (loginResult['success'] == true) {
               _showSuccessMessage('Login successful!');
+
+              // Sign out from Firebase immediately after successful login
+              // Firebase is only used for OTP verification, not for storing user data
+              try {
+                await authProvider.signOutFromFirebaseOnly();
+                if (kDebugMode) {
+                  print(
+                    '🔓 Signed out from Firebase after successful email login',
+                  );
+                }
+              } catch (e) {
+                if (kDebugMode) {
+                  print('⚠️ Error signing out from Firebase: $e');
+                }
+              }
+
               // Check if profile is complete before navigating
               if (mounted) {
                 final isProfileComplete = authProvider.isProfileComplete();
@@ -678,6 +695,22 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
             if (registerResult['success'] == true) {
               _showSuccessMessage('Account created successfully!');
+
+              // Sign out from Firebase immediately after successful registration
+              // Firebase is only used for OTP verification, not for storing user data
+              try {
+                await authProvider.signOutFromFirebaseOnly();
+                if (kDebugMode) {
+                  print(
+                    '🔓 Signed out from Firebase after successful registration',
+                  );
+                }
+              } catch (e) {
+                if (kDebugMode) {
+                  print('⚠️ Error signing out from Firebase: $e');
+                }
+              }
+
               // Navigate to edit profile screen first
               if (mounted) {
                 Navigator.pushNamedAndRemoveUntil(
@@ -707,6 +740,20 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
             if (loginResult['success'] == true) {
               _showSuccessMessage('Login successful!');
+
+              // Sign out from Firebase immediately after successful login
+              // Firebase is only used for OTP verification, not for storing user data
+              try {
+                await authProvider.signOutFromFirebaseOnly();
+                if (kDebugMode) {
+                  print('🔓 Signed out from Firebase after successful login');
+                }
+              } catch (e) {
+                if (kDebugMode) {
+                  print('⚠️ Error signing out from Firebase: $e');
+                }
+              }
+
               // Check if profile is complete before navigating
               if (mounted) {
                 final isProfileComplete = authProvider.isProfileComplete();
@@ -727,6 +774,22 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               }
             } else {
               final errorMessage = loginResult['message'] ?? 'Failed to login';
+
+              // If backend login fails, sign out from Firebase to prevent auto-login on restart
+              // This ensures the user is fully logged out when the backend doesn't recognize them
+              try {
+                await authProvider.signOut();
+                if (kDebugMode) {
+                  print(
+                    '🔓 Signed out from Firebase after backend login failure',
+                  );
+                }
+              } catch (e) {
+                if (kDebugMode) {
+                  print('⚠️ Error signing out: $e');
+                }
+              }
+
               // Check if phone number is not registered
               if (errorMessage.toLowerCase().contains('not registered') ||
                   errorMessage.toLowerCase().contains('not found') ||

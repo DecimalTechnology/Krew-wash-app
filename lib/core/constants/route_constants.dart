@@ -102,9 +102,41 @@ class AppRoutes {
   };
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
+    // onGenerateRoute is only called for named routes not in the routes map
+    // Since we're using Navigator.push with MaterialPageRoute for OTP screen,
+    // this shouldn't be called during normal navigation
+
+    // If route name is null or empty, it's likely a MaterialPageRoute being pushed
+    // In this case, we shouldn't be here, but if we are, return to auth screen
+    if (settings.name == null || settings.name!.isEmpty) {
+      return MaterialPageRoute(
+        builder: (_) => const AuthScreen(),
+        settings: settings,
+      );
+    }
+
+    // Check if this is a route that should exist but isn't in the routes map
+    // For iOS navigation issues, we'll return to auth screen instead of showing NotFoundScreen
+    // This prevents the "Page Not Found" flash
+    final routeName = settings.name!;
+
+    // If it's a route that looks like it should exist, redirect to auth
+    // This handles cases where onGenerateRoute is called unexpectedly
+    if (routeName.contains('/otp') ||
+        routeName.contains('/auth') ||
+        routeName.contains('/login') ||
+        routeName.contains('/verification')) {
+      return MaterialPageRoute(
+        builder: (_) => const AuthScreen(),
+        settings: settings,
+      );
+    }
+
     // Dynamic routes will be handled here when screens are implemented
     switch (settings.name) {
       default:
+        // Only show NotFoundScreen for truly unknown routes that aren't auth-related
+        // This prevents the flash during login flow
         return MaterialPageRoute(
           builder: (_) => const NotFoundScreen(),
           settings: settings,

@@ -31,17 +31,12 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _initializeAuth() async {
     // First, try to restore user from secure storage (stay logged in)
+    // Only restore from backend API data, not from Firebase
     await _restoreUserFromStorage();
 
-    // Also listen to auth state changes (Firebase)
-    // But don't auto-set user during verification flow - wait for backend confirmation
-    _authService.authStateChanges.listen((UserModel? user) {
-      // Only update if we don't have a user from storage AND not during verification
-      if (_user == null && user != null && !_isVerifyingAuth) {
-        _user = user;
-        notifyListeners();
-      }
-    });
+    // Don't listen to Firebase auth state changes
+    // Firebase is only used for OTP verification, not for user authentication
+    // All user data comes from the backend API only
   }
 
   Future<void> _restoreUserFromStorage() async {
@@ -185,7 +180,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Sign Out
+  // Sign Out (clears everything including backend data)
   Future<void> signOut() async {
     _setLoading(true);
     _clearError();
@@ -202,6 +197,21 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       _setError('Failed to sign out');
       _setLoading(false);
+    }
+  }
+
+  // Sign out from Firebase only (keeps backend tokens and user data)
+  // Firebase is only used for OTP verification, not for storing user data
+  Future<void> signOutFromFirebaseOnly() async {
+    try {
+      await _authService.signOut();
+      if (kDebugMode) {
+        print('🔓 Signed out from Firebase (backend data preserved)');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ Error signing out from Firebase: $e');
+      }
     }
   }
 

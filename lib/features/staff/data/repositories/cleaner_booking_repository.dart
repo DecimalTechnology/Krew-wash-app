@@ -75,6 +75,116 @@ class CleanerBookingRepository {
     return _patch(uri, accessToken, body: body);
   }
 
+  // Get session details
+  static Future<Map<String, dynamic>> getSession({
+    required String accessToken,
+    required String bookingId,
+    required String sessionId,
+    required String sessionType,
+    String? addonId,
+  }) async {
+    final uri = Uri.parse(
+      '$baseurl/cleaner/bookings/$bookingId/session/$sessionId',
+    );
+
+    final body = <String, dynamic>{'sessionType': sessionType};
+    if (addonId != null) {
+      body['addonId'] = addonId;
+    }
+
+    if (kDebugMode) {
+      print('📋 Fetching session details:');
+      print('   URL: ${uri.toString()}');
+      print('   Booking ID: $bookingId');
+      print('   Session ID: $sessionId');
+      print('   Body: $body');
+    }
+
+    return _getWithBody(uri, accessToken, body: body);
+  }
+
+  // Upload session image
+  static Future<Map<String, dynamic>> uploadSessionImage({
+    required String accessToken,
+    required String bookingId,
+    required String sessionId,
+    required String sessionType,
+    required String imagePath,
+    String? addonId,
+  }) async {
+    try {
+      final uri = Uri.parse(
+        '$baseurl/cleaner/bookings/$bookingId/session/$sessionId/image',
+      );
+
+      if (kDebugMode) {
+        print('📤 Uploading session image:');
+        print('   URL: ${uri.toString()}');
+        print('   Booking ID: $bookingId');
+        print('   Session ID: $sessionId');
+        print('   Session Type: $sessionType');
+        if (addonId != null) print('   Addon ID: $addonId');
+        print('   Image Path: $imagePath');
+      }
+
+      final request = http.MultipartRequest('PATCH', uri);
+      request.headers['Authorization'] = 'Bearer $accessToken';
+
+      // Add form fields
+      request.fields['sessionType'] = sessionType;
+      if (addonId != null) {
+        request.fields['addonId'] = addonId;
+      }
+
+      // Add image file
+      request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (kDebugMode) {
+        print('⬇️ ${response.statusCode} ${response.body}');
+      }
+
+      if (response.statusCode == 404) {
+        return {'success': false, 'message': 'Session not found', 'data': null};
+      }
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        try {
+          final errorBody = jsonDecode(response.body) as Map<String, dynamic>;
+          return {
+            'success': false,
+            'message': errorBody['message'] ?? 'Failed to upload image',
+            'data': null,
+          };
+        } catch (e) {
+          return {
+            'success': false,
+            'message': 'Failed to upload image (${response.statusCode})',
+            'data': null,
+          };
+        }
+      }
+
+      final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
+      final success =
+          (response.statusCode == 200 || response.statusCode == 201) &&
+          (responseBody['success'] == true || responseBody['data'] != null);
+
+      return {
+        'success': success,
+        'message': responseBody['message'] ?? 'Something went wrong',
+        'data': responseBody['data'],
+      };
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ CleanerBookingRepository upload error: $e');
+      }
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+
   static Future<Map<String, dynamic>> _get(Uri uri, String accessToken) async {
     try {
       if (kDebugMode) {
@@ -131,6 +241,75 @@ class CleanerBookingRepository {
         'message': body['message'] ?? 'Something went wrong',
         'data': body['data'],
         'pagination': body['pagination'],
+      };
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ CleanerBookingRepository error: $e');
+      }
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+
+  // GET request with body (for getSession API)
+  static Future<Map<String, dynamic>> _getWithBody(
+    Uri uri,
+    String accessToken, {
+    Map<String, dynamic>? body,
+  }) async {
+    try {
+      if (kDebugMode) {
+        print('🛰️ GET $uri');
+        if (body != null) {
+          print('📦 Body: $body');
+        }
+      }
+
+      final request = http.Request('GET', uri);
+      request.headers['Content-Type'] = 'application/json';
+      request.headers['Authorization'] = 'Bearer $accessToken';
+
+      if (body != null) {
+        request.body = jsonEncode(body);
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (kDebugMode) {
+        print('⬇️ ${response.statusCode} ${response.body}');
+      }
+
+      // Handle different status codes
+      if (response.statusCode == 404) {
+        return {'success': false, 'message': 'Session not found', 'data': null};
+      }
+
+      if (response.statusCode != 200) {
+        try {
+          final errorBody = jsonDecode(response.body) as Map<String, dynamic>;
+          return {
+            'success': false,
+            'message': errorBody['message'] ?? 'Failed to load session',
+            'data': null,
+          };
+        } catch (e) {
+          return {
+            'success': false,
+            'message': 'Failed to load session (${response.statusCode})',
+            'data': null,
+          };
+        }
+      }
+
+      final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
+      final success =
+          response.statusCode == 200 &&
+          (responseBody['success'] == true || responseBody['data'] != null);
+
+      return {
+        'success': success,
+        'message': responseBody['message'] ?? 'Something went wrong',
+        'data': responseBody['data'],
       };
     } catch (e) {
       if (kDebugMode) {

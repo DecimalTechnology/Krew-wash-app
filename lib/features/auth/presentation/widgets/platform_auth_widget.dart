@@ -1011,7 +1011,22 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
           '', // Empty email for phone-only sign-in
         );
 
-        if (phoneExists['success'] == true) {
+        // Debug: Log the full response to understand the structure
+        if (kDebugMode) {
+          print('📱 Phone check response: $phoneExists');
+        }
+
+        // Check if phone is actually registered
+        // The API returns message: null when phone exists (similar to sign-up flow)
+        // If message is not null, it means phone doesn't exist or there's an error
+        final hasMessage = phoneExists['message'] != null;
+        final phoneRegistered = !hasMessage;
+
+        if (kDebugMode) {
+          print('📱 Phone registered check: hasMessage=$hasMessage, phoneRegistered=$phoneRegistered');
+        }
+
+        if (phoneRegistered) {
           // Phone is registered, proceed with OTP for login
           await _sendPhoneOtpForSignIn(input);
         } else {
@@ -1033,7 +1048,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
           } else {
             // Phone is not registered, show error
             if (kDebugMode) {
-              print('❌ Not a network error, showing phone not registered');
+              print('❌ Phone not registered, showing error message');
             }
             _showPhoneNotRegisteredError();
           }

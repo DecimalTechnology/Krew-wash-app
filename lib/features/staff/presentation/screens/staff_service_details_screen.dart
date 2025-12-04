@@ -29,9 +29,12 @@ class StaffServiceDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildIOSScreen() {
-    return CupertinoPageScaffold(
-      backgroundColor: Colors.black,
-      child: _buildContent(isIOS: true),
+    return Material(
+      color: Colors.black,
+      child: CupertinoPageScaffold(
+        backgroundColor: Colors.black,
+        child: _buildContent(isIOS: true),
+      ),
     );
   }
 
@@ -307,6 +310,8 @@ class StaffServiceDetailsScreen extends StatelessWidget {
                       completedCount: currentSessions
                           .where((s) => s.isCompleted)
                           .length,
+                      addonId: addonId,
+                      sessionType: addonId != null ? 'addon' : 'package',
                     ),
                   )
                 : MaterialPageRoute(
@@ -319,6 +324,8 @@ class StaffServiceDetailsScreen extends StatelessWidget {
                       completedCount: currentSessions
                           .where((s) => s.isCompleted)
                           .length,
+                      addonId: addonId,
+                      sessionType: addonId != null ? 'addon' : 'package',
                     ),
                   ),
           );
@@ -399,28 +406,20 @@ class StaffServiceDetailsScreen extends StatelessWidget {
                               );
                               // Show success message
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: const Text(
-                                      'Session marked as completed',
-                                    ),
-                                    backgroundColor: Colors.green,
-                                    duration: const Duration(seconds: 2),
-                                  ),
+                                _showMessage(
+                                  context,
+                                  'Session marked as completed',
+                                  isError: false,
                                 );
                               }
                             } else {
                               // Show error message
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      result['message'] ??
-                                          'Failed to update session',
-                                    ),
-                                    backgroundColor: Colors.red,
-                                    duration: const Duration(seconds: 3),
-                                  ),
+                                _showMessage(
+                                  context,
+                                  result['message'] ??
+                                      'Failed to update session',
+                                  isError: true,
                                 );
                               }
                             }
@@ -481,15 +480,6 @@ class StaffServiceDetailsScreen extends StatelessWidget {
                   fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'BY ${session.completedBy?.toUpperCase() ?? 'N/A'}',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: isSmallScreen ? 12 : 14,
-                  fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
-                ),
-              ),
             ],
           ],
         ),
@@ -515,5 +505,41 @@ class StaffServiceDetailsScreen extends StatelessWidget {
       'DEC',
     ];
     return '${months[(d.month - 1).clamp(0, 11)]} ${d.day}';
+  }
+
+  void _showMessage(
+    BuildContext context,
+    String message, {
+    required bool isError,
+  }) {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+
+    if (isIOS) {
+      // Use CupertinoAlertDialog for iOS
+      showCupertinoDialog(
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: Text(isError ? 'Error' : 'Success'),
+          content: Text(message),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('OK'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Use SnackBar for Android
+      if (ScaffoldMessenger.of(context).mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: isError ? Colors.red : Colors.green,
+            duration: Duration(seconds: isError ? 3 : 2),
+          ),
+        );
+      }
+    }
   }
 }

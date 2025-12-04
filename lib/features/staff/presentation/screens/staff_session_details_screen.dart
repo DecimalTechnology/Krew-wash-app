@@ -1,14 +1,20 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../domain/models/booking_model.dart';
+import '../providers/cleaner_booking_provider.dart';
 
-class StaffSessionDetailsScreen extends StatelessWidget {
+class StaffSessionDetailsScreen extends StatefulWidget {
   final CleanerBooking booking;
   final String serviceName;
   final PackageSession session;
   final int sessionNumber;
   final int totalSessions;
   final int completedCount;
+  final String? addonId;
+  final String sessionType;
 
   const StaffSessionDetailsScreen({
     super.key,
@@ -18,7 +24,214 @@ class StaffSessionDetailsScreen extends StatelessWidget {
     required this.sessionNumber,
     required this.totalSessions,
     required this.completedCount,
+    this.addonId,
+    required this.sessionType,
   });
+
+  @override
+  State<StaffSessionDetailsScreen> createState() =>
+      _StaffSessionDetailsScreenState();
+}
+
+class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
+  Map<String, dynamic>? _sessionData;
+  bool _isLoading = true;
+  String? _error;
+  final ImagePicker _imagePicker = ImagePicker();
+  bool _isUploadingImage = false;
+  String? _selectedImagePath; // Store selected image path before upload
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSessionDetails();
+  }
+
+  Future<void> _fetchSessionDetails() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final bookingProvider = context.read<CleanerBookingProvider>();
+    final result = await bookingProvider.getSession(
+      bookingId: widget.booking.id,
+      sessionId: widget.session.id,
+      sessionType: widget.sessionType,
+      addonId: widget.addonId,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (result['success'] == true) {
+          _sessionData = result['data'];
+        } else {
+          _error = result['message'] ?? 'Failed to load session details';
+        }
+      });
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+
+    // Show action sheet/dialog to choose camera or gallery
+    ImageSource? source;
+    if (isIOS) {
+      source = await showCupertinoModalPopup<ImageSource>(
+        context: context,
+        builder: (context) => CupertinoActionSheet(
+          actions: [
+            CupertinoActionSheetAction(
+              onPressed: () => Navigator.pop(context, ImageSource.camera),
+              child: const Text('Camera'),
+            ),
+            CupertinoActionSheetAction(
+              onPressed: () => Navigator.pop(context, ImageSource.gallery),
+              child: const Text('Gallery'),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            isDestructiveAction: true,
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ),
+      );
+    } else {
+      source = await showModalBottomSheet<ImageSource>(
+        context: context,
+        builder: (context) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Camera'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Gallery'),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (source == null) return;
+
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(source: source);
+      if (pickedFile != null && mounted) {
+        setState(() {
+          _selectedImagePath = pickedFile.path;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        _showMessage('Error picking image: ${e.toString()}', isError: true);
+      }
+    }
+  }
+
+  Future<void> _uploadImage() async {
+    if (_selectedImagePath == null) return;
+
+    setState(() {
+      _isUploadingImage = true;
+    });
+
+    try {
+      final bookingProvider = context.read<CleanerBookingProvider>();
+      final result = await bookingProvider.uploadSessionImage(
+        bookingId: widget.booking.id,
+        sessionId: widget.session.id,
+        sessionType: widget.sessionType,
+        imagePath: _selectedImagePath!,
+        addonId: widget.addonId,
+      );
+
+      if (mounted) {
+        setState(() {
+          _isUploadingImage = false;
+        });
+
+        if (result['success'] == true) {
+          // Update session data directly from upload API response body
+          if (result['data'] != null) {
+            setState(() {
+              _sessionData = result['data'] as Map<String, dynamic>;
+              _selectedImagePath = null; // Clear selected image after upload
+            });
+          } else {
+            // Fallback: fetch session details if response doesn't have data
+            await _fetchSessionDetails();
+            if (mounted) {
+              setState(() {
+                _selectedImagePath = null;
+              });
+            }
+          }
+
+          // Show success message
+          if (mounted) {
+            _showMessage('Image uploaded successfully', isError: false);
+          }
+        } else {
+          // Show error message
+          if (mounted) {
+            _showMessage(
+              result['message'] ?? 'Failed to upload image',
+              isError: true,
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isUploadingImage = false;
+        });
+        _showMessage('Error: ${e.toString()}', isError: true);
+      }
+    }
+  }
+
+  void _showMessage(String message, {required bool isError}) {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+
+    if (isIOS) {
+      // Use CupertinoAlertDialog for iOS
+      showCupertinoDialog(
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: Text(isError ? 'Error' : 'Success'),
+          content: Text(message),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('OK'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Use SnackBar for Android
+      if (ScaffoldMessenger.of(context).mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: isError ? Colors.red : Colors.green,
+            duration: Duration(seconds: isError ? 3 : 2),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,9 +240,12 @@ class StaffSessionDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildIOSScreen() {
-    return CupertinoPageScaffold(
-      backgroundColor: Colors.black,
-      child: _buildContent(isIOS: true),
+    return Material(
+      color: Colors.black,
+      child: CupertinoPageScaffold(
+        backgroundColor: Colors.black,
+        child: _buildContent(isIOS: true),
+      ),
     );
   }
 
@@ -75,6 +291,64 @@ class StaffSessionDetailsScreen extends StatelessWidget {
         final bottomPadding =
             navBarMargin + navBarHeight + systemBottomPadding + 16;
 
+        if (_isLoading) {
+          return SafeArea(
+            bottom: false,
+            child: Center(
+              child: isIOS
+                  ? const CupertinoActivityIndicator(color: Colors.white)
+                  : const CircularProgressIndicator(color: Colors.white),
+            ),
+          );
+        }
+
+        if (_error != null) {
+          return SafeArea(
+            bottom: false,
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.all(horizontalPadding),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _error!,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: isSmallScreen ? 14 : 16,
+                        fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    isIOS
+                        ? CupertinoButton(
+                            onPressed: _fetchSessionDetails,
+                            child: const Text('Retry'),
+                          )
+                        : TextButton(
+                            onPressed: _fetchSessionDetails,
+                            child: const Text('Retry'),
+                          ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        // Use API data if available, otherwise fall back to session prop
+        final sessionData = _sessionData;
+        final completedBy = sessionData?['completedBy'] as List<dynamic>?;
+        final images =
+            sessionData?['images'] as List<dynamic>? ?? widget.session.images;
+        final isCompleted =
+            sessionData?['isCompleted'] as bool? ?? widget.session.isCompleted;
+        final date = sessionData?['date'] != null
+            ? DateTime.tryParse(sessionData!['date'].toString())
+            : widget.session.date;
+        final sessionId = sessionData?['_id'] as String? ?? widget.session.id;
+
         return SafeArea(
           bottom: false,
           child: SingleChildScrollView(
@@ -95,17 +369,30 @@ class StaffSessionDetailsScreen extends StatelessWidget {
                 const SizedBox(height: 24),
                 // Sessions Overview
                 _buildSessionsOverview(
-                  completedCount,
-                  totalSessions,
+                  widget.completedCount,
+                  widget.totalSessions,
                   isIOS,
                   isSmallScreen,
                 ),
                 const SizedBox(height: 24),
                 // Session Details Card
-                _buildSessionDetailsCard(isIOS, isSmallScreen, isTablet),
+                _buildSessionDetailsCard(
+                  isIOS,
+                  isSmallScreen,
+                  isTablet,
+                  isCompleted: isCompleted,
+                  date: date,
+                  completedBy: completedBy,
+                  sessionId: sessionId,
+                ),
                 const SizedBox(height: 24),
                 // Photos Section
-                _buildPhotosSection(isIOS, isSmallScreen, isTablet),
+                _buildPhotosSection(
+                  isIOS,
+                  isSmallScreen,
+                  isTablet,
+                  images: images,
+                ),
                 const SizedBox(height: 24),
               ],
             ),
@@ -164,7 +451,7 @@ class StaffSessionDetailsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'SESSION $sessionNumber DETAILS',
+                'SESSION ${widget.sessionNumber} DETAILS',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: isSmallScreen ? 20 : 24,
@@ -218,8 +505,12 @@ class StaffSessionDetailsScreen extends StatelessWidget {
   Widget _buildSessionDetailsCard(
     bool isIOS,
     bool isSmallScreen,
-    bool isTablet,
-  ) {
+    bool isTablet, {
+    required bool isCompleted,
+    DateTime? date,
+    List<dynamic>? completedBy,
+    required String sessionId,
+  }) {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: isSmallScreen ? 18 : 24,
@@ -237,7 +528,7 @@ class StaffSessionDetailsScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'SESSION $sessionNumber',
+                'SESSION ${widget.sessionNumber}',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: isSmallScreen ? 14 : 16,
@@ -246,7 +537,7 @@ class StaffSessionDetailsScreen extends StatelessWidget {
                   fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
                 ),
               ),
-              if (session.isCompleted)
+              if (isCompleted)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -270,20 +561,33 @@ class StaffSessionDetailsScreen extends StatelessWidget {
                 ),
             ],
           ),
-          if (session.isCompleted) ...[
-            const SizedBox(height: 16),
-            Divider(color: Colors.white.withOpacity(0.1), thickness: 1),
-            const SizedBox(height: 16),
-            _buildDetailRow(
-              'COMPLETED ON',
-              _formatDateTime(session.date),
-              isIOS,
-              isSmallScreen,
-            ),
+          const SizedBox(height: 16),
+          Divider(color: Colors.white.withOpacity(0.1), thickness: 1),
+          const SizedBox(height: 16),
+          // Session ID
+          _buildDetailRow('SESSION ID', sessionId, isIOS, isSmallScreen),
+          const SizedBox(height: 12),
+          // Completion Status
+          _buildDetailRow(
+            'STATUS',
+            isCompleted ? 'COMPLETED' : 'PENDING',
+            isIOS,
+            isSmallScreen,
+          ),
+          // Show completion details only if completed
+          if (isCompleted) ...[
             const SizedBox(height: 12),
+            if (date != null)
+              _buildDetailRow(
+                'COMPLETED ON',
+                _formatDateTime(date),
+                isIOS,
+                isSmallScreen,
+              ),
+            if (date != null) const SizedBox(height: 12),
             _buildDetailRow(
               'COMPLETED BY',
-              session.completedBy?.toUpperCase() ?? 'N/A',
+              _formatCompletedBy(completedBy),
               isIOS,
               isSmallScreen,
             ),
@@ -328,7 +632,12 @@ class StaffSessionDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPhotosSection(bool isIOS, bool isSmallScreen, bool isTablet) {
+  Widget _buildPhotosSection(
+    bool isIOS,
+    bool isSmallScreen,
+    bool isTablet, {
+    required List<dynamic> images,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -345,38 +654,177 @@ class StaffSessionDetailsScreen extends StatelessWidget {
                 fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
               ),
             ),
-            isIOS
+            _isUploadingImage
+                ? Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: isIOS
+                        ? const CupertinoActivityIndicator(
+                            color: Color(0xFF04CDFE),
+                          )
+                        : const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF04CDFE),
+                              strokeWidth: 2,
+                            ),
+                          ),
+                  )
+                : isIOS
                 ? CupertinoButton(
                     padding: EdgeInsets.zero,
-                    onPressed: () {
-                      // TODO: Open camera/gallery
-                    },
-                    child: const Icon(
-                      CupertinoIcons.camera,
-                      color: Color(0xFF04CDFE),
-                      size: 24,
+                    onPressed: _pickImage,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          CupertinoIcons.camera,
+                          color: Color(0xFF04CDFE),
+                          size: 24,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'ADD IMAGE',
+                          style: TextStyle(
+                            color: const Color(0xFF04CDFE),
+                            fontSize: isSmallScreen ? 12 : 14,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                            fontFamily: '.SF Pro Display',
+                          ),
+                        ),
+                      ],
                     ),
                   )
                 : IconButton(
-                    icon: const Icon(
-                      Icons.camera_alt,
-                      color: Color(0xFF04CDFE),
-                      size: 24,
+                    icon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.camera_alt,
+                          color: Color(0xFF04CDFE),
+                          size: 24,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'ADD IMAGE',
+                          style: TextStyle(
+                            color: const Color(0xFF04CDFE),
+                            fontSize: isSmallScreen ? 12 : 14,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ],
                     ),
-                    onPressed: () {
-                      // TODO: Open camera/gallery
-                    },
+                    onPressed: _pickImage,
                   ),
           ],
         ),
         const SizedBox(height: 16),
-        _buildPhotoPlaceholder(isIOS, isSmallScreen, isTablet),
+        _buildPhotoPlaceholder(isIOS, isSmallScreen, isTablet, images: images),
+        // Show selected image preview and upload button
+        if (_selectedImagePath != null) ...[
+          const SizedBox(height: 16),
+          _buildSelectedImagePreview(isIOS, isSmallScreen),
+          const SizedBox(height: 16),
+          _buildUploadButton(isIOS, isSmallScreen),
+        ],
       ],
     );
   }
 
-  Widget _buildPhotoPlaceholder(bool isIOS, bool isSmallScreen, bool isTablet) {
-    final hasPhotos = session.images.isNotEmpty;
+  Widget _buildSelectedImagePreview(bool isIOS, bool isSmallScreen) {
+    return Container(
+      height: 200,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(isIOS ? 26 : 22),
+        border: Border.all(color: const Color(0xFF04CDFE), width: 1.2),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(isIOS ? 26 : 22),
+        child: Image.file(
+          File(_selectedImagePath!),
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              color: Colors.grey[900],
+              child: const Icon(
+                Icons.broken_image,
+                color: Colors.grey,
+                size: 40,
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUploadButton(bool isIOS, bool isSmallScreen) {
+    return Container(
+      width: double.infinity,
+      height: 50,
+      decoration: BoxDecoration(
+        color: const Color(0xFF04CDFE),
+        borderRadius: BorderRadius.circular(isIOS ? 16 : 12),
+      ),
+      child: isIOS
+          ? CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: _isUploadingImage ? null : _uploadImage,
+              child: _isUploadingImage
+                  ? const CupertinoActivityIndicator(color: Colors.white)
+                  : Text(
+                      'UPLOAD IMAGE',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: isSmallScreen ? 14 : 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                        fontFamily: '.SF Pro Display',
+                      ),
+                    ),
+            )
+          : ElevatedButton(
+              onPressed: _isUploadingImage ? null : _uploadImage,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF04CDFE),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: _isUploadingImage
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      'UPLOAD IMAGE',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: isSmallScreen ? 14 : 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+            ),
+    );
+  }
+
+  Widget _buildPhotoPlaceholder(
+    bool isIOS,
+    bool isSmallScreen,
+    bool isTablet, {
+    required List<dynamic> images,
+  }) {
+    // Convert images to List<String>
+    final imageUrls = images.map((img) => img.toString()).toList();
+    final hasPhotos = imageUrls.isNotEmpty;
 
     if (hasPhotos) {
       // Show photo grid if images exist
@@ -389,7 +837,7 @@ class StaffSessionDetailsScreen extends StatelessWidget {
           mainAxisSpacing: 12,
           childAspectRatio: 1,
         ),
-        itemCount: session.images.length,
+        itemCount: imageUrls.length,
         itemBuilder: (context, index) {
           return Container(
             decoration: BoxDecoration(
@@ -399,7 +847,7 @@ class StaffSessionDetailsScreen extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.network(
-                session.images[index],
+                imageUrls[index],
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
@@ -448,6 +896,24 @@ class StaffSessionDetailsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatCompletedBy(List<dynamic>? completedBy) {
+    if (completedBy == null || completedBy.isEmpty) return 'N/A';
+
+    // Extract names from completedBy array
+    final names = completedBy
+        .map((item) {
+          if (item is Map) {
+            return item['name']?.toString() ?? '';
+          }
+          return item.toString();
+        })
+        .where((name) => name.isNotEmpty)
+        .toList();
+
+    if (names.isEmpty) return 'N/A';
+    return names.join(', ').toUpperCase();
   }
 
   String _formatDateTime(DateTime? date) {
