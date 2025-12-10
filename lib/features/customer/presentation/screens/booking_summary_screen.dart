@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/constants/route_constants.dart';
+import 'payment_screen.dart';
 
 class BookingSummaryArguments {
   const BookingSummaryArguments({
@@ -613,10 +615,7 @@ class BookingSummaryScreen extends StatelessWidget {
             ),
           ),
           onPressed: () {
-            // TODO: Navigate to payment screen
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Proceeding to payment...')),
-            );
+            _navigateToPayment(context, total);
           },
           child: const Text(
             'CONFIRM & PROCEED TO PAYMENT',
@@ -652,19 +651,7 @@ class BookingSummaryScreen extends StatelessWidget {
           color: const Color(0xFF04CDFE),
           borderRadius: BorderRadius.circular(12),
           onPressed: () {
-            // TODO: Navigate to payment screen
-            showCupertinoDialog(
-              context: context,
-              builder: (context) => CupertinoAlertDialog(
-                title: const Text('Proceeding to payment...'),
-                actions: [
-                  CupertinoDialogAction(
-                    child: const Text('OK'),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            );
+            _navigateToPayment(context, total);
           },
           child: const Text(
             'CONFIRM & PROCEED TO PAYMENT',
@@ -713,5 +700,56 @@ class BookingSummaryScreen extends StatelessWidget {
     final month = monthNames[date.month - 1];
     final year = date.year;
     return '$day $month $year';
+  }
+
+  void _navigateToPayment(BuildContext context, double total) {
+    print('🚀 _navigateToPayment called');
+    print('   Total: $total');
+
+    if (arguments == null) {
+      print('❌ Arguments are null, cannot navigate');
+      return;
+    }
+
+    final package = arguments!.package;
+    final addOns = arguments!.selectedAddOns;
+    final dates = arguments!.selectedDates;
+    final vehicle = arguments!.selectedVehicle;
+
+    print('   Package: ${package['name'] ?? 'N/A'}');
+    print('   AddOns count: ${addOns.length}');
+    print('   Dates count: ${dates.length}');
+    print('   Vehicle: ${vehicle['vehicleModel'] ?? 'N/A'}');
+
+    // Prepare booking data
+    final bookingData = {
+      'package': package,
+      'addOns': addOns,
+      'dates': dates.map((d) => d.toIso8601String()).toList(),
+      'vehicle': vehicle,
+      'totalAmount': total,
+    };
+
+    print('🔄 Navigating to payment screen...');
+    try {
+      Navigator.pushNamed(
+        context,
+        Routes.customerPayment,
+        arguments: PaymentScreenArguments(
+          amount: total,
+          currency: 'AED',
+          bookingData: bookingData,
+          package: package,
+          selectedAddOns: addOns,
+          selectedDates: dates,
+          selectedVehicle: vehicle,
+        ),
+      );
+      print('✅ Navigation call completed');
+    } catch (e, stackTrace) {
+      print('❌❌❌ ERROR NAVIGATING TO PAYMENT ❌❌❌');
+      print('   Error: $e');
+      print('   StackTrace: $stackTrace');
+    }
   }
 }

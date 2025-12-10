@@ -12,6 +12,7 @@ import 'package:carwash_app/features/customer/presentation/screens/add_new_car_s
 import 'package:carwash_app/features/customer/presentation/screens/my_package_screen.dart';
 import 'package:carwash_app/features/customer/presentation/screens/package_details_screen.dart';
 import 'package:carwash_app/features/customer/presentation/screens/booking_summary_screen.dart';
+import 'package:carwash_app/features/customer/presentation/screens/payment_screen.dart';
 import 'package:carwash_app/features/auth/presentation/screens/auth_screen.dart';
 import 'package:carwash_app/features/auth/presentation/screens/otp_verification_screen.dart';
 import 'package:carwash_app/features/staff/presentation/screens/cleaner_login_screen.dart';
@@ -95,6 +96,11 @@ class AppRoutes {
           ModalRoute.of(context)?.settings.arguments
               as BookingSummaryArguments?;
       return BookingSummaryScreen(arguments: args);
+    },
+    Routes.customerPayment: (context) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments as PaymentScreenArguments?;
+      return PaymentScreen(arguments: args);
     },
     Routes.cleanerLogin: (context) => const CleanerLoginScreen(),
     Routes.staffHome: (context) => const StaffMainNavigationScreen(),

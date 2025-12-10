@@ -19,6 +19,7 @@ class CleanerBooking {
     this.endDate,
     this.createdAt,
     this.updatedAt,
+    this.activeIssue,
   });
 
   final String id;
@@ -38,6 +39,7 @@ class CleanerBooking {
   final DateTime? endDate;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final bool? activeIssue;
 
   factory CleanerBooking.fromMap(Map<String, dynamic> map) {
     return CleanerBooking(
@@ -78,6 +80,9 @@ class CleanerBooking {
       endDate: _parseDate(map['endDate']),
       createdAt: _parseDate(map['createdAt']),
       updatedAt: _parseDate(map['updatedAt']),
+      activeIssue: map['activeIssue'] is bool
+          ? map['activeIssue'] as bool
+          : map['activeIssue'] == true || map['activeIssue'] == 'true',
     );
   }
 
@@ -112,6 +117,7 @@ class CleanerBooking {
       'endDate': endDate?.toUtc().toIso8601String(),
       'createdAt': createdAt?.toUtc().toIso8601String(),
       'updatedAt': updatedAt?.toUtc().toIso8601String(),
+      'activeIssue': activeIssue,
     };
   }
 

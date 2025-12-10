@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 import '../../domain/models/booking_model.dart';
 import '../providers/cleaner_booking_provider.dart';
 import 'staff_service_details_screen.dart';
+import 'report_issue_screen.dart';
+import 'issue_chat_screen.dart';
+import '../../data/repositories/chat_repository.dart';
 
 class StaffBookingDetailsScreen extends StatefulWidget {
   final CleanerBooking booking;
@@ -212,6 +215,19 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
+                    // Action Buttons Section
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: horizontalPadding,
+                      ),
+                      child: _buildActionButtons(
+                        context,
+                        booking,
+                        isIOS,
+                        isSmallScreen,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                     // Services Section
                     Padding(
                       padding: EdgeInsets.symmetric(
@@ -303,8 +319,52 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
           ),
           // Spacer to balance the back button on the left
           const Spacer(),
-          // Invisible placeholder to balance the back button
-          const SizedBox(width: 32),
+          // Bell icon (notification) on the right
+          Container(
+            width: 32,
+            height: 32,
+            decoration: const BoxDecoration(
+              color: Color(0xFF04CDFE),
+              shape: BoxShape.circle,
+            ),
+            child: isIOS
+                ? CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: () {
+                      // TODO: Navigate to notifications screen
+                      // For now, show a placeholder
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Notifications - Coming soon'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    child: const Icon(
+                      CupertinoIcons.bell,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  )
+                : IconButton(
+                    icon: const Icon(
+                      Icons.notifications_outlined,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                    onPressed: () {
+                      // TODO: Navigate to notifications screen
+                      // For now, show a placeholder
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Notifications - Coming soon'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    padding: EdgeInsets.zero,
+                  ),
+          ),
         ],
       ),
     );
@@ -406,6 +466,292 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildActionButtons(
+    BuildContext context,
+    CleanerBooking booking,
+    bool isIOS,
+    bool isSmallScreen,
+  ) {
+    // Check if there's an active issue for this booking
+    final activeIssue = booking.activeIssue ?? false;
+
+    if (activeIssue) {
+      // When activeIssue is true, show only "VIEW ACTIVE ISSUE" button
+      return _buildViewActiveIssueButton(
+        context,
+        isIOS,
+        isSmallScreen,
+        isActive: true,
+        onPressed: () async {
+          await _handleViewActiveIssue(context, booking, isIOS);
+        },
+      );
+    } else {
+      // When activeIssue is false, show only "REPORT AN ISSUE" button
+      return _buildReportIssueButton(
+        context,
+        booking,
+        isIOS,
+        isSmallScreen,
+        onPressed: () {
+          Navigator.of(context).push(
+            isIOS
+                ? CupertinoPageRoute(
+                    builder: (_) => ReportIssueScreen(booking: booking),
+                  )
+                : MaterialPageRoute(
+                    builder: (_) => ReportIssueScreen(booking: booking),
+                  ),
+          );
+        },
+      );
+    }
+  }
+
+  Widget _buildViewActiveIssueButton(
+    BuildContext context,
+    bool isIOS,
+    bool isSmallScreen, {
+    required bool isActive,
+    VoidCallback? onPressed,
+  }) {
+    // When activeIssue is true, use different styling
+    if (isActive) {
+      return _buildActionButton(
+        context,
+        'VIEW ACTIVE ISSUE',
+        const Color(0xFF4CAF50), // Green color for active issue
+        isIOS,
+        isSmallScreen,
+        textColor: Colors.white,
+        icon: Icons.warning_amber_rounded,
+        onPressed: onPressed,
+      );
+    }
+
+    // When activeIssue is false, use dark red design with red border
+    return Container(
+      height: isSmallScreen ? 44 : 48,
+      decoration: BoxDecoration(
+        color: const Color(0xFF330000), // Dark red background
+        borderRadius: BorderRadius.circular(isIOS ? 12 : 10),
+        border: Border.all(
+          color: const Color(0xFFFF6666), // Light red border
+          width: 1.5,
+        ),
+      ),
+      child: isIOS
+          ? CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: onPressed,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    CupertinoIcons.exclamationmark_triangle_fill,
+                    color: const Color(0xFFFF6666),
+                    size: isSmallScreen ? 16 : 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'VIEW ACTIVE ISSUE',
+                    style: TextStyle(
+                      color: const Color(0xFFFF6666), // Light red text
+                      fontSize: isSmallScreen ? 12 : 14,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                      fontFamily: '.SF Pro Text',
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onPressed,
+                borderRadius: BorderRadius.circular(10),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: const Color(0xFFFF6666),
+                        size: isSmallScreen ? 16 : 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'VIEW ACTIVE ISSUE',
+                        style: TextStyle(
+                          color: const Color(0xFFFF6666), // Light red text
+                          fontSize: isSmallScreen ? 12 : 14,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                          fontFamily: 'Roboto',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildReportIssueButton(
+    BuildContext context,
+    CleanerBooking booking,
+    bool isIOS,
+    bool isSmallScreen, {
+    VoidCallback? onPressed,
+  }) {
+    // Dark grey background with white text and icon
+    return Container(
+      height: isSmallScreen ? 44 : 48,
+      decoration: BoxDecoration(
+        color: const Color(0xFF2A2A2A), // Dark grey background
+        borderRadius: BorderRadius.circular(isIOS ? 12 : 10),
+      ),
+      child: isIOS
+          ? CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: onPressed,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    CupertinoIcons.exclamationmark_triangle,
+                    color: Colors.white,
+                    size: isSmallScreen ? 16 : 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'REPORT AN ISSUE',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: isSmallScreen ? 12 : 14,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                      fontFamily: '.SF Pro Text',
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onPressed,
+                borderRadius: BorderRadius.circular(10),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.white,
+                        size: isSmallScreen ? 16 : 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'REPORT AN ISSUE',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: isSmallScreen ? 12 : 14,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                          fontFamily: 'Roboto',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildActionButton(
+    BuildContext context,
+    String text,
+    Color backgroundColor,
+    bool isIOS,
+    bool isSmallScreen, {
+    VoidCallback? onPressed,
+    Color? textColor,
+    IconData? icon,
+  }) {
+    final finalTextColor = textColor ?? Colors.white;
+    return Container(
+      height: isSmallScreen ? 44 : 48,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(isIOS ? 12 : 10),
+      ),
+      child: isIOS
+          ? CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: onPressed,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    Icon(
+                      icon,
+                      color: finalTextColor,
+                      size: isSmallScreen ? 16 : 18,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    text,
+                    style: TextStyle(
+                      color: finalTextColor,
+                      fontSize: isSmallScreen ? 12 : 14,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                      fontFamily: '.SF Pro Text',
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onPressed,
+                borderRadius: BorderRadius.circular(10),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (icon != null) ...[
+                        Icon(
+                          icon,
+                          color: finalTextColor,
+                          size: isSmallScreen ? 16 : 18,
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Text(
+                        text,
+                        style: TextStyle(
+                          color: finalTextColor,
+                          fontSize: isSmallScreen ? 12 : 14,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                          fontFamily: 'Roboto',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
     );
   }
 
@@ -582,5 +928,172 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleViewActiveIssue(
+    BuildContext context,
+    CleanerBooking booking,
+    bool isIOS,
+  ) async {
+    try {
+      // Show loading indicator
+      if (isIOS) {
+        showCupertinoDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              const CupertinoAlertDialog(content: CupertinoActivityIndicator()),
+        );
+      } else {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      // Try to get existing chat for this booking
+      final chatResult = await ChatRepository.getChatByBookingId(
+        bookingId: booking.id,
+      );
+
+      // Close loading indicator
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (!context.mounted) return;
+
+      if (chatResult['success'] == true) {
+        // Extract chat data from response
+        final chatData = chatResult['data'] as Map<String, dynamic>?;
+        final chatId = chatData?['_id']?.toString() ?? '';
+        final issueType = chatData?['issue']?.toString() ?? 'ACTIVE ISSUE';
+        final description = chatData?['description']?.toString() ?? '';
+
+        // Navigate to chat screen
+        Navigator.of(context).push(
+          isIOS
+              ? CupertinoPageRoute(
+                  builder: (_) => IssueChatScreen(
+                    booking: booking,
+                    issueType: issueType,
+                    description: description,
+                    chatData: chatData,
+                    roomId: chatId,
+                  ),
+                )
+              : MaterialPageRoute(
+                  builder: (_) => IssueChatScreen(
+                    booking: booking,
+                    issueType: issueType,
+                    description: description,
+                    chatData: chatData,
+                    roomId: chatId,
+                  ),
+                ),
+        );
+      } else {
+        // If getting chat fails, try using initiateChat which might return existing chat
+        final initiateResult = await ChatRepository.initiateChat(
+          bookingId: booking.id,
+          description: 'Viewing active issue',
+          issue: 'ACTIVE ISSUE',
+        );
+
+        if (!context.mounted) return;
+
+        if (initiateResult['success'] == true) {
+          final chatData = initiateResult['data'] as Map<String, dynamic>?;
+          final chatId = chatData?['_id']?.toString() ?? '';
+          final issueType = chatData?['issue']?.toString() ?? 'ACTIVE ISSUE';
+          final description = chatData?['description']?.toString() ?? '';
+
+          // Navigate to chat screen
+          Navigator.of(context).push(
+            isIOS
+                ? CupertinoPageRoute(
+                    builder: (_) => IssueChatScreen(
+                      booking: booking,
+                      issueType: issueType,
+                      description: description,
+                      chatData: chatData,
+                      roomId: chatId,
+                    ),
+                  )
+                : MaterialPageRoute(
+                    builder: (_) => IssueChatScreen(
+                      booking: booking,
+                      issueType: issueType,
+                      description: description,
+                      chatData: chatData,
+                      roomId: chatId,
+                    ),
+                  ),
+          );
+        } else {
+          // Show error message
+          final errorMessage =
+              initiateResult['message'] ?? 'Failed to load active issue chat';
+          if (isIOS) {
+            showCupertinoDialog(
+              context: context,
+              builder: (context) => CupertinoAlertDialog(
+                title: const Text('Error'),
+                content: Text(errorMessage),
+                actions: [
+                  CupertinoDialogAction(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMessage),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      // Close loading indicator if still open
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (!context.mounted) return;
+
+      // Show error message
+      final errorMessage = 'Error loading active issue: ${e.toString()}';
+      if (isIOS) {
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: const Text('Error'),
+            content: Text(errorMessage),
+            actions: [
+              CupertinoDialogAction(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 }
