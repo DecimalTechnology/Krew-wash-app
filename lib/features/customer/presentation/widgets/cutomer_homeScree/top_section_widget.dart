@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/constants/route_constants.dart';
+import '../../../../../core/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
 
@@ -77,32 +78,30 @@ class TopSectionWidget extends StatelessWidget {
       context: context,
       builder: (BuildContext dialogContext) => AlertDialog(
         backgroundColor: Colors.grey[900],
-        title: const Text('Logout', style: TextStyle(color: Colors.white)),
-        content: const Text(
+        title: Text('Logout', style: AppTheme.bebasNeue(color: Colors.white)),
+        content: Text(
           'Are you sure you want to logout?',
-          style: TextStyle(color: Colors.white70),
+          style: AppTheme.bebasNeue(color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text(
+            child: Text(
               'Cancel',
-              style: TextStyle(color: Colors.white54),
+              style: AppTheme.bebasNeue(color: Colors.white54),
             ),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(dialogContext);
+              final rootNav = Navigator.of(context, rootNavigator: true);
               await context.read<AuthProvider>().signOut();
-              if (context.mounted) {
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/auth',
-                  (route) => false,
-                );
-              }
+              rootNav.pushNamedAndRemoveUntil(
+                Routes.authWrapper,
+                (route) => false,
+              );
             },
-            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+            child: Text('Logout', style: AppTheme.bebasNeue(color: Colors.red)),
           ),
         ],
       ),

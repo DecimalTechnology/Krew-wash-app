@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Color constants
@@ -26,14 +27,41 @@ class AppTheme {
     border: Border.all(color: primaryColor, width: 1),
   );
 
-  // Font family - using system default until BebasNeue fonts are added
-  static const String fontFamily = 'Roboto';
+  // Font family - Bebas Neue
+  static const String fontFamily = 'BebasNeue';
+
+  // Font size multiplier - increase all text sizes by this factor
+  static const double fontSizeMultiplier = 1.3;
+
+  // Get Bebas Neue text style
+  static TextStyle bebasNeue({
+    double? fontSize,
+    FontWeight? fontWeight,
+    Color? color,
+    double? letterSpacing,
+    double? height,
+    List<Shadow>? shadows,
+  }) {
+    return GoogleFonts.bebasNeue(
+      fontSize: fontSize != null ? fontSize * fontSizeMultiplier : null,
+      fontWeight: fontWeight ?? FontWeight.w400,
+      color: color ?? textColor,
+      letterSpacing: letterSpacing,
+      height: height,
+      shadows: shadows,
+    );
+  }
 
   // Material Theme
   static ThemeData get materialTheme {
+    final bebasNeueTextTheme = GoogleFonts.bebasNeueTextTheme();
+
     return ThemeData(
       useMaterial3: true,
-      fontFamily: fontFamily,
+      textTheme: bebasNeueTextTheme.apply(
+        bodyColor: textColor,
+        displayColor: textColor,
+      ),
       primaryColor: primaryColor,
       scaffoldBackgroundColor: backgroundColor,
       colorScheme: const ColorScheme.dark(
@@ -46,120 +74,34 @@ class AppTheme {
         onSurface: textColor,
         onBackground: textColor,
       ),
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(
-          fontFamily: fontFamily,
-          color: textColor,
-          fontWeight: FontWeight.bold,
-        ),
-        displayMedium: TextStyle(
-          fontFamily: fontFamily,
-          color: textColor,
-          fontWeight: FontWeight.bold,
-        ),
-        displaySmall: TextStyle(
-          fontFamily: fontFamily,
-          color: textColor,
-          fontWeight: FontWeight.bold,
-        ),
-        headlineLarge: TextStyle(
-          fontFamily: fontFamily,
-          color: textColor,
-          fontWeight: FontWeight.bold,
-        ),
-        headlineMedium: TextStyle(
-          fontFamily: fontFamily,
-          color: textColor,
-          fontWeight: FontWeight.bold,
-        ),
-        headlineSmall: TextStyle(
-          fontFamily: fontFamily,
-          color: textColor,
-          fontWeight: FontWeight.bold,
-        ),
-        titleLarge: TextStyle(
-          fontFamily: fontFamily,
-          color: textColor,
-          fontWeight: FontWeight.bold,
-        ),
-        titleMedium: TextStyle(
-          fontFamily: fontFamily,
-          color: textColor,
-          fontWeight: FontWeight.w600,
-        ),
-        titleSmall: TextStyle(
-          fontFamily: fontFamily,
-          color: textColor,
-          fontWeight: FontWeight.w600,
-        ),
-        bodyLarge: TextStyle(
-          fontFamily: fontFamily,
-          color: textColor,
-          fontWeight: FontWeight.normal,
-        ),
-        bodyMedium: TextStyle(
-          fontFamily: fontFamily,
-          color: textColor,
-          fontWeight: FontWeight.normal,
-        ),
-        bodySmall: TextStyle(
-          fontFamily: fontFamily,
-          color: textSecondaryColor,
-          fontWeight: FontWeight.normal,
-        ),
-        labelLarge: TextStyle(
-          fontFamily: fontFamily,
-          color: textColor,
-          fontWeight: FontWeight.w600,
-        ),
-        labelMedium: TextStyle(
-          fontFamily: fontFamily,
-          color: textColor,
-          fontWeight: FontWeight.w500,
-        ),
-        labelSmall: TextStyle(
-          fontFamily: fontFamily,
-          color: textSecondaryColor,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: backgroundColor,
         foregroundColor: textColor,
-        titleTextStyle: TextStyle(
-          fontFamily: fontFamily,
-          color: textColor,
-          fontWeight: FontWeight.bold,
+        centerTitle: true,
+        titleTextStyle: bebasNeue(
           fontSize: 20,
+          fontWeight: FontWeight.w400,
+          color: textColor,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
-          textStyle: const TextStyle(
-            fontFamily: fontFamily,
-            fontWeight: FontWeight.bold,
-          ),
+          textStyle: bebasNeue(fontWeight: FontWeight.w400),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primaryColor,
-          textStyle: const TextStyle(
-            fontFamily: fontFamily,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: bebasNeue(fontWeight: FontWeight.w400),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: primaryColor,
           side: const BorderSide(color: primaryColor),
-          textStyle: const TextStyle(
-            fontFamily: fontFamily,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: bebasNeue(fontWeight: FontWeight.w400),
         ),
       ),
     );
@@ -167,58 +109,36 @@ class AppTheme {
 
   // Cupertino Theme
   static CupertinoThemeData get cupertinoTheme {
-    return const CupertinoThemeData(
+    return CupertinoThemeData(
       primaryColor: primaryColor,
       scaffoldBackgroundColor: backgroundColor,
       textTheme: CupertinoTextThemeData(
         primaryColor: textColor,
-        textStyle: TextStyle(
-          fontFamily: fontFamily,
-          color: textColor,
-          decoration: TextDecoration.none,
-        ),
-        actionTextStyle: TextStyle(
-          fontFamily: fontFamily,
+        textStyle: bebasNeue(color: textColor),
+        actionTextStyle: bebasNeue(
           color: primaryColor,
-          fontWeight: FontWeight.w600,
-          decoration: TextDecoration.none,
+          fontWeight: FontWeight.w400,
         ),
-        tabLabelTextStyle: TextStyle(
-          fontFamily: fontFamily,
+        tabLabelTextStyle: bebasNeue(
           color: textColor,
-          fontWeight: FontWeight.w500,
-          decoration: TextDecoration.none,
+          fontWeight: FontWeight.w400,
         ),
-        navTitleTextStyle: TextStyle(
-          fontFamily: fontFamily,
+        navTitleTextStyle: bebasNeue(
           color: textColor,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w400,
           fontSize: 20,
-          decoration: TextDecoration.none,
         ),
-        navLargeTitleTextStyle: TextStyle(
-          fontFamily: fontFamily,
+        navLargeTitleTextStyle: bebasNeue(
           color: textColor,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w400,
           fontSize: 28,
-          decoration: TextDecoration.none,
         ),
-        navActionTextStyle: TextStyle(
-          fontFamily: fontFamily,
+        navActionTextStyle: bebasNeue(
           color: primaryColor,
-          fontWeight: FontWeight.w600,
-          decoration: TextDecoration.none,
+          fontWeight: FontWeight.w400,
         ),
-        pickerTextStyle: TextStyle(
-          fontFamily: fontFamily,
-          color: textColor,
-          decoration: TextDecoration.none,
-        ),
-        dateTimePickerTextStyle: TextStyle(
-          fontFamily: fontFamily,
-          color: textColor,
-          decoration: TextDecoration.none,
-        ),
+        pickerTextStyle: bebasNeue(color: textColor),
+        dateTimePickerTextStyle: bebasNeue(color: textColor),
       ),
     );
   }
@@ -231,8 +151,7 @@ class AppTheme {
     double? letterSpacing,
     double? height,
   }) {
-    return TextStyle(
-      fontFamily: fontFamily,
+    return bebasNeue(
       fontSize: fontSize,
       fontWeight: fontWeight,
       color: color ?? textColor,

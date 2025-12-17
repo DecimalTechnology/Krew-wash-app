@@ -116,74 +116,86 @@ class _StaffMainNavigationScreenState extends State<StaffMainNavigationScreen> {
     double iconSize,
     double navItemSize,
   ) {
-    return CupertinoPageScaffold(
-      backgroundColor: Colors.black,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Main content - fills entire space
-          Positioned.fill(child: _screens[_currentIndex]),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        // Handle back button: move to previous tab (index - 1)
+        if (_currentIndex > 0) {
+          setState(() {
+            _currentIndex = _currentIndex - 1;
+          });
+        }
+      },
+      child: CupertinoPageScaffold(
+        backgroundColor: Colors.black,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Main content - fills entire space
+            Positioned.fill(child: _screens[_currentIndex]),
 
-          // Positioned bottom navigation bar - fixed at bottom
-          Positioned(
-            left: navBarMargin,
-            right: navBarMargin,
-            bottom: navBarMargin + MediaQuery.of(context).padding.bottom,
-            child: Container(
-              height: navBarHeight,
-              decoration: BoxDecoration(
-                color: AppTheme.cardColor,
-                borderRadius: BorderRadius.circular(navBarRadius),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: horizontalPadding,
-                  vertical: verticalPadding,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildIOSNavItem(
-                      0,
-                      CupertinoIcons.house,
-                      CupertinoIcons.house_fill,
-                      iconSize,
-                      navItemSize,
-                    ),
-                    _buildIOSNavItem(
-                      1,
-                      CupertinoIcons.calendar,
-                      CupertinoIcons.calendar,
-                      iconSize,
-                      navItemSize,
-                    ),
-                    _buildIOSNavItem(
-                      2,
-                      CupertinoIcons.list_bullet,
-                      CupertinoIcons.list_bullet,
-                      iconSize,
-                      navItemSize,
-                    ),
-                    _buildIOSNavItem(
-                      3,
-                      CupertinoIcons.person,
-                      CupertinoIcons.person_fill,
-                      iconSize,
-                      navItemSize,
+            // Positioned bottom navigation bar - fixed at bottom
+            Positioned(
+              left: navBarMargin,
+              right: navBarMargin,
+              bottom: navBarMargin + MediaQuery.of(context).padding.bottom,
+              child: Container(
+                height: navBarHeight,
+                decoration: BoxDecoration(
+                  color: AppTheme.cardColor,
+                  borderRadius: BorderRadius.circular(navBarRadius),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
                     ),
                   ],
                 ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: verticalPadding,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildIOSNavItem(
+                        0,
+                        CupertinoIcons.house,
+                        CupertinoIcons.house_fill,
+                        iconSize,
+                        navItemSize,
+                      ),
+                      _buildIOSNavItem(
+                        1,
+                        CupertinoIcons.calendar,
+                        CupertinoIcons.calendar,
+                        iconSize,
+                        navItemSize,
+                      ),
+                      _buildIOSNavItem(
+                        2,
+                        CupertinoIcons.list_bullet,
+                        CupertinoIcons.list_bullet,
+                        iconSize,
+                        navItemSize,
+                      ),
+                      _buildIOSNavItem(
+                        3,
+                        CupertinoIcons.person,
+                        CupertinoIcons.person_fill,
+                        iconSize,
+                        navItemSize,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -197,74 +209,86 @@ class _StaffMainNavigationScreenState extends State<StaffMainNavigationScreen> {
     double iconSize,
     double navItemSize,
   ) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Main content - fills entire space
-          Positioned.fill(child: _screens[_currentIndex]),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        // Handle back button: move to previous tab (index - 1)
+        if (_currentIndex > 0) {
+          setState(() {
+            _currentIndex = _currentIndex - 1;
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Main content - fills entire space
+            Positioned.fill(child: _screens[_currentIndex]),
 
-          // Positioned bottom navigation bar - fixed at bottom
-          Positioned(
-            left: navBarMargin,
-            right: navBarMargin,
-            bottom: navBarMargin + MediaQuery.of(context).padding.bottom,
-            child: Container(
-              height: navBarHeight,
-              decoration: BoxDecoration(
-                color: AppTheme.cardColor,
-                borderRadius: BorderRadius.circular(navBarRadius),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: horizontalPadding,
-                  vertical: verticalPadding,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildAndroidNavItem(
-                      0,
-                      Icons.home_outlined,
-                      Icons.home,
-                      iconSize,
-                      navItemSize,
-                    ),
-                    _buildAndroidNavItem(
-                      1,
-                      Icons.calendar_today_outlined,
-                      Icons.calendar_today,
-                      iconSize,
-                      navItemSize,
-                    ),
-                    _buildAndroidNavItem(
-                      2,
-                      Icons.history_outlined,
-                      Icons.history,
-                      iconSize,
-                      navItemSize,
-                    ),
-                    _buildAndroidNavItem(
-                      3,
-                      Icons.person_outline,
-                      Icons.person,
-                      iconSize,
-                      navItemSize,
+            // Positioned bottom navigation bar - fixed at bottom
+            Positioned(
+              left: navBarMargin,
+              right: navBarMargin,
+              bottom: navBarMargin + MediaQuery.of(context).padding.bottom,
+              child: Container(
+                height: navBarHeight,
+                decoration: BoxDecoration(
+                  color: AppTheme.cardColor,
+                  borderRadius: BorderRadius.circular(navBarRadius),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
                     ),
                   ],
                 ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: verticalPadding,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildAndroidNavItem(
+                        0,
+                        Icons.home_outlined,
+                        Icons.home,
+                        iconSize,
+                        navItemSize,
+                      ),
+                      _buildAndroidNavItem(
+                        1,
+                        Icons.calendar_today_outlined,
+                        Icons.calendar_today,
+                        iconSize,
+                        navItemSize,
+                      ),
+                      _buildAndroidNavItem(
+                        2,
+                        Icons.history_outlined,
+                        Icons.history,
+                        iconSize,
+                        navItemSize,
+                      ),
+                      _buildAndroidNavItem(
+                        3,
+                        Icons.person_outline,
+                        Icons.person,
+                        iconSize,
+                        navItemSize,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

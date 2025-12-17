@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../../../core/constants/route_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 import '../../presentation/providers/package_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/building_model.dart';
@@ -23,6 +24,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
   String? _selectedBuilding;
   bool _initializedFromProfile = false;
   VoidCallback? _authListener;
+  AuthProvider? _authProvider;
 
   @override
   void initState() {
@@ -84,26 +86,29 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
     if (!authProvider.isInitializing && authProvider.user != null) {
       await initFromUser();
     } else {
+      // Store reference to authProvider for safe disposal
+      _authProvider = authProvider;
       _authListener = () async {
-        if (!authProvider.isInitializing && authProvider.user != null) {
+        if (!_authProvider!.isInitializing && _authProvider!.user != null) {
           await initFromUser();
-          if (_authListener != null) {
-            authProvider.removeListener(_authListener!);
+          if (_authListener != null && _authProvider != null) {
+            _authProvider!.removeListener(_authListener!);
             _authListener = null;
           }
         }
       };
-      authProvider.addListener(_authListener!);
+      _authProvider!.addListener(_authListener!);
     }
   }
 
   @override
   void dispose() {
-    final authProvider = mounted ? context.read<AuthProvider>() : null;
-    if (_authListener != null && authProvider != null) {
-      authProvider.removeListener(_authListener!);
+    // Safely remove listener using stored reference (no context access needed)
+    if (_authListener != null && _authProvider != null) {
+      _authProvider!.removeListener(_authListener!);
       _authListener = null;
     }
+    _authProvider = null;
     _scrollController.dispose();
     super.dispose();
   }
@@ -546,8 +551,8 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
         children: [
           if (showShimmer)
             Shimmer.fromColors(
-              baseColor: Colors.white.withOpacity(0.08),
-              highlightColor: Colors.white.withOpacity(0.25),
+              baseColor: Colors.white.withValues(alpha: 0.08),
+              highlightColor: Colors.white.withValues(alpha: 0.25),
               child: Container(
                 height: textSize,
                 width: fontSize * 8,
@@ -560,8 +565,8 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
           else
             Text(
               'BUILDING NAME',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
+              style: AppTheme.bebasNeue(
+                color: Colors.white.withValues(alpha: 0.7),
                 fontSize: textSize * 0.9,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1.0,
@@ -574,8 +579,8 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
           ),
           if (showShimmer)
             Shimmer.fromColors(
-              baseColor: Colors.white.withOpacity(0.08),
-              highlightColor: Colors.white.withOpacity(0.25),
+              baseColor: Colors.white.withValues(alpha: 0.08),
+              highlightColor: Colors.white.withValues(alpha: 0.25),
               child: Container(
                 height: fieldHeight,
                 decoration: BoxDecoration(
@@ -603,7 +608,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                 buildingText,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: AppTheme.bebasNeue(
                   color: Colors.white,
                   fontSize: textSize,
                   fontWeight: FontWeight.w600,
@@ -627,7 +632,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
     final titleStyle = TextStyle(
       color: Colors.white,
       fontSize: fontSize * 1.1,
-      fontWeight: FontWeight.bold,
+      fontWeight: FontWeight.w400,
       letterSpacing: 1.0,
     );
 
@@ -642,8 +647,8 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
           return Padding(
             padding: EdgeInsets.only(bottom: fontSize * 0.8),
             child: Shimmer.fromColors(
-              baseColor: Colors.white.withOpacity(0.08),
-              highlightColor: Colors.white.withOpacity(0.25),
+              baseColor: Colors.white.withValues(alpha: 0.08),
+              highlightColor: Colors.white.withValues(alpha: 0.25),
               child: Container(
                 height: fontSize * 4.5,
                 decoration: BoxDecoration(
@@ -663,9 +668,9 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
           Container(
             alignment: Alignment.centerLeft,
             padding: EdgeInsets.symmetric(vertical: fontSize),
-            child: const Text(
+            child: Text(
               'No add-ons available for this vehicle type.',
-              style: TextStyle(color: Colors.white70),
+              style: AppTheme.bebasNeue(color: Colors.white70),
             ),
           ),
         ];
@@ -698,14 +703,14 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                 border: Border.all(
                   color: isSelected
                       ? const Color(0xFF04CDFE)
-                      : Colors.white.withOpacity(0.1),
+                      : Colors.white.withValues(alpha: 0.1),
                   width: isSelected ? 2 : 1,
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: const Color(
                       0xFF04CDFE,
-                    ).withOpacity(isSelected ? 0.3 : 0.2),
+                    ).withValues(alpha: isSelected ? 0.3 : 0.2),
                     blurRadius: isSelected ? 14 : 10,
                     offset: const Offset(0, 4),
                   ),
@@ -721,10 +726,10 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                       children: [
                         Text(
                           name.toUpperCase(),
-                          style: TextStyle(
+                          style: AppTheme.bebasNeue(
                             color: const Color(0xFF04CDFE),
                             fontSize: fontSize * 1.1,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w400,
                             letterSpacing: 0.5,
                           ),
                         ),
@@ -732,7 +737,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                           SizedBox(height: fontSize * 0.3),
                           Text(
                             frequency,
-                            style: TextStyle(
+                            style: AppTheme.bebasNeue(
                               color: Colors.white70,
                               fontSize: fontSize * 0.75,
                             ),
@@ -742,7 +747,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                           SizedBox(height: fontSize * 0.4),
                           Text(
                             description,
-                            style: TextStyle(
+                            style: AppTheme.bebasNeue(
                               color: Colors.white70,
                               fontSize: fontSize * 0.75,
                               height: 1.3,
@@ -757,7 +762,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                     children: [
                       Text(
                         'EACH SERVICE',
-                        style: TextStyle(
+                        style: AppTheme.bebasNeue(
                           color: Colors.white70,
                           fontSize: fontSize * 0.7,
                           fontWeight: FontWeight.w600,
@@ -767,10 +772,10 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                       SizedBox(height: fontSize * 0.3),
                       Text(
                         price,
-                        style: TextStyle(
+                        style: AppTheme.bebasNeue(
                           color: const Color(0xFF04CDFE),
                           fontSize: fontSize * 1.2,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w400,
                           letterSpacing: 0.8,
                         ),
                       ),
@@ -822,35 +827,20 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
       child: Row(
         children: [
           // Back Button
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFF00D4AA),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: isIOS
-                ? CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () => Navigator.pop(context),
-                    child: const Icon(
-                      CupertinoIcons.back,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  )
-                : Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
+          StandardBackButton(
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final didPop = await navigator.maybePop();
+              if (!didPop) {
+                final rootNavigator = Navigator.of(
+                  context,
+                  rootNavigator: true,
+                );
+                if (rootNavigator != navigator) {
+                  await rootNavigator.maybePop();
+                }
+              }
+            },
           ),
         ],
       ),
@@ -929,8 +919,8 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: buttonSpacing),
               child: Shimmer.fromColors(
-                baseColor: Colors.white.withOpacity(0.08),
-                highlightColor: Colors.white.withOpacity(0.25),
+                baseColor: Colors.white.withValues(alpha: 0.08),
+                highlightColor: Colors.white.withValues(alpha: 0.25),
                 child: Container(
                   height: buttonHeight,
                   decoration: BoxDecoration(
@@ -950,9 +940,9 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
         return Container(
           padding: EdgeInsets.symmetric(vertical: fontSize),
           alignment: Alignment.center,
-          child: const Text(
+          child: Text(
             'No vehicle types available',
-            style: TextStyle(color: Colors.white70),
+            style: AppTheme.bebasNeue(color: Colors.white70),
           ),
         );
       }
@@ -979,13 +969,13 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                   padding: EdgeInsets.symmetric(horizontal: internalPadding),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? const Color(0xFF04CDFE).withOpacity(0.25)
+                        ? const Color(0xFF04CDFE).withValues(alpha: 0.25)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
                           ? const Color(0xFF04CDFE)
-                          : Colors.white.withOpacity(0.15),
+                          : Colors.white.withValues(alpha: 0.15),
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -995,10 +985,10 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                       Flexible(
                         child: Text(
                           typeName.toUpperCase(),
-                          style: TextStyle(
+                          style: AppTheme.bebasNeue(
                             color: Colors.white,
                             fontSize: vehicleTextSize,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w400,
                             letterSpacing: 1,
                           ),
                           maxLines: 1,
@@ -1044,10 +1034,10 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
       ),
       child: Text(
         'SELECT YOUR PACKAGE',
-        style: TextStyle(
+        style: AppTheme.bebasNeue(
           color: Colors.white,
           fontSize: fontSize * 1.0,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w400,
           letterSpacing: 1.5,
         ),
         textAlign: TextAlign.center,
@@ -1081,9 +1071,9 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
           ? Container(
               alignment: Alignment.center,
               padding: EdgeInsets.symmetric(vertical: verticalSpacing),
-              child: const Text(
+              child: Text(
                 'No packages to show. Select a building to continue.',
-                style: TextStyle(color: Colors.white70),
+                style: AppTheme.bebasNeue(color: Colors.white70),
                 textAlign: TextAlign.center,
               ),
             )
@@ -1110,7 +1100,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                                 width: 2,
                               )
                             : Border.all(
-                                color: Colors.white.withOpacity(0.1),
+                                color: Colors.white.withValues(alpha: 0.1),
                                 width: 1,
                               ),
                       ),
@@ -1127,10 +1117,10 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                                 // Package Name
                                 Text(
                                   (package['name'] ?? 'Package').toUpperCase(),
-                                  style: TextStyle(
+                                  style: AppTheme.bebasNeue(
                                     color: const Color(0xFF04CDFE),
                                     fontSize: fontSize * 1.1,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.w400,
                                     letterSpacing: 1.0,
                                   ),
                                 ),
@@ -1138,7 +1128,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                                 // Description
                                 Text(
                                   package['description'] ?? '',
-                                  style: TextStyle(
+                                  style: AppTheme.bebasNeue(
                                     color: Colors.white,
                                     fontSize: fontSize * 0.85,
                                     fontWeight: FontWeight.normal,
@@ -1163,10 +1153,10 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                                 // Frequency
                                 Text(
                                   (package['frequency'] ?? '').toUpperCase(),
-                                  style: TextStyle(
+                                  style: AppTheme.bebasNeue(
                                     color: Colors.white,
                                     fontSize: fontSize * 0.9,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.w400,
                                     letterSpacing: 0.5,
                                   ),
                                   textAlign: TextAlign.end,
@@ -1175,10 +1165,10 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                                 // Price
                                 Text(
                                   package['price'] ?? '0 AED',
-                                  style: TextStyle(
+                                  style: AppTheme.bebasNeue(
                                     color: const Color(0xFF04CDFE),
                                     fontSize: fontSize * 1.1,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.w400,
                                     letterSpacing: 0.5,
                                   ),
                                   textAlign: TextAlign.end,
@@ -1209,8 +1199,8 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
           return Padding(
             padding: EdgeInsets.only(bottom: verticalSpacing),
             child: Shimmer.fromColors(
-              baseColor: Colors.white.withOpacity(0.08),
-              highlightColor: Colors.white.withOpacity(0.25),
+              baseColor: Colors.white.withValues(alpha: 0.08),
+              highlightColor: Colors.white.withValues(alpha: 0.25),
               child: Container(
                 padding: EdgeInsets.all(cardPadding),
                 decoration: BoxDecoration(
@@ -1316,10 +1306,10 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
         ),
         child: Text(
           'NEXT',
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: Colors.white,
             fontSize: fontSize * 0.95,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w400,
             letterSpacing: 1.2,
           ),
         ),
@@ -1341,8 +1331,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
       return provider.selectedAddOnIds.contains(id);
     }).toList();
 
-    Navigator.pushNamed(
-      context,
+    Navigator.of(context, rootNavigator: true).pushNamed(
       Routes.customerPackageDetails,
       arguments: PackageDetailsArguments(
         package: selectedPackage,

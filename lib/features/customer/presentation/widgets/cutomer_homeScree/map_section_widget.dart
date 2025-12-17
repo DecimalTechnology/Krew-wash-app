@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'dart:async';
 import '../../../../../core/config/map_styles.dart';
 import '../../../../../core/constants/route_constants.dart';
+import '../../../../../core/theme/app_theme.dart';
 import '../../providers/location_provider.dart';
 
 class MapSectionWidget extends StatefulWidget {
@@ -128,7 +129,10 @@ class _MapSectionWidgetState extends State<MapSectionWidget> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.pushNamed(context, Routes.customerMapFullScreen);
+        Navigator.of(
+          context,
+          rootNavigator: true,
+        ).pushNamed(Routes.customerMapFullScreen);
       },
       child: Container(
         margin: const EdgeInsets.all(10),
@@ -138,7 +142,7 @@ class _MapSectionWidgetState extends State<MapSectionWidget> {
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -154,7 +158,7 @@ class _MapSectionWidgetState extends State<MapSectionWidget> {
                   if (locationProvider.isLoading) {
                     return Container(
                       color: Colors.grey[900],
-                      child: const Center(
+                      child: Center(
                         child: CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation<Color>(
                             Color(0xFF00AAD4),
@@ -176,16 +180,16 @@ class _MapSectionWidgetState extends State<MapSectionWidget> {
                               color: Colors.white,
                               size: 48,
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
                             Text(
                               'Location Error',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                             Text(
                               locationProvider.error!,
                               style: const TextStyle(
@@ -194,13 +198,13 @@ class _MapSectionWidgetState extends State<MapSectionWidget> {
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: _initializeMap,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF00AAD4),
                               ),
-                              child: const Text('Retry'),
+                              child: Text('Retry'),
                             ),
                           ],
                         ),
@@ -220,16 +224,16 @@ class _MapSectionWidgetState extends State<MapSectionWidget> {
                                 Color(0xFF00AAD4),
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            const Text(
+                            SizedBox(height: 16),
+                            Text(
                               'Loading Map...',
-                              style: TextStyle(
+                              style: AppTheme.bebasNeue(
                                 color: Colors.white,
                                 fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                             Text(
                               'Lat: ${_currentLocation?.latitude ?? "Getting..."}',
                               style: const TextStyle(color: Colors.white70),
@@ -290,13 +294,13 @@ class _MapSectionWidgetState extends State<MapSectionWidget> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(Icons.flash_on, color: Colors.white, size: 16),
-                      const SizedBox(width: 4),
-                      const Text(
+                      SizedBox(width: 4),
+                      Text(
                         'OVER 20+ CAR WASH STATIONS',
-                        style: TextStyle(
+                        style: AppTheme.bebasNeue(
                           color: Colors.white,
                           fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ],

@@ -10,8 +10,13 @@ import '../providers/edit_profile_provider.dart';
 import '../../../auth/presentation/screens/otp_verification_screen.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 import '../../presentation/providers/package_provider.dart';
 import '../../../../core/constants/route_constants.dart';
+import '../../../../core/utils/network_error_dialog.dart';
+import '../../../../core/utils/network_error_utils.dart';
+import '../../data/repositories/package_repository.dart';
+import '../../domain/models/building_model.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -22,7 +27,6 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _nameController = TextEditingController();
-  final _apartmentNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _buildingSearchController = TextEditingController();
@@ -43,7 +47,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    // Delay loading user data until widget tree is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadUserData();
+      }
+    });
   }
 
   void _loadUserData() {
@@ -56,14 +65,114 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _emailController.text = user.email ?? '';
 
       // Load building ID from user data if available
-      if (user.buildingId != null) {
+      if (user.buildingId != null && user.buildingId!.isNotEmpty) {
         _selectedBuildingId = user.buildingId;
-        // Note: We don't have the building name, so the field will be empty
-        // User can search and select to see the building name
+        // Fetch building name to display in the field
+        _fetchBuildingName(user.buildingId!);
+      }
+    }
+  }
+
+  Future<void> _fetchBuildingName(String buildingId) async {
+    try {
+      final packageProvider = context.read<PackageProvider>();
+      // Check if building name is already available in package provider
+      if (packageProvider.selectedBuildingId == buildingId &&
+          (packageProvider.selectedBuildingName ?? '').isNotEmpty) {
+        setState(() {
+          _selectedBuildingName = packageProvider.selectedBuildingName;
+          _buildingSearchController.text = _selectedBuildingName!;
+        });
+        return;
       }
 
-      // Load apartment name from user data if available
-      // (assuming it's stored in user model, adjust field name as needed)
+      // Fetch building name by searching buildings
+      // Try multiple search strategies to find the building
+      final repo = const PackageRepository();
+      List<BuildingModel> buildings = [];
+
+      // Strategy 1: Try searching with building ID (in case API supports ID search)
+      try {
+        buildings = await repo.searchBuildings(buildingId);
+        final building = buildings.firstWhere(
+          (b) => b.id == buildingId,
+          orElse: () => BuildingModel(id: buildingId, buildingName: ''),
+        );
+        if (building.buildingName.isNotEmpty) {
+          if (mounted) {
+            setState(() {
+              _selectedBuildingName = building.buildingName;
+              _buildingSearchController.text = building.buildingName;
+            });
+          }
+          return;
+        }
+      } catch (_) {
+        // Continue to next strategy
+      }
+
+      // Strategy 2: Try searching with common characters to get all buildings
+      // Try 'a' first (most common starting letter)
+      try {
+        buildings = await repo.searchBuildings('a');
+        var building = buildings.firstWhere(
+          (b) => b.id == buildingId,
+          orElse: () => BuildingModel(id: buildingId, buildingName: ''),
+        );
+        if (building.buildingName.isEmpty) {
+          // Try 'e' if 'a' didn't work
+          buildings = await repo.searchBuildings('e');
+          building = buildings.firstWhere(
+            (b) => b.id == buildingId,
+            orElse: () => BuildingModel(id: buildingId, buildingName: ''),
+          );
+        }
+        if (building.buildingName.isNotEmpty && mounted) {
+          setState(() {
+            _selectedBuildingName = building.buildingName;
+            _buildingSearchController.text = building.buildingName;
+          });
+          return;
+        }
+      } catch (_) {
+        // Continue to next strategy
+      }
+
+      // Strategy 3: Try empty search (might return all buildings)
+      try {
+        buildings = await repo.searchBuildings('');
+        final building = buildings.firstWhere(
+          (b) => b.id == buildingId,
+          orElse: () => BuildingModel(id: buildingId, buildingName: ''),
+        );
+        if (building.buildingName.isNotEmpty && mounted) {
+          setState(() {
+            _selectedBuildingName = building.buildingName;
+            _buildingSearchController.text = building.buildingName;
+          });
+          return;
+        }
+      } catch (_) {
+        // If all strategies fail, show building ID
+      }
+
+      // If all strategies fail, at least show the building ID
+      if (mounted) {
+        setState(() {
+          _buildingSearchController.text = buildingId;
+        });
+      }
+    } catch (e) {
+      // Log error for debugging
+      if (kDebugMode) {
+        print('Error fetching building name: $e');
+      }
+      // If fetching fails, at least show the building ID
+      if (mounted) {
+        setState(() {
+          _buildingSearchController.text = buildingId;
+        });
+      }
     }
   }
 
@@ -72,7 +181,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _searchDebounce?.cancel();
     _hideBuildingSuggestions();
     _nameController.dispose();
-    _apartmentNameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
     _buildingSearchController.dispose();
@@ -104,7 +212,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   child: Builder(
                     builder: (context) => Column(
                       children: [
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20),
                         // Profile Picture Section
                         Consumer<EditProfileProvider>(
                           builder: (context, editProfileProvider, child) =>
@@ -113,21 +221,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 editProfileProvider: editProfileProvider,
                               ),
                         ),
-                        const SizedBox(height: 40),
+                        SizedBox(height: 40),
                         // Name Field
                         _buildNameField(isIOS: true),
-                        const SizedBox(height: 24),
-                        // Apartment Name Field
-                        _buildApartmentNameField(isIOS: true),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                         // Phone Field
                         _buildPhoneField(isIOS: true),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                         // Email Field
                         _buildEmailField(isIOS: true),
                         // Contact Save Button (shows when phone or email is being edited)
                         if (_isEditingPhone || _isEditingEmail) ...[
-                          const SizedBox(height: 12),
+                          SizedBox(height: 12),
                           Builder(
                             builder: (context) => _buildSaveFieldButton(
                               text: 'SAVE',
@@ -136,18 +241,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             ),
                           ),
                         ],
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                         // Building ID Field
                         _buildBuildingIdField(isIOS: true),
-                        const SizedBox(height: 40),
+                        SizedBox(height: 40),
                         // Save Button
                         Builder(
                           builder: (context) => _buildSaveButton(
                             isIOS: true,
-                            onSave: () => _handleSave(context),
+                            onSave: () {
+                              if (kDebugMode) {
+                                print(
+                                  '🔵 [EditProfileScreen] Save button tapped (iOS)',
+                                );
+                              }
+                              _handleSave(context);
+                            },
                           ),
                         ),
-                        const SizedBox(height: 40),
+                        SizedBox(height: 40),
                       ],
                     ),
                   ),
@@ -176,7 +288,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   child: Builder(
                     builder: (context) => Column(
                       children: [
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20),
                         // Profile Picture Section
                         Consumer<EditProfileProvider>(
                           builder: (context, editProfileProvider, child) =>
@@ -185,21 +297,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 editProfileProvider: editProfileProvider,
                               ),
                         ),
-                        const SizedBox(height: 40),
+                        SizedBox(height: 40),
                         // Name Field
                         _buildNameField(isIOS: false),
-                        const SizedBox(height: 24),
-                        // Apartment Name Field
-                        _buildApartmentNameField(isIOS: false),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                         // Phone Field
                         _buildPhoneField(isIOS: false),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                         // Email Field
                         _buildEmailField(isIOS: false),
                         // Contact Save Button (shows when phone or email is being edited)
                         if (_isEditingPhone || _isEditingEmail) ...[
-                          const SizedBox(height: 12),
+                          SizedBox(height: 12),
                           Builder(
                             builder: (context) => _buildSaveFieldButton(
                               text: 'SAVE',
@@ -208,18 +317,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             ),
                           ),
                         ],
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                         // Building ID Field
                         _buildBuildingIdField(isIOS: false),
-                        const SizedBox(height: 40),
+                        SizedBox(height: 40),
                         // Save Button
                         Builder(
                           builder: (context) => _buildSaveButton(
                             isIOS: false,
-                            onSave: () => _handleSave(context),
+                            onSave: () {
+                              if (kDebugMode) {
+                                print(
+                                  '🔵 [EditProfileScreen] Save button tapped (Android)',
+                                );
+                              }
+                              _handleSave(context);
+                            },
                           ),
                         ),
-                        const SizedBox(height: 40),
+                        SizedBox(height: 40),
                       ],
                     ),
                   ),
@@ -237,36 +353,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       padding: const EdgeInsets.all(20.0),
       child: Row(
         children: [
-          CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () => Navigator.pop(context),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFF00D4AA),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(
-                CupertinoIcons.back,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ),
-          const Expanded(
+          StandardBackButton(onPressed: () => Navigator.pop(context)),
+          Expanded(
             child: Text(
               'EDIT PROFILE',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: 24,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w400,
                 letterSpacing: 1.5,
               ),
             ),
           ),
-          const SizedBox(width: 40),
+          SizedBox(width: 40),
         ],
       ),
     );
@@ -277,39 +377,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       padding: const EdgeInsets.all(20.0),
       child: Row(
         children: [
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF00D4AA),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(
-                  Icons.arrow_back,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-            ),
-          ),
-          const Expanded(
+          StandardBackButton(onPressed: () => Navigator.pop(context)),
+          Expanded(
             child: Text(
               'EDIT PROFILE',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: 24,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w400,
                 letterSpacing: 1.5,
               ),
             ),
           ),
-          const SizedBox(width: 40),
+          SizedBox(width: 40),
         ],
       ),
     );
@@ -356,7 +437,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
           child: ClipOval(child: imageWidget),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -366,7 +447,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               onPressed: () => _pickImage(isIOS),
               isIOS: isIOS,
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16),
             _buildActionButton(
               text: editProfileProvider.isSaving ? 'SAVING...' : 'SAVE',
               color: const Color(0xFF04CDFE),
@@ -394,27 +475,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       showCupertinoModalPopup(
         context: context,
         builder: (context) => CupertinoActionSheet(
-          title: const Text('Select Image Source'),
+          title: Text('Select Image Source'),
           actions: [
             CupertinoActionSheetAction(
               onPressed: () {
                 Navigator.pop(context);
                 _pickImageFromSource(ImageSource.camera, isIOS);
               },
-              child: const Text('Camera'),
+              child: Text('Camera'),
             ),
             CupertinoActionSheetAction(
               onPressed: () {
                 Navigator.pop(context);
                 _pickImageFromSource(ImageSource.gallery, isIOS);
               },
-              child: const Text('Photo Library'),
+              child: Text('Photo Library'),
             ),
           ],
           cancelButton: CupertinoActionSheetAction(
             onPressed: () => Navigator.pop(context),
             isDestructiveAction: true,
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
         ),
       );
@@ -427,7 +508,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.camera_alt),
-                title: const Text('Camera'),
+                title: Text('Camera'),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImageFromSource(ImageSource.camera, isIOS);
@@ -435,7 +516,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library),
-                title: const Text('Photo Library'),
+                title: Text('Photo Library'),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImageFromSource(ImageSource.gallery, isIOS);
@@ -443,7 +524,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.cancel),
-                title: const Text('Cancel'),
+                title: Text('Cancel'),
                 onTap: () => Navigator.pop(context),
               ),
             ],
@@ -477,11 +558,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           showCupertinoDialog(
             context: context,
             builder: (context) => CupertinoAlertDialog(
-              title: const Text('Error'),
+              title: Text('Error'),
               content: Text('Failed to pick image: ${e.toString()}'),
               actions: [
                 CupertinoDialogAction(
-                  child: const Text('OK'),
+                  child: Text('OK'),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -524,11 +605,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         showCupertinoDialog(
           context: context,
           builder: (context) => CupertinoAlertDialog(
-            title: const Text('Success'),
-            content: const Text('Profile image updated successfully'),
+            title: Text('Success'),
+            content: Text('Profile image updated successfully'),
             actions: [
               CupertinoDialogAction(
-                child: const Text('OK'),
+                child: Text('OK'),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -550,11 +631,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         showCupertinoDialog(
           context: context,
           builder: (context) => CupertinoAlertDialog(
-            title: const Text('Error'),
+            title: Text('Error'),
             content: Text(error),
             actions: [
               CupertinoDialogAction(
-                child: const Text('OK'),
+                child: Text('OK'),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -579,7 +660,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       width: 100,
       height: 40,
       decoration: BoxDecoration(
-        color: isEnabled ? color : color.withOpacity(0.5),
+        color: isEnabled ? color : color.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(isIOS ? 20 : 12),
       ),
       child: isIOS
@@ -588,12 +669,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               onPressed: isEnabled ? onPressed : null,
               child: Text(
                 text,
-                style: TextStyle(
+                style: AppTheme.bebasNeue(
                   color: isEnabled
                       ? Colors.white
-                      : Colors.white.withOpacity(0.6),
+                      : Colors.white.withValues(alpha: 0.6),
                   fontSize: 14,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             )
@@ -605,12 +686,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: Center(
                   child: Text(
                     text,
-                    style: TextStyle(
+                    style: AppTheme.bebasNeue(
                       color: isEnabled
                           ? Colors.white
-                          : Colors.white.withOpacity(0.6),
+                          : Colors.white.withValues(alpha: 0.6),
                       fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ),
@@ -626,12 +707,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'NAME',
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: 14,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w400,
                 letterSpacing: 1.2,
               ),
             ),
@@ -652,41 +733,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         _buildTextField(
           controller: _nameController,
           enabled: _isEditingName,
-          isIOS: isIOS,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildApartmentNameField({required bool isIOS}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'APARTMENT NAME',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-          ),
-        ),
-        const SizedBox(height: 12),
-        _buildTextField(
-          controller: _apartmentNameController,
-          enabled: true,
-          isIOS: isIOS,
-        ),
-        const SizedBox(height: 12),
-        _buildSaveFieldButton(
-          text: 'SAVE',
-          onPressed: () {
-            // TODO: Save apartment name
-          },
           isIOS: isIOS,
         ),
       ],
@@ -700,12 +750,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'PHONE',
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: 14,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w400,
                 letterSpacing: 1.2,
               ),
             ),
@@ -726,7 +776,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         _buildTextField(
           controller: _phoneController,
           enabled: _isEditingPhone,
@@ -744,12 +794,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'EMAIL',
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: 14,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w400,
                 letterSpacing: 1.2,
               ),
             ),
@@ -770,7 +820,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         _buildTextField(
           controller: _emailController,
           enabled: _isEditingEmail,
@@ -788,12 +838,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'BUILDING ID',
-              style: TextStyle(
+            Text(
+              'BUILDING NAME',
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: 14,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w400,
                 letterSpacing: 1.2,
               ),
             ),
@@ -828,7 +878,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         CompositedTransformTarget(
           link: _buildingFieldLink,
           child: _buildTextField(
@@ -904,12 +954,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       color: AppTheme.cardColor,
                       borderRadius: BorderRadius.circular(isIOS ? 20 : 12),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
                     child: isSearching && results.isEmpty
-                        ? const Padding(
+                        ? Padding(
                             padding: EdgeInsets.all(16.0),
                             child: Center(
                               child: SizedBox(
@@ -922,11 +972,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             ),
                           )
                         : (!isSearching && results.isEmpty)
-                        ? const Padding(
+                        ? Padding(
                             padding: EdgeInsets.all(16.0),
                             child: Text(
                               'No buildings found',
-                              style: TextStyle(color: Colors.white70),
+                              style: AppTheme.bebasNeue(color: Colors.white70),
                             ),
                           )
                         : ListView.separated(
@@ -935,7 +985,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             itemCount: results.length,
                             separatorBuilder: (_, __) => Divider(
                               height: 1,
-                              color: Colors.white.withOpacity(0.08),
+                              color: Colors.white.withValues(alpha: 0.08),
                             ),
                             itemBuilder: (context, index) {
                               final b = results[index];
@@ -1017,14 +1067,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         placeholder: hintText,
         keyboardType: keyboardType,
         style: const TextStyle(color: Colors.white),
-        placeholderStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+        placeholderStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: enabled
                 ? const Color(0xFF04CDFE)
-                : Colors.white.withOpacity(0.3),
+                : Colors.white.withValues(alpha: 0.3),
           ),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1040,15 +1090,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
           filled: true,
-          fillColor: Colors.white.withOpacity(0.1),
+          fillColor: Colors.white.withValues(alpha: 0.1),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
               color: enabled
                   ? const Color(0xFF04CDFE)
-                  : Colors.white.withOpacity(0.3),
+                  : Colors.white.withValues(alpha: 0.3),
             ),
           ),
           enabledBorder: OutlineInputBorder(
@@ -1056,7 +1106,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             borderSide: BorderSide(
               color: enabled
                   ? const Color(0xFF04CDFE)
-                  : Colors.white.withOpacity(0.3),
+                  : Colors.white.withValues(alpha: 0.3),
             ),
           ),
           focusedBorder: OutlineInputBorder(
@@ -1097,7 +1147,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               )
@@ -1112,7 +1162,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
@@ -1132,28 +1182,38 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           borderRadius: BorderRadius.circular(isIOS ? 28 : 12),
         ),
         child: isIOS
-            ? CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: onSave,
-                child: const Text(
-                  'SAVE',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
-                  ),
+            ? Consumer<EditProfileProvider>(
+                builder: (context, ep, _) => CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: ep.isSaving ? null : onSave,
+                  child: ep.isSaving
+                      ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CupertinoActivityIndicator(
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          'SAVE',
+                          style: AppTheme.bebasNeue(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
                 ),
               )
-            : Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: onSave,
-                  child: Consumer<EditProfileProvider>(
-                    builder: (context, ep, _) => Center(
+            : Consumer<EditProfileProvider>(
+                builder: (context, ep, _) => Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: ep.isSaving ? null : onSave,
+                    child: Center(
                       child: ep.isSaving
-                          ? const SizedBox(
+                          ? SizedBox(
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
@@ -1163,12 +1223,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 ),
                               ),
                             )
-                          : const Text(
+                          : Text(
                               'SAVE',
-                              style: TextStyle(
+                              style: AppTheme.bebasNeue(
                                 color: Colors.white,
                                 fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w400,
                                 letterSpacing: 1.5,
                               ),
                             ),
@@ -1270,6 +1330,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           authProvider: authProvider,
           phone: phoneChanged ? newPhone : null,
           email: emailChanged ? newEmail : null,
+          apartmentName: null, // Apartment name field removed
         );
 
         if (!mounted) return;
@@ -1287,9 +1348,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           );
         } else {
           final msg = ep.error ?? 'Failed to update contact details';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg), backgroundColor: Colors.red[700]),
-          );
+          // Check if it's a network error
+          if (msg == 'NETWORK_ERROR' ||
+              NetworkErrorUtils.isNetworkErrorString(msg)) {
+            NetworkErrorDialog.show(context);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(msg), backgroundColor: Colors.red[700]),
+            );
+          }
         }
       } catch (e) {
         if (!mounted) return;
@@ -1327,9 +1394,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         } else {
           final msg = result['message'] ?? 'Failed to send email OTP';
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg), backgroundColor: Colors.red[700]),
-          );
+          // Check if it's a network error
+          if (result['isNetworkError'] == true) {
+            NetworkErrorDialog.show(context);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(msg), backgroundColor: Colors.red[700]),
+            );
+          }
           return;
         }
       } catch (e) {
@@ -1352,125 +1424,172 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _handleSave(BuildContext context) async {
-    final authProvider = context.read<AuthProvider>();
-    final ep = context.read<EditProfileProvider>();
-    final packageProvider = context.read<PackageProvider>();
-    final current = authProvider.user;
-    final newEmail = _emailController.text.trim();
-    final newPhone = _phoneController.text.trim();
-    final emailChanged =
-        newEmail.isNotEmpty && newEmail != (current?.email ?? '');
-    final phoneChanged =
-        newPhone.isNotEmpty && newPhone != ((current?.phone?.toString()) ?? '');
+    try {
+      if (kDebugMode) {
+        print(
+          '🔵 [EditProfileScreen] Save button pressed - _handleSave called',
+        );
+      }
 
-    // Get building ID from selected building, package provider, or current user
-    // Only use a new buildingId if explicitly selected, otherwise preserve existing
-    final buildingId =
-        _selectedBuildingId ?? packageProvider.selectedBuildingId;
-    // If no new building selected, preserve the existing one (don't pass null)
-    final buildingIdToSave = buildingId ?? current?.buildingId;
+      final authProvider = context.read<AuthProvider>();
+      final ep = context.read<EditProfileProvider>();
+      final packageProvider = context.read<PackageProvider>();
+      final current = authProvider.user;
+      final newEmail = _emailController.text.trim();
+      final newPhone = _phoneController.text.trim();
+      final emailChanged =
+          newEmail.isNotEmpty && newEmail != (current?.email ?? '');
+      final phoneChanged =
+          newPhone.isNotEmpty &&
+          newPhone != ((current?.phone?.toString()) ?? '');
 
-    Future<void> doSave() async {
-      final success = await ep.saveProfile(
-        authProvider: authProvider,
-        name: _nameController.text.trim().isEmpty
-            ? null
-            : _nameController.text.trim(),
-        phone: newPhone.isEmpty ? null : newPhone,
-        email: newEmail.isEmpty ? null : newEmail,
-        buildingId: buildingIdToSave,
-        apartmentName: _apartmentNameController.text.trim().isEmpty
-            ? null
-            : _apartmentNameController.text.trim(),
-      );
+      if (kDebugMode) {
+        print('📦 [EditProfileScreen] emailChanged: $emailChanged');
+        print('📦 [EditProfileScreen] phoneChanged: $phoneChanged');
+      }
 
-      if (!mounted) return;
+      // Get building ID from selected building, package provider, or current user
+      // Only use a new buildingId if explicitly selected, otherwise preserve existing
+      final buildingId =
+          _selectedBuildingId ?? packageProvider.selectedBuildingId;
+      // If no new building selected, preserve the existing one (don't pass null)
+      final buildingIdToSave = buildingId ?? current?.buildingId;
 
-      if (success) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile updated successfully'),
-              backgroundColor: Color(0xFF00D4AA),
-            ),
-          );
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            Routes.customerHome,
-            (route) => false,
+      Future<void> doSave() async {
+        if (kDebugMode) {
+          print('📦 [EditProfileScreen] doSave() called');
+          print(
+            '📦 [EditProfileScreen] Building ID to save: $buildingIdToSave',
           );
         }
-      } else {
-        final msg = ep.error ?? 'Failed to update profile';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg), backgroundColor: Colors.red[700]),
+
+        final success = await ep.saveProfile(
+          authProvider: authProvider,
+          name: _nameController.text.trim().isEmpty
+              ? null
+              : _nameController.text.trim(),
+          phone: newPhone.isEmpty ? null : newPhone,
+          email: newEmail.isEmpty ? null : newEmail,
+          buildingId: buildingIdToSave,
+          apartmentName: null, // Apartment name field removed
+        );
+
+        if (kDebugMode) {
+          print('📦 [EditProfileScreen] doSave() completed, success: $success');
+        }
+
+        if (!mounted) return;
+
+        if (success) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profile updated successfully'),
+                backgroundColor: Color(0xFF00D4AA),
+              ),
+            );
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              Routes.customerHome,
+              (route) => false,
+            );
+          }
+        } else {
+          final msg = ep.error ?? 'Failed to update profile';
+          // Check if it's a network error
+          if (msg == 'NETWORK_ERROR' ||
+              NetworkErrorUtils.isNetworkErrorString(msg)) {
+            NetworkErrorDialog.show(context);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(msg), backgroundColor: Colors.red[700]),
+            );
+          }
+        }
+      }
+
+      // Email OTP verification
+      if (emailChanged) {
+        final result = await authProvider.sendEmailOtp(email: newEmail);
+        if (result['success'] == true) {
+          if (!mounted) return;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => OtpVerificationScreen(
+                phoneNumber: newEmail,
+                otpMethod: 'email',
+                email: newEmail,
+                isSignUp: false,
+                onVerified: () async {
+                  await doSave();
+                },
+              ),
+            ),
+          );
+          return;
+        } else {
+          final msg = result['message'] ?? 'Failed to send email OTP';
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(msg), backgroundColor: Colors.red[700]),
+          );
+          return;
+        }
+      }
+
+      // Phone OTP verification (Firebase)
+      if (phoneChanged) {
+        final phoneOtp = await authProvider.sendPhoneVerificationCode(
+          phoneNumber: newPhone,
+        );
+        if (phoneOtp.isSuccess && phoneOtp.verificationId != null) {
+          if (!mounted) return;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => OtpVerificationScreen(
+                phoneNumber: newPhone,
+                otpMethod: 'phone',
+                verificationId: phoneOtp.verificationId,
+                isSignUp: false,
+                onVerified: () async {
+                  await doSave();
+                },
+              ),
+            ),
+          );
+          return;
+        } else {
+          final msg = phoneOtp.errorMessage ?? 'Failed to send phone OTP';
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(msg), backgroundColor: Colors.red[700]),
+          );
+          return;
+        }
+      }
+
+      // No OTP needed - save directly
+      if (kDebugMode) {
+        print(
+          '📦 [EditProfileScreen] No OTP needed, calling doSave() directly',
         );
       }
-    }
-
-    // Email OTP verification
-    if (emailChanged) {
-      final result = await authProvider.sendEmailOtp(email: newEmail);
-      if (result['success'] == true) {
-        if (!mounted) return;
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => OtpVerificationScreen(
-              phoneNumber: newEmail,
-              otpMethod: 'email',
-              email: newEmail,
-              isSignUp: false,
-              onVerified: () async {
-                await doSave();
-              },
-            ),
+      await doSave();
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print('❌ [EditProfileScreen] Error in _handleSave: $e');
+        print('❌ [EditProfileScreen] Stack trace: $stackTrace');
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving profile: ${e.toString()}'),
+            backgroundColor: Colors.red[700],
           ),
         );
-        return;
-      } else {
-        final msg = result['message'] ?? 'Failed to send email OTP';
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg), backgroundColor: Colors.red[700]),
-        );
-        return;
       }
     }
-
-    // Phone OTP verification (Firebase)
-    if (phoneChanged) {
-      final phoneOtp = await authProvider.sendPhoneVerificationCode(
-        phoneNumber: newPhone,
-      );
-      if (phoneOtp.isSuccess && phoneOtp.verificationId != null) {
-        if (!mounted) return;
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => OtpVerificationScreen(
-              phoneNumber: newPhone,
-              otpMethod: 'phone',
-              verificationId: phoneOtp.verificationId,
-              isSignUp: false,
-              onVerified: () async {
-                await doSave();
-              },
-            ),
-          ),
-        );
-        return;
-      } else {
-        final msg = phoneOtp.errorMessage ?? 'Failed to send phone OTP';
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg), backgroundColor: Colors.red[700]),
-        );
-        return;
-      }
-    }
-
-    // No OTP needed
-    await doSave();
   }
 }

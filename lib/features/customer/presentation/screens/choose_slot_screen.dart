@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:io';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 
 class ChooseSlotScreen extends StatefulWidget {
   const ChooseSlotScreen({super.key});
@@ -76,7 +77,7 @@ class _ChooseSlotScreenState extends State<ChooseSlotScreen> {
               SliverToBoxAdapter(
                 child: Column(
                   children: [
-                    const SizedBox(height: 100),
+                    SizedBox(height: 100),
 
                     // Date Selection
                     _buildDateSelection(),
@@ -87,7 +88,7 @@ class _ChooseSlotScreenState extends State<ChooseSlotScreen> {
                     // Book Button
                     _buildBookButton(),
 
-                    const SizedBox(height: 40),
+                    SizedBox(height: 40),
                   ],
                 ),
               ),
@@ -130,7 +131,7 @@ class _ChooseSlotScreenState extends State<ChooseSlotScreen> {
               SliverToBoxAdapter(
                 child: Column(
                   children: [
-                    const SizedBox(height: 200),
+                    SizedBox(height: 200),
 
                     // Date Selection
                     _buildDateSelection(),
@@ -141,7 +142,7 @@ class _ChooseSlotScreenState extends State<ChooseSlotScreen> {
                     // Book Button
                     _buildBookButton(),
 
-                    const SizedBox(height: 40),
+                    SizedBox(height: 40),
                   ],
                 ),
               ),
@@ -171,36 +172,7 @@ class _ChooseSlotScreenState extends State<ChooseSlotScreen> {
       child: Row(
         children: [
           // Back Button
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFF04CDFE),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: isIOS
-                ? CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () => Navigator.pop(context),
-                    child: const Icon(
-                      CupertinoIcons.back,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  )
-                : Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-          ),
+          StandardBackButton(onPressed: () => Navigator.pop(context)),
         ],
       ),
     );
@@ -239,27 +211,11 @@ class _ChooseSlotScreenState extends State<ChooseSlotScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Back Button - Teal geometric shape
-          CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () => Navigator.pop(context),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFF04CDFE),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                CupertinoIcons.back,
-                color: CupertinoColors.white,
-                size: 20,
-              ),
-            ),
-          ),
+          StandardBackButton(onPressed: () => Navigator.pop(context)),
           // "slot" text in top-left
-          const Text(
+          Text(
             'slot',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.grey,
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -294,27 +250,11 @@ class _ChooseSlotScreenState extends State<ChooseSlotScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Back Button - Teal geometric shape
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFF04CDFE),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.arrow_back,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ),
+          StandardBackButton(onPressed: () => Navigator.pop(context)),
           // "slot" text in top-left
-          const Text(
+          Text(
             'slot',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.grey,
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -342,12 +282,12 @@ class _ChooseSlotScreenState extends State<ChooseSlotScreen> {
   Widget _buildTitle() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40.0),
-      child: const Text(
+      child: Text(
         'CHOOSE YOUR SLOT',
-        style: TextStyle(
+        style: AppTheme.bebasNeue(
           color: Colors.white,
           fontSize: 24,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w400,
           letterSpacing: 1,
         ),
         textAlign: TextAlign.center,
@@ -361,16 +301,16 @@ class _ChooseSlotScreenState extends State<ChooseSlotScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'CHOOSE THE DATE*',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           GestureDetector(
             onTap: _selectDate,
             child: Container(
@@ -389,7 +329,7 @@ class _ChooseSlotScreenState extends State<ChooseSlotScreen> {
                 children: [
                   Text(
                     selectedDate ?? 'Select Date',
-                    style: TextStyle(
+                    style: AppTheme.bebasNeue(
                       color: selectedDate != null ? Colors.white : Colors.grey,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -411,16 +351,16 @@ class _ChooseSlotScreenState extends State<ChooseSlotScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'AVAILABLE TIME SLOTS',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -478,10 +418,10 @@ class _ChooseSlotScreenState extends State<ChooseSlotScreen> {
                                   : Colors.white,
                               size: 28,
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: 4),
                             Text(
                               slot,
-                              style: TextStyle(
+                              style: AppTheme.bebasNeue(
                                 color: isSelected
                                     ? Colors.blue[400]
                                     : Colors.white,
@@ -522,12 +462,12 @@ class _ChooseSlotScreenState extends State<ChooseSlotScreen> {
         ),
         child: Text(
           'BOOK YOUR SLOT',
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: selectedDate != null && selectedSlots.isNotEmpty
                 ? Colors.white
                 : Colors.grey[400]!,
             fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w400,
             letterSpacing: 1.5,
           ),
         ),

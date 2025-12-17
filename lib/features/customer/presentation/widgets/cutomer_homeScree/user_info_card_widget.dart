@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_theme.dart';
 
 class UserInfoCardWidget extends StatefulWidget {
   const UserInfoCardWidget({super.key});
@@ -77,7 +78,7 @@ class _UserInfoCardWidgetState extends State<UserInfoCardWidget>
             opacity: _textAnimation,
             child: Text(
               'HI, ANOOP',
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: screenWidth > 400
                     ? 22
@@ -102,12 +103,12 @@ class _UserInfoCardWidgetState extends State<UserInfoCardWidget>
               builder: (context, child) {
                 return Text(
                   'FAST FRESH',
-                  style: TextStyle(
+                  style: AppTheme.bebasNeue(
                     color: Colors.white,
                     fontSize: screenWidth > 400
                         ? 28
                         : (screenWidth > 600 ? 22 : 40),
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: 2,
                     shadows: [
                       Shadow(
@@ -142,7 +143,7 @@ class _UserInfoCardWidgetState extends State<UserInfoCardWidget>
               builder: (context, child) {
                 return Text(
                   'ID : 147587',
-                  style: TextStyle(
+                  style: AppTheme.bebasNeue(
                     color: const Color(0xFF04CDFE),
                     fontSize: screenWidth > 400
                         ? 22

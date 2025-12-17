@@ -1,5 +1,7 @@
+import 'package:carwash_app/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 import '../../domain/models/booking_model.dart';
 import '../../data/repositories/chat_repository.dart';
 import 'issue_chat_screen.dart';
@@ -77,13 +79,13 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   // Issue Type Section
                   _buildIssueTypeSection(isIOS, isSmallScreen),
-                  const SizedBox(height: 32),
+                  SizedBox(height: 32),
                   // Description Section
                   _buildDescriptionSection(isIOS, isSmallScreen),
-                  const SizedBox(height: 32),
+                  SizedBox(height: 32),
                 ],
               ),
             ),
@@ -107,48 +109,21 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Back button
-          Container(
-            width: 32,
-            height: 32,
-            decoration: const BoxDecoration(
-              color: Color(0xFF04CDFE),
-              shape: BoxShape.circle,
-            ),
-            child: isIOS
-                ? CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Icon(
-                      CupertinoIcons.arrow_left,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  )
-                : IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    onPressed: () => Navigator.of(context).pop(),
-                    padding: EdgeInsets.zero,
-                  ),
-          ),
+          StandardBackButton(onPressed: () => Navigator.of(context).pop()),
           const Spacer(),
           // Centered heading
           Text(
             'REPORT ISSUE',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: isSmallScreen ? 20 : 24,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
               letterSpacing: 1.2,
-              fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
             ),
           ),
           const Spacer(),
           // Invisible placeholder to balance the back button
-          const SizedBox(width: 32),
+          SizedBox(width: 40),
         ],
       ),
     );
@@ -160,15 +135,14 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       children: [
         Text(
           'ISSUE TYPE',
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: Colors.white,
             fontSize: isSmallScreen ? 16 : 18,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w400,
             letterSpacing: 1.2,
-            fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         ..._issueTypes.map((issueType) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -202,7 +176,7 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
           border: Border.all(
             color: isSelected
                 ? const Color(0xFF04CDFE)
-                : Colors.white.withOpacity(0.3),
+                : Colors.white.withValues(alpha: 0.3),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -211,12 +185,11 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
             Expanded(
               child: Text(
                 issueType,
-                style: TextStyle(
+                style: AppTheme.bebasNeue(
                   color: Colors.white,
                   fontSize: isSmallScreen ? 14 : 16,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: 0.5,
-                  fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
                 ),
               ),
             ),
@@ -240,35 +213,32 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       children: [
         Text(
           'DESCRIPTION',
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: Colors.white,
             fontSize: isSmallScreen ? 16 : 18,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w400,
             letterSpacing: 1.2,
-            fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(isIOS ? 15 : 12),
-            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.3),
+              width: 1,
+            ),
           ),
           child: isIOS
               ? CupertinoTextField(
                   controller: _descriptionController,
                   placeholder: 'PLEASE DESCRIBE THE ISSUE IN DETAIL ...',
                   placeholderStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withValues(alpha: 0.5),
                     fontSize: isSmallScreen ? 14 : 16,
-                    fontFamily: '.SF Pro Text',
                   ),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontFamily: '.SF Pro Text',
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
                   maxLines: 6,
                   padding: const EdgeInsets.all(16),
                   decoration: const BoxDecoration(),
@@ -276,16 +246,12 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                 )
               : TextField(
                   controller: _descriptionController,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontFamily: 'Roboto',
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
                   maxLines: 6,
                   decoration: InputDecoration(
                     hintText: 'PLEASE DESCRIBE THE ISSUE IN DETAIL ...',
                     hintStyle: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
+                      color: Colors.white.withValues(alpha: 0.5),
                       fontSize: isSmallScreen ? 14 : 16,
                     ),
                     border: InputBorder.none,
@@ -315,7 +281,7 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
         color: Colors.black,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -329,8 +295,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                 padding: EdgeInsets.zero,
                 color: (_canSubmit && !_isSubmitting)
                     ? const Color(0xFF04CDFE)
-                    : Colors.white.withOpacity(0.3),
-                disabledColor: Colors.white.withOpacity(0.3),
+                    : Colors.white.withValues(alpha: 0.3),
+                disabledColor: Colors.white.withValues(alpha: 0.3),
                 onPressed: (_canSubmit && !_isSubmitting)
                     ? _handleSubmit
                     : null,
@@ -339,14 +305,13 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                     ? const CupertinoActivityIndicator(color: Colors.white)
                     : Text(
                         'SUBMIT REPORT',
-                        style: TextStyle(
+                        style: AppTheme.bebasNeue(
                           color: (_canSubmit && !_isSubmitting)
                               ? Colors.white
-                              : Colors.white.withOpacity(0.5),
+                              : Colors.white.withValues(alpha: 0.5),
                           fontSize: isSmallScreen ? 14 : 16,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w400,
                           letterSpacing: 0.5,
-                          fontFamily: '.SF Pro Text',
                         ),
                       ),
               )
@@ -357,14 +322,14 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _canSubmit
                       ? const Color(0xFF04CDFE)
-                      : Colors.white.withOpacity(0.3),
-                  disabledBackgroundColor: Colors.white.withOpacity(0.3),
+                      : Colors.white.withValues(alpha: 0.3),
+                  disabledBackgroundColor: Colors.white.withValues(alpha: 0.3),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 child: _isSubmitting
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
@@ -376,14 +341,13 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                       )
                     : Text(
                         'SUBMIT REPORT',
-                        style: TextStyle(
+                        style: AppTheme.bebasNeue(
                           color: (_canSubmit && !_isSubmitting)
                               ? Colors.white
-                              : Colors.white.withOpacity(0.5),
+                              : Colors.white.withValues(alpha: 0.5),
                           fontSize: isSmallScreen ? 14 : 16,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w400,
                           letterSpacing: 0.5,
-                          fontFamily: 'Roboto',
                         ),
                       ),
               ),
@@ -417,8 +381,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
         final chatData = result['data'] as Map<String, dynamic>?;
         final chatId = chatData?['_id']?.toString() ?? '';
 
-        // Navigate to chat screen with chat data and room ID
-        Navigator.of(context).push(
+        // Navigate to chat screen with chat data and room ID, replacing current screen
+        Navigator.of(context).pushReplacement(
           isIOS
               ? CupertinoPageRoute(
                   builder: (_) => IssueChatScreen(
@@ -446,11 +410,11 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
           showCupertinoDialog(
             context: context,
             builder: (context) => CupertinoAlertDialog(
-              title: const Text('Error'),
+              title: Text('Error'),
               content: Text(errorMessage),
               actions: [
                 CupertinoDialogAction(
-                  child: const Text('OK'),
+                  child: Text('OK'),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
@@ -469,11 +433,11 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
         showCupertinoDialog(
           context: context,
           builder: (context) => CupertinoAlertDialog(
-            title: const Text('Error'),
+            title: Text('Error'),
             content: Text(errorMessage),
             actions: [
               CupertinoDialogAction(
-                child: const Text('OK'),
+                child: Text('OK'),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ],

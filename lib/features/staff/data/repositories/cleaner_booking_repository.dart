@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -177,6 +179,36 @@ class CleanerBookingRepository {
         'message': responseBody['message'] ?? 'Something went wrong',
         'data': responseBody['data'],
       };
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        print('❌ Network error uploading session image: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+        'data': null,
+      };
+    } on TimeoutException catch (e) {
+      if (kDebugMode) {
+        print('❌ Timeout error uploading session image: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+        'data': null,
+      };
+    } on http.ClientException catch (e) {
+      if (kDebugMode) {
+        print('❌ Client error uploading session image: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+        'data': null,
+      };
     } catch (e) {
       if (kDebugMode) {
         print('❌ CleanerBookingRepository upload error: $e');
@@ -241,6 +273,39 @@ class CleanerBookingRepository {
         'message': body['message'] ?? 'Something went wrong',
         'data': body['data'],
         'pagination': body['pagination'],
+      };
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        print('❌ Network error in _get: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+        'data': null,
+        'pagination': null,
+      };
+    } on TimeoutException catch (e) {
+      if (kDebugMode) {
+        print('❌ Timeout error in _get: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+        'data': null,
+        'pagination': null,
+      };
+    } on http.ClientException catch (e) {
+      if (kDebugMode) {
+        print('❌ Client error in _get: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+        'data': null,
+        'pagination': null,
       };
     } catch (e) {
       if (kDebugMode) {
@@ -311,6 +376,69 @@ class CleanerBookingRepository {
         'message': responseBody['message'] ?? 'Something went wrong',
         'data': responseBody['data'],
       };
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        print('❌ Network error in _get: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+        'data': null,
+        'pagination': null,
+      };
+    } on TimeoutException catch (e) {
+      if (kDebugMode) {
+        print('❌ Timeout error in _get: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+        'data': null,
+        'pagination': null,
+      };
+    } on http.ClientException catch (e) {
+      if (kDebugMode) {
+        print('❌ Client error in _get: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+        'data': null,
+        'pagination': null,
+      };
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        print('❌ Network error in _getWithBody: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+        'data': null,
+      };
+    } on TimeoutException catch (e) {
+      if (kDebugMode) {
+        print('❌ Timeout error in _getWithBody: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+        'data': null,
+      };
+    } on http.ClientException catch (e) {
+      if (kDebugMode) {
+        print('❌ Client error in _getWithBody: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+        'data': null,
+      };
     } catch (e) {
       if (kDebugMode) {
         print('❌ CleanerBookingRepository error: $e');
@@ -376,6 +504,69 @@ class CleanerBookingRepository {
         'success': success,
         'message': responseBody['message'] ?? 'Something went wrong',
         'data': responseBody['data'],
+      };
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        print('❌ Network error in _get: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+        'data': null,
+        'pagination': null,
+      };
+    } on TimeoutException catch (e) {
+      if (kDebugMode) {
+        print('❌ Timeout error in _get: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+        'data': null,
+        'pagination': null,
+      };
+    } on http.ClientException catch (e) {
+      if (kDebugMode) {
+        print('❌ Client error in _get: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+        'data': null,
+        'pagination': null,
+      };
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        print('❌ Network error in _patch: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+        'data': null,
+      };
+    } on TimeoutException catch (e) {
+      if (kDebugMode) {
+        print('❌ Timeout error in _patch: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+        'data': null,
+      };
+    } on http.ClientException catch (e) {
+      if (kDebugMode) {
+        print('❌ Client error in _patch: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+        'data': null,
       };
     } catch (e) {
       if (kDebugMode) {

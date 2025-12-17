@@ -23,6 +23,7 @@ class EditProfileProvider extends ChangeNotifier {
     String? phone,
     String? email,
     String? buildingId,
+    String? apartmentNumber,
   }) async {
     final current = authProvider.user;
     if (current != null) {
@@ -33,6 +34,7 @@ class EditProfileProvider extends ChangeNotifier {
         phone: phone != null ? int.tryParse(phone) : null,
         email: email,
         buildingId: buildingId ?? current.buildingId,
+        apartmentNumber: apartmentNumber ?? current.apartmentNumber,
       );
       await SecureStorageService.saveUserData(jsonEncode(updatedUser.toMap()));
       authProvider.setUser(updatedUser);
@@ -56,16 +58,32 @@ class EditProfileProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Store apartmentName before API call to ensure it's preserved
+      final apartmentToSave = apartmentName;
+
+      if (kDebugMode) {
+        print(
+          '📦 [EditProfileProvider.saveProfile] apartmentName received: $apartmentName',
+        );
+        print(
+          '📦 [EditProfileProvider.saveProfile] apartmentToSave: $apartmentToSave',
+        );
+      }
+
       final result = await _repo.updateProfile(
         name: name,
         phone: phone,
         email: email,
         buildingId: buildingId,
-        apartmentNumber: apartmentName,
+        apartmentNumber: apartmentToSave,
       );
 
       if (result['success'] == false) {
         _error = result['message']?.toString();
+        // Check if it's a network error
+        if (result['isNetworkError'] == true) {
+          _error = 'NETWORK_ERROR'; // Special marker for network errors
+        }
         _isSaving = false;
         notifyListeners();
         return false;
@@ -114,9 +132,60 @@ class EditProfileProvider extends ChangeNotifier {
       // If backend returns updated user data, persist it
       final updated = result['data'] ?? result['user'] ?? result;
 
+      if (kDebugMode) {
+        print(
+          '📦 [EditProfileProvider] Backend response keys: ${result.keys.join(", ")}',
+        );
+        if (updated is Map) {
+          print(
+            '📦 [EditProfileProvider] Updated data keys: ${updated.keys.join(", ")}',
+          );
+          if (updated.containsKey('apartmentNumber')) {
+            print(
+              '📦 [EditProfileProvider] Backend returned apartmentNumber: ${updated['apartmentNumber']}',
+            );
+          } else {
+            print(
+              '📦 [EditProfileProvider] Backend did NOT return apartmentNumber',
+            );
+          }
+        } else {
+          print('📦 [EditProfileProvider] Updated data is not a map');
+        }
+      }
+
       if (updated != null && updated is Map<String, dynamic>) {
         try {
-          final map = updated;
+          final map = Map<String, dynamic>.from(updated);
+
+          // Ensure apartmentNumber is included in saved data
+          // If apartmentToSave was sent, use it (even if empty string to clear it)
+          // Otherwise preserve existing value from current user
+          if (apartmentToSave != null) {
+            // User provided a value (could be empty string to clear)
+            // If empty string, set to null to clear it; otherwise use the value
+            map['apartmentNumber'] = apartmentToSave.isEmpty
+                ? null
+                : apartmentToSave;
+            if (kDebugMode) {
+              print(
+                '📦 [EditProfileProvider] Setting apartmentNumber from apartmentToSave: ${apartmentToSave.isEmpty ? "null (cleared)" : apartmentToSave}',
+              );
+            }
+          } else {
+            // apartmentToSave is null - user didn't change it, preserve existing
+            final currentUser = authProvider.user;
+            if (currentUser?.apartmentNumber != null) {
+              map['apartmentNumber'] = currentUser!.apartmentNumber;
+              if (kDebugMode) {
+                print(
+                  '📦 [EditProfileProvider] Preserving existing apartmentNumber: ${currentUser.apartmentNumber}',
+                );
+              }
+            } else if (kDebugMode) {
+              print('📦 [EditProfileProvider] No apartmentNumber to preserve');
+            }
+          }
 
           // Save to local storage
           await SecureStorageService.saveUserData(jsonEncode(map));
@@ -127,6 +196,9 @@ class EditProfileProvider extends ChangeNotifier {
           if (kDebugMode) {
             print('✅ Profile updated and saved to local storage');
             print('📦 Saved user data: ${map.keys.join(", ")}');
+            print(
+              '📦 Apartment Number: ${map['apartmentNumber'] ?? "not included"}',
+            );
           }
         } catch (e) {
           if (kDebugMode) {
@@ -139,6 +211,7 @@ class EditProfileProvider extends ChangeNotifier {
             phone: phone,
             email: email,
             buildingId: buildingId,
+            apartmentNumber: apartmentToSave,
           );
         }
       } else {
@@ -149,6 +222,7 @@ class EditProfileProvider extends ChangeNotifier {
           phone: phone,
           email: email,
           buildingId: buildingId,
+          apartmentNumber: apartmentToSave,
         );
       }
 
@@ -176,6 +250,10 @@ class EditProfileProvider extends ChangeNotifier {
       final result = await _repo.uploadProfileImage(imageFile: file);
       if (result['success'] == false) {
         _error = result['message']?.toString();
+        // Check if it's a network error
+        if (result['isNetworkError'] == true) {
+          _error = 'NETWORK_ERROR'; // Special marker for network errors
+        }
         _isSaving = false;
         notifyListeners();
         return false;

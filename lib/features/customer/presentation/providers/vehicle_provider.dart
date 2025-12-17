@@ -1,6 +1,10 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../../data/repositories/vehicle_repository.dart';
+import '../../../../core/utils/network_error_utils.dart';
 
 class VehicleProvider extends ChangeNotifier {
   final VehicleRepository _repository;
@@ -32,9 +36,13 @@ class VehicleProvider extends ChangeNotifier {
   bool _isLoadingVehicles = false;
   bool get isLoadingVehicles => _isLoadingVehicles;
 
+  String? _errorMessage;
+  String? get errorMessage => _errorMessage;
+
   Future<void> loadVehicleTypes({bool forceRefresh = false}) async {
     if (_vehicleTypes.isNotEmpty && !forceRefresh) return;
     _isLoadingVehicleTypes = true;
+    _errorMessage = null;
     notifyListeners();
     try {
       final types = await _repository.getVehicleTypes();
@@ -44,6 +52,26 @@ class VehicleProvider extends ChangeNotifier {
         _selectedVehicleTypeName = null;
         _vehicleModels = [];
         _selectedVehicleModel = null;
+      }
+    } on TimeoutException {
+      _errorMessage = NetworkErrorUtils.getNetworkErrorMessage();
+      if (_vehicleTypes.isEmpty) {
+        _vehicleTypes = [];
+      }
+    } on SocketException {
+      _errorMessage = NetworkErrorUtils.getNetworkErrorMessage();
+      if (_vehicleTypes.isEmpty) {
+        _vehicleTypes = [];
+      }
+    } on http.ClientException {
+      _errorMessage = NetworkErrorUtils.getNetworkErrorMessage();
+      if (_vehicleTypes.isEmpty) {
+        _vehicleTypes = [];
+      }
+    } catch (e) {
+      _errorMessage = NetworkErrorUtils.getErrorMessage(e);
+      if (_vehicleTypes.isEmpty) {
+        _vehicleTypes = [];
       }
     } finally {
       _isLoadingVehicleTypes = false;
@@ -73,10 +101,31 @@ class VehicleProvider extends ChangeNotifier {
 
   Future<void> loadVehicles() async {
     _isLoadingVehicles = true;
+    _errorMessage = null;
     notifyListeners();
     try {
       final list = await _repository.getVehicles();
       _vehicles = list;
+    } on TimeoutException {
+      _errorMessage = NetworkErrorUtils.getNetworkErrorMessage();
+      if (_vehicles.isEmpty) {
+        _vehicles = [];
+      }
+    } on SocketException {
+      _errorMessage = NetworkErrorUtils.getNetworkErrorMessage();
+      if (_vehicles.isEmpty) {
+        _vehicles = [];
+      }
+    } on http.ClientException {
+      _errorMessage = NetworkErrorUtils.getNetworkErrorMessage();
+      if (_vehicles.isEmpty) {
+        _vehicles = [];
+      }
+    } catch (e) {
+      _errorMessage = NetworkErrorUtils.getErrorMessage(e);
+      if (_vehicles.isEmpty) {
+        _vehicles = [];
+      }
     } finally {
       _isLoadingVehicles = false;
       notifyListeners();

@@ -62,8 +62,16 @@ dependencies:
   # Image Picker
   image_picker: ^1.0.7
   
+  # Google Fonts
+  google_fonts: ^6.2.1
+  
   # Telr Payment Gateway
   telr_mobile_payment_sdk: ^0.2.0
+  
+  # WebView for payment URL
+  webview_flutter: ^4.4.2
+  # URL Launcher as fallback for payment
+  url_launcher: ^6.3.1
   
 dev_dependencies:
   flutter_test:

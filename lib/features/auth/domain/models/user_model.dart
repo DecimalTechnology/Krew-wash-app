@@ -5,6 +5,7 @@ class UserModel {
   final int? phone;
   final String? photo;
   final String? buildingId;
+  final String? apartmentNumber;
   final bool? isVerified;
   final String? verificationMethod;
   final bool? isDeleted;
@@ -20,6 +21,7 @@ class UserModel {
     this.phone,
     this.photo,
     this.buildingId,
+    this.apartmentNumber,
     this.isVerified,
     this.verificationMethod,
     this.isDeleted,
@@ -44,6 +46,7 @@ class UserModel {
       phone: phoneNumber != null ? int.tryParse(phoneNumber) : null,
       photo: photoURL,
       buildingId: null,
+      apartmentNumber: null,
       isVerified: null,
       verificationMethod: null,
       isDeleted: null,
@@ -63,6 +66,7 @@ class UserModel {
       'photo': photo,
       'image': photo, // Also save as 'image' for API compatibility
       'buildingId': buildingId,
+      'apartmentNumber': apartmentNumber,
       'isVerified': isVerified,
       'verificationMethod': verificationMethod,
       'isDeleted': isDeleted,
@@ -103,6 +107,7 @@ class UserModel {
       phone: safePhone(),
       photo: imageUrl,
       buildingId: safeStringOrNull('buildingId'),
+      apartmentNumber: safeStringOrNull('apartmentNumber'),
       isVerified: map['isVerified'] as bool?,
       verificationMethod: safeStringOrNull('verificationMethod'),
       isDeleted: map['isDeleted'] as bool?,
@@ -124,6 +129,7 @@ class UserModel {
     int? phone,
     String? photo,
     String? buildingId,
+    String? apartmentNumber,
     bool? isVerified,
     String? verificationMethod,
     bool? isDeleted,
@@ -139,6 +145,7 @@ class UserModel {
       phone: phone ?? this.phone,
       photo: photo ?? this.photo,
       buildingId: buildingId ?? this.buildingId,
+      apartmentNumber: apartmentNumber ?? this.apartmentNumber,
       isVerified: isVerified ?? this.isVerified,
       verificationMethod: verificationMethod ?? this.verificationMethod,
       isDeleted: isDeleted ?? this.isDeleted,

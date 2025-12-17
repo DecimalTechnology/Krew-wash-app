@@ -28,12 +28,7 @@ void main() async {
       samsungPayServiceId: null,
       samsungPayMerchantId: null,
     );
-    print('✅ Telr SDK initialized successfully');
   } catch (e) {
-    print('⚠️ Telr SDK initialization failed: $e');
-    print(
-      '   This is normal on first run. The SDK will initialize when needed.',
-    );
     // Continue anyway - SDK might initialize later when payment is triggered
   }
 

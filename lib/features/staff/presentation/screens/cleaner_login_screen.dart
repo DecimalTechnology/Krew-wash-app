@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/route_constants.dart';
+import '../../../../core/utils/network_error_dialog.dart';
 import '../providers/staff_provider.dart';
 
 class CleanerLoginScreen extends StatefulWidget {
@@ -89,7 +91,7 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
       ),
       child: Container(
         // Dark overlay for better text readability
-        color: Colors.black.withOpacity(0.3),
+        color: Colors.black.withValues(alpha: 0.3),
         child: SingleChildScrollView(
           padding: EdgeInsets.only(
             top: topPadding,
@@ -115,7 +117,7 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
               SizedBox(height: buttonSpacing),
               // LOGIN Button
               _buildLoginButton(isIOS, isSmallScreen: isSmallScreen),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
             ],
           ),
         ),
@@ -138,19 +140,19 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
     return Text(
       'LOGIN',
       textAlign: TextAlign.center,
-      style: TextStyle(
+      style: AppTheme.bebasNeue(
         fontSize: fontSize,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w400,
         color: const Color(0xFF04CDFE),
         letterSpacing: 2.0,
         shadows: [
           Shadow(
-            color: const Color(0xFF04CDFE).withOpacity(0.6),
+            color: const Color(0xFF04CDFE).withValues(alpha: 0.6),
             blurRadius: blurRadius,
             offset: const Offset(0, 0),
           ),
           Shadow(
-            color: const Color(0xFF04CDFE).withOpacity(0.4),
+            color: const Color(0xFF04CDFE).withValues(alpha: 0.4),
             blurRadius: blurRadius2,
             offset: const Offset(0, 0),
           ),
@@ -173,12 +175,11 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
           padding: EdgeInsets.only(bottom: isSmallScreen ? 6 : 8, left: 4),
           child: Text(
             'CLEANER ID',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: labelFontSize,
               fontWeight: FontWeight.w600,
               letterSpacing: 1.2,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
             ),
           ),
         ),
@@ -192,7 +193,7 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
                   color: Colors.black,
                   borderRadius: BorderRadius.circular(borderRadius),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.white.withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),
@@ -208,14 +209,14 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(borderRadius),
                     borderSide: BorderSide(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(borderRadius),
                     borderSide: BorderSide(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -248,12 +249,11 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
           padding: EdgeInsets.only(bottom: isSmallScreen ? 6 : 8, left: 4),
           child: Text(
             'PASSWORD',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: labelFontSize,
               fontWeight: FontWeight.w600,
               letterSpacing: 1.2,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
             ),
           ),
         ),
@@ -269,7 +269,7 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
                   color: Colors.black,
                   borderRadius: BorderRadius.circular(borderRadius),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.white.withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),
@@ -286,7 +286,7 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
                     _obscurePassword
                         ? CupertinoIcons.eye_slash
                         : CupertinoIcons.eye,
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     size: iconSize,
                   ),
                 ),
@@ -303,14 +303,14 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(borderRadius),
                     borderSide: BorderSide(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(borderRadius),
                     borderSide: BorderSide(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -327,7 +327,7 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
                       _obscurePassword
                           ? Icons.visibility_off
                           : Icons.visibility,
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                       size: iconSize,
                     ),
                     onPressed: () {
@@ -360,10 +360,10 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
                   ? const CupertinoActivityIndicator(color: Colors.white)
                   : Text(
                       'LOGIN',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: Colors.white,
                         fontSize: fontSize,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         letterSpacing: 1.5,
                       ),
                     ),
@@ -389,9 +389,9 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
                     )
                   : Text(
                       'LOGIN',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         fontSize: fontSize,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         letterSpacing: 1.5,
                       ),
                     ),
@@ -427,14 +427,18 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
         // Show success message
         _showSuccess('Login successful!');
 
-        // Navigate to staff home screen
-        Navigator.pushNamedAndRemoveUntil(
+        // Always go through AuthWrapper after auth changes (keeps navigation consistent)
+        Navigator.of(
           context,
-          Routes.staffHome,
-          (route) => false,
-        );
+          rootNavigator: true,
+        ).pushNamedAndRemoveUntil(Routes.authWrapper, (route) => false);
       } else {
-        _showError(result['message'] ?? 'Login failed');
+        // Check if it's a network error
+        if (result['isNetworkError'] == true) {
+          NetworkErrorDialog.show(context);
+        } else {
+          _showError(result['message'] ?? 'Login failed');
+        }
       }
     } catch (e) {
       if (!mounted) return;
@@ -454,11 +458,11 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
       showCupertinoDialog(
         context: context,
         builder: (context) => CupertinoAlertDialog(
-          title: const Text('Error'),
+          title: Text('Error'),
           content: Text(message),
           actions: [
             CupertinoDialogAction(
-              child: const Text('OK'),
+              child: Text('OK'),
               onPressed: () => Navigator.pop(context),
             ),
           ],
@@ -477,11 +481,11 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
       showCupertinoDialog(
         context: context,
         builder: (context) => CupertinoAlertDialog(
-          title: const Text('Success'),
+          title: Text('Success'),
           content: Text(message),
           actions: [
             CupertinoDialogAction(
-              child: const Text('OK'),
+              child: Text('OK'),
               onPressed: () => Navigator.pop(context),
             ),
           ],

@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../../../core/constants/api.dart';
@@ -44,6 +46,33 @@ class StaffRepository {
           'message': responseData['message'] ?? 'Login failed',
         };
       }
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        print('❌ Network error staff login: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
+    } on TimeoutException catch (e) {
+      if (kDebugMode) {
+        print('❌ Timeout error staff login: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+      };
+    } on http.ClientException catch (e) {
+      if (kDebugMode) {
+        print('❌ Client error staff login: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
     } catch (e) {
       if (kDebugMode) {
         print('❌ Staff Login Error: $e');
@@ -77,6 +106,33 @@ class StaffRepository {
           'message': responseData['message'] ?? 'Failed to get profile',
         };
       }
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        print('❌ Network error getting profile: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
+    } on TimeoutException catch (e) {
+      if (kDebugMode) {
+        print('❌ Timeout error getting profile: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+      };
+    } on http.ClientException catch (e) {
+      if (kDebugMode) {
+        print('❌ Client error getting profile: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
     } catch (e) {
       if (kDebugMode) {
         print('❌ Get Profile Error: $e');

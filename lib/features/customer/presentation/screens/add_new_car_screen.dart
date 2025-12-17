@@ -4,6 +4,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 import '../../data/repositories/vehicle_repository.dart';
 import '../../presentation/providers/vehicle_provider.dart';
 
@@ -83,8 +85,9 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
         final provider = context.read<VehicleProvider>();
         final selectedTypeId = provider.selectedVehicleTypeId;
         if (selectedTypeId == null || selectedTypeId.isEmpty) {
+          // Field is readOnly, so just unfocus - no need for snackbar
+          // The hint text already indicates "Select car type first"
           _vehicleModelFocusNode.unfocus();
-          _showSnack('Please select a car type first');
           return;
         }
         if (provider.vehicleModels.isEmpty &&
@@ -139,11 +142,21 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
       _vehicleModelController.text = selectedModelName;
     }
 
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    // No bottom nav bar height needed since this screen is pushed above MainNavigationScreen
+    // when accessed from car list screen using rootNavigator: true
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 20,
+            bottom: 20 + bottomPadding,
+          ),
           child: _buildForm(context, vehicleProvider, isIOS),
         ),
       ),
@@ -161,11 +174,11 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(context),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           _buildCarTypeField(vehicleProvider),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           _buildVehicleModelField(vehicleProvider),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
           _buildLabeledField(
             label: 'VEHICLE NUMBER *',
             controller: _vehicleNumberController,
@@ -174,7 +187,7 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
                 ? 'Enter vehicle number'
                 : null,
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
           _buildLabeledField(
             label: 'COLOR *',
             controller: _colorController,
@@ -182,7 +195,7 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
             validator: (value) =>
                 (value == null || value.isEmpty) ? 'Enter color' : null,
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
           _buildLabeledField(
             label: 'PARKING NUMBER *',
             controller: _parkingNumberController,
@@ -191,7 +204,7 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
                 ? 'Enter parking number'
                 : null,
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
           _buildLabeledField(
             label: 'PARKING AREA *',
             controller: _parkingAreaController,
@@ -199,7 +212,7 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
             validator: (value) =>
                 (value == null || value.isEmpty) ? 'Enter parking area' : null,
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: 32),
           SizedBox(
             width: double.infinity,
             height: 52,
@@ -212,7 +225,7 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
                 ),
               ),
               child: _isSaving
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 22,
                       width: 22,
                       child: CircularProgressIndicator(
@@ -220,12 +233,12 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : const Text(
+                  : Text(
                       'SAVE',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: Colors.white,
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         letterSpacing: 1.5,
                       ),
                     ),
@@ -238,27 +251,7 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
 
   Widget _buildHeader(BuildContext context) {
     return Row(
-      children: [
-        Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: const Color(0xFF04CDFE),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF04CDFE).withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 15),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-      ],
+      children: [StandardBackButton(onPressed: () => Navigator.pop(context))],
     );
   }
 
@@ -271,16 +264,16 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'CAR TYPE *',
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: Colors.white,
             fontSize: 13,
             fontWeight: FontWeight.w600,
             letterSpacing: 1.0,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         CompositedTransformTarget(
           link: _carTypeFieldLink,
           child: TextFormField(
@@ -347,16 +340,16 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'VEHICLE MODEL *',
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: Colors.white,
             fontSize: 13,
             fontWeight: FontWeight.w600,
             letterSpacing: 1.0,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         CompositedTransformTarget(
           link: _vehicleModelFieldLink,
           child: TextFormField(
@@ -389,11 +382,6 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
             validator: (_) => provider.selectedVehicleModel == null
                 ? 'Select a car model'
                 : null,
-            onTap: () {
-              if (!hasTypeSelected) {
-                _showSnack('Please select a car type first');
-              }
-            },
           ),
         ),
       ],
@@ -422,7 +410,7 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
             letterSpacing: 1.0,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         TextFormField(
           controller: controller,
           readOnly: readOnly,
@@ -458,11 +446,11 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
       ),
       focusedBorder: const OutlineInputBorder(
         borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -602,11 +590,11 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
                             color: const Color(0xFF11172B),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.15),
+                              color: Colors.white.withValues(alpha: 0.15),
                             ),
                           ),
                           child: isLoading
-                              ? const Padding(
+                              ? Padding(
                                   padding: EdgeInsets.all(16.0),
                                   child: Center(
                                     child: SizedBox(
@@ -619,11 +607,11 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
                                   ),
                                 )
                               : results.isEmpty
-                              ? const Padding(
+                              ? Padding(
                                   padding: EdgeInsets.all(16.0),
                                   child: Text(
                                     'No car types found',
-                                    style: TextStyle(
+                                    style: AppTheme.bebasNeue(
                                       color: Colors.white54,
                                       fontSize: 14,
                                     ),
@@ -634,7 +622,7 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
                                   itemCount: results.length,
                                   separatorBuilder: (_, __) => Divider(
                                     height: 1,
-                                    color: Colors.white.withOpacity(0.08),
+                                    color: Colors.white.withValues(alpha: 0.08),
                                   ),
                                   itemBuilder: (context, index) {
                                     final item = results[index];
@@ -756,11 +744,11 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
                             color: const Color(0xFF11172B),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.15),
+                              color: Colors.white.withValues(alpha: 0.15),
                             ),
                           ),
                           child: isLoading
-                              ? const Padding(
+                              ? Padding(
                                   padding: EdgeInsets.all(16.0),
                                   child: Center(
                                     child: SizedBox(
@@ -773,11 +761,11 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
                                   ),
                                 )
                               : results.isEmpty
-                              ? const Padding(
+                              ? Padding(
                                   padding: EdgeInsets.all(16.0),
                                   child: Text(
                                     'No car models found',
-                                    style: TextStyle(
+                                    style: AppTheme.bebasNeue(
                                       color: Colors.white54,
                                       fontSize: 14,
                                     ),
@@ -788,7 +776,7 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
                                   itemCount: results.length,
                                   separatorBuilder: (_, __) => Divider(
                                     height: 1,
-                                    color: Colors.white.withOpacity(0.08),
+                                    color: Colors.white.withValues(alpha: 0.08),
                                   ),
                                   itemBuilder: (context, index) {
                                     final model = results[index];

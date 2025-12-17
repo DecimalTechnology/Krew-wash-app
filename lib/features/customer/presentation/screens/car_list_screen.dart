@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../../core/constants/route_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 import '../../data/repositories/vehicle_repository.dart';
 import '../../presentation/providers/vehicle_provider.dart';
 
@@ -68,6 +69,26 @@ class _CarListViewState extends State<_CarListView> {
         final vehicles = provider.vehicles;
         final isLoading = provider.isLoadingVehicles;
 
+        // Check if we're in MainNavigationScreen (as a tab) or pushed as separate screen
+        // If pushed from profile screen using rootNavigator, we're above MainNavigationScreen
+        // so bottom nav won't be visible. Check by seeing if we can pop from non-root navigator
+        final nonRootNavigator = Navigator.of(context, rootNavigator: false);
+        final isInMainNavAsTab = !nonRootNavigator.canPop();
+
+        // Calculate bottom padding for button
+        // Only add bottom nav bar height if we're in MainNavigationScreen as a tab
+        final bottomNavBarHeight = isInMainNavAsTab
+            ? (screenWidth < 350
+                  ? 60.0 + 12.0 * 2
+                  : screenWidth >= 350 && screenWidth < 400
+                  ? 65.0 + 14.0 * 2
+                  : screenWidth > 600
+                  ? 80.0 + 20.0 * 2
+                  : 70.0 + 16.0 * 2)
+            : 0.0;
+        final bottomPadding =
+            bottomNavBarHeight + MediaQuery.of(context).padding.bottom + 16;
+
         final content = Container(
           decoration: const BoxDecoration(
             image: DecorationImage(
@@ -79,16 +100,52 @@ class _CarListViewState extends State<_CarListView> {
             child: Column(
               children: [
                 _buildHeader(context, isIOS, screenWidth),
+                // Show error message if there's a network error
+                if (provider.errorMessage != null) ...[
+                  Container(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.red.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 20,
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            provider.errorMessage!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: () async => _refreshVehicles(provider),
-                    color: const Color(0xFF04CDFE),
-                    backgroundColor: Colors.black,
-                    child: isLoading && vehicles.isEmpty
-                        ? const _LoadingState()
-                        : vehicles.isEmpty
-                        ? const _EmptyState()
-                        : SingleChildScrollView(
+                  child: isLoading && vehicles.isEmpty
+                      ? const _LoadingState()
+                      : vehicles.isEmpty
+                      ? const _EmptyState()
+                      : RefreshIndicator(
+                          onRefresh: () async => _refreshVehicles(provider),
+                          color: const Color(0xFF04CDFE),
+                          backgroundColor: Colors.black,
+                          child: SingleChildScrollView(
                             controller: _scrollController,
                             physics: const AlwaysScrollableScrollPhysics(),
                             child: Column(
@@ -145,22 +202,16 @@ class _CarListViewState extends State<_CarListView> {
 
                                       if (success) {
                                         await provider.loadVehicles();
-                                        if (mounted) {
-                                          await _showDeleteResult(
-                                            context,
-                                            response,
-                                          );
-                                        }
                                       }
                                     },
                                   ),
                                 ),
                                 _buildAddNewCarButton(context, isIOS),
-                                SizedBox(height: screenWidth > 400 ? 40 : 30),
+                                SizedBox(height: bottomPadding),
                               ],
                             ),
                           ),
-                  ),
+                        ),
                 ),
               ],
             ),
@@ -183,67 +234,63 @@ class _CarListViewState extends State<_CarListView> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Container(
-            width: screenWidth > 400 ? 50 : 40,
-            height: screenWidth > 400 ? 50 : 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFF04CDFE),
-              borderRadius: BorderRadius.circular(screenWidth > 400 ? 25 : 20),
-            ),
-            child: isIOS
-                ? CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () => Navigator.pop(context),
-                    child: Icon(
-                      CupertinoIcons.back,
-                      color: Colors.white,
-                      size: screenWidth > 400 ? 24 : 20,
-                    ),
-                  )
-                : Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(
-                        screenWidth > 400 ? 25 : 20,
-                      ),
-                      onTap: () => Navigator.pop(context),
-                      child: Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                        size: screenWidth > 400 ? 24 : 20,
-                      ),
-                    ),
-                  ),
+          StandardBackButton(
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final didPop = await navigator.maybePop();
+              if (!didPop) {
+                // Fallback to root navigator if this one cannot pop
+                final rootNavigator = Navigator.of(
+                  context,
+                  rootNavigator: true,
+                );
+                if (rootNavigator != navigator) {
+                  await rootNavigator.maybePop();
+                }
+              }
+            },
           ),
-          const Spacer(),
-          Text(
-            'MY CARS',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: screenWidth > 400 ? 22 : 20,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
+          Expanded(
+            child: Text(
+              'MY CARS',
+              textAlign: TextAlign.center,
+              style: AppTheme.bebasNeue(
+                color: Colors.white,
+                fontSize: screenWidth > 400 ? 22 : 20,
+                fontWeight: FontWeight.w400,
+                letterSpacing: 1.2,
+              ),
             ),
           ),
-          const Spacer(flex: 2),
+          SizedBox(width: 40), // Balance the back button width
         ],
       ),
     );
   }
 
   Widget _buildAddNewCarButton(BuildContext context, bool isIOS) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Row(
         children: [
-          const Expanded(flex: 1, child: SizedBox()),
+          Expanded(flex: 1, child: SizedBox()),
           Expanded(
             flex: 1,
             child: isIOS
                 ? CupertinoButton(
                     padding: EdgeInsets.zero,
-                    onPressed: () {
-                      Navigator.pushNamed(context, Routes.customerAddNewCar);
+                    onPressed: () async {
+                      // Use rootNavigator to push above MainNavigationScreen
+                      // This will hide the bottom navigation bar
+                      final result = await Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).pushNamed(Routes.customerAddNewCar);
+                      if (!mounted) return;
+                      if (result == true) {
+                        final provider = context.read<VehicleProvider>();
+                        await provider.loadVehicles();
+                      }
                     },
                     child: Container(
                       height: 48,
@@ -260,13 +307,13 @@ class _CarListViewState extends State<_CarListView> {
                           ),
                         ],
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
                           'ADD NEW CAR',
-                          style: TextStyle(
+                          style: AppTheme.bebasNeue(
                             color: Colors.white,
                             fontSize: 14,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w400,
                             letterSpacing: 1,
                           ),
                         ),
@@ -274,8 +321,18 @@ class _CarListViewState extends State<_CarListView> {
                     ),
                   )
                 : ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, Routes.customerAddNewCar);
+                    onPressed: () async {
+                      // Use rootNavigator to push above MainNavigationScreen
+                      // This will hide the bottom navigation bar
+                      final result = await Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).pushNamed(Routes.customerAddNewCar);
+                      if (!mounted) return;
+                      if (result == true) {
+                        final provider = context.read<VehicleProvider>();
+                        await provider.loadVehicles();
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF04CDFE),
@@ -291,12 +348,12 @@ class _CarListViewState extends State<_CarListView> {
                         0xFF04CDFE,
                       ).withValues(alpha: 0.3),
                     ),
-                    child: const Text(
+                    child: Text(
                       'ADD NEW CAR',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: Colors.white,
                         fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         letterSpacing: 1,
                       ),
                     ),
@@ -312,21 +369,29 @@ class _CarListViewState extends State<_CarListView> {
     if (isIOS) {
       return showCupertinoDialog<bool>(
         context: context,
-        builder: (_) => CupertinoAlertDialog(
-          title: const Text('Remove vehicle?'),
-          content: const Text(
+        builder: (dialogContext) => CupertinoAlertDialog(
+          title: Text('Remove vehicle?'),
+          content: Text(
             'Are you sure you want to delete this vehicle from your list?',
           ),
           actions: [
             CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(false),
+              onPressed: () {
+                if (mounted) {
+                  Navigator.of(dialogContext).pop(false);
+                }
+              },
               isDefaultAction: true,
-              child: const Text('Cancel'),
+              child: Text('Cancel'),
             ),
             CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(true),
+              onPressed: () {
+                if (mounted) {
+                  Navigator.of(dialogContext).pop(true);
+                }
+              },
               isDestructiveAction: true,
-              child: const Text('Delete'),
+              child: Text('Delete'),
             ),
           ],
         ),
@@ -335,147 +400,38 @@ class _CarListViewState extends State<_CarListView> {
 
     return showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFF11162A),
-        title: const Text(
+        title: Text(
           'Remove vehicle?',
-          style: TextStyle(color: Colors.white),
+          style: AppTheme.bebasNeue(color: Colors.white),
         ),
-        content: const Text(
+        content: Text(
           'Are you sure you want to delete this vehicle from your list?',
-          style: TextStyle(color: Colors.white70),
+          style: AppTheme.bebasNeue(color: Colors.white70),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('CANCEL'),
+            onPressed: () {
+              if (mounted) {
+                Navigator.of(dialogContext).pop(false);
+              }
+            },
+            child: Text('CANCEL'),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
+            onPressed: () {
+              if (mounted) {
+                Navigator.of(dialogContext).pop(true);
+              }
+            },
+            child: Text(
               'DELETE',
-              style: TextStyle(color: Colors.redAccent),
+              style: AppTheme.bebasNeue(color: Colors.redAccent),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Future<void> _showDeleteResult(
-    BuildContext context,
-    Map<String, dynamic> response,
-  ) async {
-    final message =
-        response['message']?.toString() ?? 'Vehicle deleted successfully';
-    final data = response['data'];
-    Map<String, dynamic>? dataMap;
-    if (data is Map<String, dynamic>) {
-      dataMap = data;
-    }
-
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF11162A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 48,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.white24,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Delete Response',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  message,
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-                if (dataMap != null && dataMap.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Vehicle Details',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...dataMap.entries.map(
-                    (entry) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4.0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              entry.key.toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white54,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            flex: 3,
-                            child: Text(
-                              (entry.value ?? '--').toString(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF04CDFE),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    child: const Text('CLOSE'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }
@@ -538,10 +494,10 @@ class _VehicleCard extends StatelessWidget {
                   SizedBox(width: screenWidth > 400 ? 8 : 6),
                   Text(
                     vehicleType,
-                    style: TextStyle(
+                    style: AppTheme.bebasNeue(
                       color: Colors.white,
                       fontSize: screenWidth > 400 ? 18 : 16,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -601,7 +557,7 @@ class _VehicleCard extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white70,
               fontSize: screenWidth > 400 ? 16 : 14,
               fontWeight: FontWeight.w500,
@@ -609,10 +565,10 @@ class _VehicleCard extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Text(
           value,
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: Colors.white,
             fontSize: screenWidth > 400 ? 16 : 14,
             fontWeight: FontWeight.w600,
@@ -634,12 +590,12 @@ class _LoadingState extends StatelessWidget {
         padding: const EdgeInsets.only(top: 120.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             CircularProgressIndicator(color: Color(0xFF04CDFE)),
             SizedBox(height: 16),
             Text(
               'Loading vehicles...',
-              style: TextStyle(color: Colors.white70),
+              style: AppTheme.bebasNeue(color: Colors.white70),
             ),
           ],
         ),
@@ -653,25 +609,97 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.only(top: 120.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.directions_car_filled, color: Colors.white30, size: 48),
-            SizedBox(height: 16),
-            Text(
-              'No vehicles found',
-              style: TextStyle(color: Colors.white54, fontSize: 16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.directions_car_filled,
+            color: Colors.white30,
+            size: 48,
+          ),
+          SizedBox(height: 16),
+          Text(
+            'No vehicles found',
+            style: AppTheme.bebasNeue(color: Colors.white54, fontSize: 16),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Add your first vehicle to get started.',
+            style: AppTheme.bebasNeue(color: Colors.white38, fontSize: 14),
+          ),
+          SizedBox(height: 32),
+          if (isIOS)
+            Builder(
+              builder: (buttonContext) => CupertinoButton(
+                onPressed: () async {
+                  // Use rootNavigator to push above MainNavigationScreen
+                  // This will hide the bottom navigation bar
+                  final result = await Navigator.of(
+                    buttonContext,
+                    rootNavigator: true,
+                  ).pushNamed(Routes.customerAddNewCar);
+                  if (result == true) {
+                    final provider = buttonContext.read<VehicleProvider>();
+                    await provider.loadVehicles();
+                  }
+                },
+                color: const Color(0xFF04CDFE),
+                borderRadius: BorderRadius.circular(12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 12,
+                ),
+                child: Text(
+                  'ADD NEW CAR',
+                  style: AppTheme.bebasNeue(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ),
+            )
+          else
+            Builder(
+              builder: (buttonContext) => ElevatedButton(
+                onPressed: () async {
+                  // Use rootNavigator to push above MainNavigationScreen
+                  // This will hide the bottom navigation bar
+                  final result = await Navigator.of(
+                    buttonContext,
+                    rootNavigator: true,
+                  ).pushNamed(Routes.customerAddNewCar);
+                  if (result == true) {
+                    final provider = buttonContext.read<VehicleProvider>();
+                    await provider.loadVehicles();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF04CDFE),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 32,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'ADD NEW CAR',
+                  style: AppTheme.bebasNeue(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ),
             ),
-            SizedBox(height: 8),
-            Text(
-              'Tap "Add New Car" to add your vehicle.',
-              style: TextStyle(color: Colors.white38, fontSize: 14),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }

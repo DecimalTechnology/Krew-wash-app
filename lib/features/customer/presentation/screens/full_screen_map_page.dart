@@ -3,6 +3,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 import 'dart:math' as math;
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 import '../providers/location_provider.dart';
 import '../../../../core/config/map_styles.dart';
 
@@ -321,7 +323,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                         color: station.isAvailable ? Colors.green : Colors.red,
                         size: 32,
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,12 +332,12 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                               station.name,
                               style: const TextStyle(
                                 fontSize: 20,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                             Text(
                               station.address,
-                              style: TextStyle(
+                              style: AppTheme.bebasNeue(
                                 fontSize: 14,
                                 color: Colors.grey[600],
                               ),
@@ -345,7 +347,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Row(
                     children: [
                       Container(
@@ -363,14 +365,14 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                           station.isAvailable ? 'Available' : 'Busy',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w400,
                             fontSize: 12,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       const Icon(Icons.star, color: Colors.amber, size: 18),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Text(
                         '${station.rating}',
                         style: const TextStyle(
@@ -378,13 +380,13 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                           fontSize: 16,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       const Icon(
                         Icons.location_on,
                         color: Color(0xFF00AAD4),
                         size: 18,
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Text(
                         '${distance.toStringAsFixed(1)} km',
                         style: const TextStyle(
@@ -397,18 +399,21 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                         '\$${station.price}',
                         style: const TextStyle(
                           fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w400,
                           color: Color(0xFF00AAD4),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  const Text(
+                  SizedBox(height: 24),
+                  Text(
                     'Services Available:',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: AppTheme.bebasNeue(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -416,21 +421,24 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                         .map((service) => _buildServiceChip(service))
                         .toList(),
                   ),
-                  const SizedBox(height: 24),
-                  const Text(
+                  SizedBox(height: 24),
+                  Text(
                     'Type:',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: AppTheme.bebasNeue(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     station.type.toString().split('.').last.toUpperCase(),
-                    style: TextStyle(
+                    style: AppTheme.bebasNeue(
                       fontSize: 14,
                       color: Colors.grey[700],
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -457,7 +465,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),
@@ -475,15 +483,17 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF00AAD4).withOpacity(0.1),
+        color: const Color(0xFF00AAD4).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF00AAD4).withOpacity(0.3)),
+        border: Border.all(
+          color: const Color(0xFF00AAD4).withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.check_circle, color: Color(0xFF00AAD4), size: 16),
-          const SizedBox(width: 6),
+          SizedBox(width: 6),
           Text(
             service,
             style: const TextStyle(
@@ -519,7 +529,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
               if (locationProvider.isLoading || _currentLocation == null) {
                 return Container(
                   color: Colors.grey[900],
-                  child: const Center(
+                  child: Center(
                     child: CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(
                         Color(0xFF00AAD4),
@@ -541,16 +551,16 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                           color: Colors.white,
                           size: 48,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         Text(
                           'Location Error',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         Text(
                           locationProvider.error!,
                           style: const TextStyle(
@@ -559,13 +569,13 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: _initializeMap,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF00AAD4),
                           ),
-                          child: const Text('Retry'),
+                          child: Text('Retry'),
                         ),
                       ],
                     ),
@@ -610,7 +620,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -618,8 +628,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                   ),
                   child: Row(
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back),
+                      StandardBackButton(
                         onPressed: () => Navigator.pop(context),
                       ),
                       Expanded(
@@ -687,7 +696,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                     color: Color(0xFF00AAD4),
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 FloatingActionButton(
                   heroTag: 'list',
                   mini: true,
@@ -712,7 +721,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                 borderRadius: BorderRadius.circular(25),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -726,11 +735,11 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                     color: Color(0xFF00AAD4),
                     size: 20,
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Text(
                     '${_filteredStations.length} Stations',
                     style: const TextStyle(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                       fontSize: 14,
                     ),
                   ),
@@ -789,19 +798,25 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  const Text(
+                  Text(
                     'Nearby Stations',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: AppTheme.bebasNeue(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
                   const Spacer(),
                   Text(
                     '${_filteredStations.length} found',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    style: AppTheme.bebasNeue(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -822,8 +837,8 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(
                         color: station.isAvailable
-                            ? Colors.green.withOpacity(0.3)
-                            : Colors.red.withOpacity(0.3),
+                            ? Colors.green.withValues(alpha: 0.3)
+                            : Colors.red.withValues(alpha: 0.3),
                         width: 2,
                       ),
                     ),
@@ -837,14 +852,14 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                       title: Text(
                         station.name,
                         style: const TextStyle(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w400,
                           fontSize: 16,
                         ),
                       ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           Row(
                             children: [
                               const Icon(
@@ -852,15 +867,15 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                                 color: Colors.amber,
                                 size: 14,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                               Text('${station.rating}'),
-                              const SizedBox(width: 12),
+                              SizedBox(width: 12),
                               const Icon(
                                 Icons.location_on,
                                 color: Color(0xFF00AAD4),
                                 size: 14,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                               Text('${distance.toStringAsFixed(1)} km'),
                             ],
                           ),
@@ -874,7 +889,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                             '\$${station.price}',
                             style: const TextStyle(
                               fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w400,
                               color: Color(0xFF00AAD4),
                             ),
                           ),
@@ -894,7 +909,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           ),

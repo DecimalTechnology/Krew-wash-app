@@ -1,6 +1,8 @@
+import 'package:carwash_app/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 import '../../domain/models/booking_model.dart';
 import '../providers/cleaner_booking_provider.dart';
 import 'staff_service_details_screen.dart';
@@ -151,14 +153,13 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
                       children: [
                         Text(
                           error,
-                          style: TextStyle(
+                          style: AppTheme.bebasNeue(
                             color: Colors.white,
                             fontSize: isSmallScreen ? 14 : 16,
-                            fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         isIOS
                             ? CupertinoButton(
                                 onPressed: () {
@@ -166,7 +167,7 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
                                     widget.booking.id,
                                   );
                                 },
-                                child: const Text('Retry'),
+                                child: Text('Retry'),
                               )
                             : TextButton(
                                 onPressed: () {
@@ -174,7 +175,7 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
                                     widget.booking.id,
                                   );
                                 },
-                                child: const Text('Retry'),
+                                child: Text('Retry'),
                               ),
                       ],
                     ),
@@ -185,66 +186,143 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
 
             return SafeArea(
               bottom: false,
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics(),
-                ),
-                padding: EdgeInsets.only(bottom: bottomPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    _buildHeader(
-                      context,
-                      isIOS,
-                      isSmallScreen,
-                      horizontalPadding,
+              child: isIOS
+                  ? CustomScrollView(
+                      physics: const BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
+                      ),
+                      slivers: [
+                        CupertinoSliverRefreshControl(
+                          onRefresh: () async {
+                            await _fetchBookingDetails();
+                          },
+                        ),
+                        SliverPadding(
+                          padding: EdgeInsets.only(bottom: bottomPadding),
+                          sliver: SliverToBoxAdapter(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Header
+                                _buildHeader(
+                                  context,
+                                  isIOS,
+                                  isSmallScreen,
+                                  horizontalPadding,
+                                ),
+                                SizedBox(height: 24),
+                                // Vehicle Information Card
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: horizontalPadding,
+                                  ),
+                                  child: _buildVehicleInfoCard(
+                                    context,
+                                    booking,
+                                    isIOS,
+                                    isSmallScreen,
+                                    isTablet,
+                                  ),
+                                ),
+                                SizedBox(height: 24),
+                                // Action Buttons Section
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: horizontalPadding,
+                                  ),
+                                  child: _buildActionButtons(
+                                    context,
+                                    booking,
+                                    isIOS,
+                                    isSmallScreen,
+                                  ),
+                                ),
+                                SizedBox(height: 24),
+                                // Services Section
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: horizontalPadding,
+                                  ),
+                                  child: _buildServicesSection(
+                                    context,
+                                    booking,
+                                    isIOS,
+                                    isSmallScreen,
+                                    isTablet,
+                                  ),
+                                ),
+                                SizedBox(height: 24),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : RefreshIndicator(
+                      onRefresh: () async {
+                        await _fetchBookingDetails();
+                      },
+                      color: const Color(0xFF04CDFE),
+                      backgroundColor: Colors.black,
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.only(bottom: bottomPadding),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Header
+                            _buildHeader(
+                              context,
+                              isIOS,
+                              isSmallScreen,
+                              horizontalPadding,
+                            ),
+                            SizedBox(height: 24),
+                            // Vehicle Information Card
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: horizontalPadding,
+                              ),
+                              child: _buildVehicleInfoCard(
+                                context,
+                                booking,
+                                isIOS,
+                                isSmallScreen,
+                                isTablet,
+                              ),
+                            ),
+                            SizedBox(height: 24),
+                            // Action Buttons Section
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: horizontalPadding,
+                              ),
+                              child: _buildActionButtons(
+                                context,
+                                booking,
+                                isIOS,
+                                isSmallScreen,
+                              ),
+                            ),
+                            SizedBox(height: 24),
+                            // Services Section
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: horizontalPadding,
+                              ),
+                              child: _buildServicesSection(
+                                context,
+                                booking,
+                                isIOS,
+                                isSmallScreen,
+                                isTablet,
+                              ),
+                            ),
+                            SizedBox(height: 24),
+                          ],
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 24),
-                    // Vehicle Information Card
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: horizontalPadding,
-                      ),
-                      child: _buildVehicleInfoCard(
-                        context,
-                        booking,
-                        isIOS,
-                        isSmallScreen,
-                        isTablet,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // Action Buttons Section
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: horizontalPadding,
-                      ),
-                      child: _buildActionButtons(
-                        context,
-                        booking,
-                        isIOS,
-                        isSmallScreen,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // Services Section
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: horizontalPadding,
-                      ),
-                      child: _buildServicesSection(
-                        context,
-                        booking,
-                        isIOS,
-                        isSmallScreen,
-                        isTablet,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
             );
           },
         );
@@ -264,33 +342,7 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Back button in blue circular container on the left
-          Container(
-            width: 32,
-            height: 32,
-            decoration: const BoxDecoration(
-              color: Color(0xFF04CDFE),
-              shape: BoxShape.circle,
-            ),
-            child: isIOS
-                ? CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Icon(
-                      CupertinoIcons.arrow_left,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  )
-                : IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    onPressed: () => Navigator.of(context).pop(),
-                    padding: EdgeInsets.zero,
-                  ),
-          ),
+          StandardBackButton(onPressed: () => Navigator.of(context).pop()),
           // Spacer to push heading to center
           const Spacer(),
           // Centered heading
@@ -298,21 +350,19 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
             children: [
               Text(
                 'Booking Details',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
+                style: AppTheme.bebasNeue(
+                  color: Colors.white.withValues(alpha: 0.7),
                   fontSize: isSmallScreen ? 12 : 14,
-                  fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 'BOOKING DETAILS',
-                style: TextStyle(
+                style: AppTheme.bebasNeue(
                   color: Colors.white,
                   fontSize: isSmallScreen ? 20 : 24,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: 1.2,
-                  fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
                 ),
               ),
             ],
@@ -321,8 +371,8 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
           const Spacer(),
           // Bell icon (notification) on the right
           Container(
-            width: 32,
-            height: 32,
+            width: 40,
+            height: 40,
             decoration: const BoxDecoration(
               color: Color(0xFF04CDFE),
               shape: BoxShape.circle,
@@ -405,28 +455,26 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
         children: [
           Text(
             vehicleModel.toUpperCase(),
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: const Color(0xFF04CDFE),
               fontSize: isSmallScreen ? 16 : 18,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
               letterSpacing: 0.5,
-              fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             vehiclePlate,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: isSmallScreen ? 14 : 16,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
             ),
           ),
-          const SizedBox(height: 16),
-          Divider(color: Colors.white.withOpacity(0.1), thickness: 1),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
+          Divider(color: Colors.white.withValues(alpha: 0.1), thickness: 1),
+          SizedBox(height: 16),
           _buildInfoRow('COLOUR', vehicleColor, isIOS, isSmallScreen),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildInfoRow('LOCATION', location, isIOS, isSmallScreen),
         ],
       ),
@@ -446,21 +494,19 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
           width: isSmallScreen ? 80 : 100,
           child: Text(
             label,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
               fontSize: isSmallScreen ? 12 : 14,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
             ),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: isSmallScreen ? 12 : 14,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
             ),
             textAlign: TextAlign.right,
           ),
@@ -496,8 +542,8 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
         booking,
         isIOS,
         isSmallScreen,
-        onPressed: () {
-          Navigator.of(context).push(
+        onPressed: () async {
+          final result = await Navigator.of(context).push(
             isIOS
                 ? CupertinoPageRoute(
                     builder: (_) => ReportIssueScreen(booking: booking),
@@ -506,6 +552,11 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
                     builder: (_) => ReportIssueScreen(booking: booking),
                   ),
           );
+
+          // Refresh booking details when returning from report issue screen
+          if (context.mounted && result != null) {
+            await _fetchBookingDetails();
+          }
         },
       );
     }
@@ -555,15 +606,14 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
                     color: const Color(0xFFFF6666),
                     size: isSmallScreen ? 16 : 18,
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Text(
                     'VIEW ACTIVE ISSUE',
-                    style: TextStyle(
+                    style: AppTheme.bebasNeue(
                       color: const Color(0xFFFF6666), // Light red text
                       fontSize: isSmallScreen ? 12 : 14,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: 0.5,
-                      fontFamily: '.SF Pro Text',
                     ),
                   ),
                 ],
@@ -583,15 +633,14 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
                         color: const Color(0xFFFF6666),
                         size: isSmallScreen ? 16 : 18,
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Text(
                         'VIEW ACTIVE ISSUE',
-                        style: TextStyle(
+                        style: AppTheme.bebasNeue(
                           color: const Color(0xFFFF6666), // Light red text
                           fontSize: isSmallScreen ? 12 : 14,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w400,
                           letterSpacing: 0.5,
-                          fontFamily: 'Roboto',
                         ),
                       ),
                     ],
@@ -628,15 +677,14 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
                     color: Colors.white,
                     size: isSmallScreen ? 16 : 18,
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Text(
                     'REPORT AN ISSUE',
-                    style: TextStyle(
+                    style: AppTheme.bebasNeue(
                       color: Colors.white,
                       fontSize: isSmallScreen ? 12 : 14,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: 0.5,
-                      fontFamily: '.SF Pro Text',
                     ),
                   ),
                 ],
@@ -656,15 +704,14 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
                         color: Colors.white,
                         size: isSmallScreen ? 16 : 18,
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Text(
                         'REPORT AN ISSUE',
-                        style: TextStyle(
+                        style: AppTheme.bebasNeue(
                           color: Colors.white,
                           fontSize: isSmallScreen ? 12 : 14,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w400,
                           letterSpacing: 0.5,
-                          fontFamily: 'Roboto',
                         ),
                       ),
                     ],
@@ -705,16 +752,15 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
                       color: finalTextColor,
                       size: isSmallScreen ? 16 : 18,
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                   ],
                   Text(
                     text,
-                    style: TextStyle(
+                    style: AppTheme.bebasNeue(
                       color: finalTextColor,
                       fontSize: isSmallScreen ? 12 : 14,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: 0.5,
-                      fontFamily: '.SF Pro Text',
                     ),
                   ),
                 ],
@@ -735,16 +781,15 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
                           color: finalTextColor,
                           size: isSmallScreen ? 16 : 18,
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                       ],
                       Text(
                         text,
-                        style: TextStyle(
+                        style: AppTheme.bebasNeue(
                           color: finalTextColor,
                           fontSize: isSmallScreen ? 12 : 14,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w400,
                           letterSpacing: 0.5,
-                          fontFamily: 'Roboto',
                         ),
                       ),
                     ],
@@ -767,15 +812,14 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
       children: [
         Text(
           'SERVICES',
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: Colors.white,
             fontSize: isSmallScreen ? 16 : 18,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w400,
             letterSpacing: 1.2,
-            fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         // Main Package Service
         if (booking.package != null)
           _buildServiceCard(
@@ -896,21 +940,19 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
                 children: [
                   Text(
                     serviceName.toUpperCase(),
-                    style: TextStyle(
+                    style: AppTheme.bebasNeue(
                       color: Colors.white,
                       fontSize: isSmallScreen ? 14 : 16,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: 0.5,
-                      fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     type,
-                    style: TextStyle(
+                    style: AppTheme.bebasNeue(
                       color: Colors.white70,
                       fontSize: isSmallScreen ? 12 : 14,
-                      fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                     ),
                   ),
                 ],
@@ -918,10 +960,9 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
             ),
             Text(
               '$completedCount/$totalCount COMPLETED',
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: isSmallScreen ? 12 : 14,
-                fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
               ),
             ),
           ],
@@ -948,8 +989,7 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) =>
-              const Center(child: CircularProgressIndicator()),
+          builder: (context) => Center(child: CircularProgressIndicator()),
         );
       }
 
@@ -972,8 +1012,8 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
         final issueType = chatData?['issue']?.toString() ?? 'ACTIVE ISSUE';
         final description = chatData?['description']?.toString() ?? '';
 
-        // Navigate to chat screen
-        Navigator.of(context).push(
+        // Navigate to chat screen and refresh booking details when returning
+        final result = await Navigator.of(context).push(
           isIOS
               ? CupertinoPageRoute(
                   builder: (_) => IssueChatScreen(
@@ -994,6 +1034,11 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
                   ),
                 ),
         );
+
+        // Refresh booking details when returning from chat screen
+        if (context.mounted && result != null) {
+          await _fetchBookingDetails();
+        }
       } else {
         // If getting chat fails, try using initiateChat which might return existing chat
         final initiateResult = await ChatRepository.initiateChat(
@@ -1010,8 +1055,8 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
           final issueType = chatData?['issue']?.toString() ?? 'ACTIVE ISSUE';
           final description = chatData?['description']?.toString() ?? '';
 
-          // Navigate to chat screen
-          Navigator.of(context).push(
+          // Navigate to chat screen and refresh booking details when returning
+          final result = await Navigator.of(context).push(
             isIOS
                 ? CupertinoPageRoute(
                     builder: (_) => IssueChatScreen(
@@ -1032,6 +1077,11 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
                     ),
                   ),
           );
+
+          // Refresh booking details when returning from chat screen
+          if (context.mounted && result != null) {
+            await _fetchBookingDetails();
+          }
         } else {
           // Show error message
           final errorMessage =
@@ -1040,12 +1090,12 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
             showCupertinoDialog(
               context: context,
               builder: (context) => CupertinoAlertDialog(
-                title: const Text('Error'),
+                title: Text('Error'),
                 content: Text(errorMessage),
                 actions: [
                   CupertinoDialogAction(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('OK'),
+                    child: Text('OK'),
                   ),
                 ],
               ),
@@ -1075,12 +1125,12 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
         showCupertinoDialog(
           context: context,
           builder: (context) => CupertinoAlertDialog(
-            title: const Text('Error'),
+            title: Text('Error'),
             content: Text(errorMessage),
             actions: [
               CupertinoDialogAction(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
+                child: Text('OK'),
               ),
             ],
           ),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -22,83 +23,204 @@ class ProfileRepository {
     String? buildingId,
     String? apartmentNumber,
   }) async {
-    final token = await SecureStorageService.getAccessToken();
-    _logToken('ProfileRepository.updateProfile', token);
-    final uri = Uri.parse('$baseurl/profile');
-
-    final body = <String, dynamic>{};
-    if (name != null) body['name'] = name;
-    if (phone != null) body['phone'] = phone;
-    if (email != null) body['email'] = email;
-    if (buildingId != null) body['buildingId'] = buildingId;
-    if (apartmentNumber != null) body['apartmentNumber'] = apartmentNumber;
-
-    final res = await http.put(
-      uri,
-      headers: {
-        'Content-Type': 'application/json',
-        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode(body),
-    );
-
-    if (res.statusCode == 200 || res.statusCode == 201) {
-      try {
-        return jsonDecode(res.body) as Map<String, dynamic>;
-      } catch (_) {
-        return {'success': true};
-      }
-    }
-
     try {
-      final err = jsonDecode(res.body) as Map<String, dynamic>;
+      final token = await SecureStorageService.getAccessToken();
+      _logToken('ProfileRepository.updateProfile', token);
+      final uri = Uri.parse('$baseurl/profile');
+
+      final body = <String, dynamic>{};
+      if (name != null) body['name'] = name;
+      if (phone != null) body['phone'] = phone;
+      if (email != null) body['email'] = email;
+      if (buildingId != null) body['buildingId'] = buildingId;
+      // Include apartmentNumber if provided
+      // Empty string means clear it (send null), null means don't update (don't include)
+      if (apartmentNumber != null) {
+        // If empty string, send null to backend to clear it; otherwise send the value
+        body['apartmentNumber'] = apartmentNumber.isEmpty
+            ? null
+            : apartmentNumber;
+        if (kDebugMode) {
+          debugPrint(
+            '📦 [ProfileRepository.updateProfile] Including apartmentNumber: ${apartmentNumber.isEmpty ? "null (to clear)" : apartmentNumber}',
+          );
+        }
+      } else if (kDebugMode) {
+        debugPrint(
+          '📦 [ProfileRepository.updateProfile] apartmentNumber is null, not including in request',
+        );
+      }
+
+      if (kDebugMode) {
+        debugPrint(
+          '📦 [ProfileRepository.updateProfile] Request body: ${jsonEncode(body)}',
+        );
+        debugPrint(
+          '📦 [ProfileRepository.updateProfile] apartmentNumber parameter: $apartmentNumber',
+        );
+      }
+
+      final res = await http.put(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null && token.isNotEmpty)
+            'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(body),
+      );
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        try {
+          final response = jsonDecode(res.body) as Map<String, dynamic>;
+          if (kDebugMode) {
+            debugPrint(
+              '📦 [ProfileRepository.updateProfile] Response status: ${res.statusCode}',
+            );
+            debugPrint(
+              '📦 [ProfileRepository.updateProfile] Response body: ${res.body}',
+            );
+            if (response.containsKey('data') && response['data'] is Map) {
+              final data = response['data'] as Map;
+              debugPrint(
+                '📦 [ProfileRepository.updateProfile] Response data keys: ${data.keys.join(", ")}',
+              );
+              if (data.containsKey('apartmentNumber')) {
+                debugPrint(
+                  '📦 [ProfileRepository.updateProfile] Response apartmentNumber: ${data['apartmentNumber']}',
+                );
+              }
+            }
+          }
+          return response;
+        } catch (_) {
+          return {'success': true};
+        }
+      }
+
+      try {
+        final err = jsonDecode(res.body) as Map<String, dynamic>;
+        return {
+          'success': false,
+          'message': err['message'] ?? 'Failed to update profile',
+        };
+      } catch (_) {
+        return {
+          'success': false,
+          'message': 'Failed to update profile: ${res.statusCode}',
+        };
+      }
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Network error updating profile: $e');
+      }
       return {
         'success': false,
-        'message': err['message'] ?? 'Failed to update profile',
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
       };
-    } catch (_) {
+    } on TimeoutException catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Timeout error updating profile: $e');
+      }
       return {
         'success': false,
-        'message': 'Failed to update profile: ${res.statusCode}',
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+      };
+    } on http.ClientException catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Client error updating profile: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error updating profile: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Failed to update profile: ${e.toString()}',
       };
     }
   }
 
   // Get profile - GET /profile
   Future<Map<String, dynamic>> getProfile() async {
-    final token = await SecureStorageService.getAccessToken();
-    _logToken('ProfileRepository.getProfile', token);
-    final uri = Uri.parse('$baseurl/profile');
+    try {
+      final token = await SecureStorageService.getAccessToken();
+      _logToken('ProfileRepository.getProfile', token);
+      final uri = Uri.parse('$baseurl/profile');
 
-    final res = await http.get(
-      uri,
-      headers: {
-        'Content-Type': 'application/json',
-        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-      },
-    );
+      final res = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null && token.isNotEmpty)
+            'Authorization': 'Bearer $token',
+        },
+      );
 
-    if (res.statusCode == 200 || res.statusCode == 201) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        try {
+          return jsonDecode(res.body) as Map<String, dynamic>;
+        } catch (_) {
+          return {
+            'success': false,
+            'message': 'Failed to parse profile response',
+          };
+        }
+      }
+
       try {
-        return jsonDecode(res.body) as Map<String, dynamic>;
+        final err = jsonDecode(res.body) as Map<String, dynamic>;
+        return {
+          'success': false,
+          'message': err['message'] ?? 'Failed to get profile',
+        };
       } catch (_) {
         return {
           'success': false,
-          'message': 'Failed to parse profile response',
+          'message': 'Failed to get profile: ${res.statusCode}',
         };
       }
-    }
-
-    try {
-      final err = jsonDecode(res.body) as Map<String, dynamic>;
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Network error getting profile: $e');
+      }
       return {
         'success': false,
-        'message': err['message'] ?? 'Failed to get profile',
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
       };
-    } catch (_) {
+    } on TimeoutException catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Timeout error getting profile: $e');
+      }
       return {
         'success': false,
-        'message': 'Failed to get profile: ${res.statusCode}',
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+      };
+    } on http.ClientException catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Client error getting profile: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error getting profile: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Failed to get profile: ${e.toString()}',
       };
     }
   }
@@ -107,36 +229,73 @@ class ProfileRepository {
   Future<Map<String, dynamic>> uploadProfileImage({
     required File imageFile,
   }) async {
-    final token = await SecureStorageService.getAccessToken();
-    _logToken('ProfileRepository.uploadProfileImage', token);
-    final uri = Uri.parse('$baseurl/profile/image');
-
-    final req = http.MultipartRequest('PATCH', uri);
-    if (token != null && token.isNotEmpty) {
-      req.headers['Authorization'] = 'Bearer $token';
-    }
-    req.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
-    final streamed = await req.send();
-    final res = await http.Response.fromStream(streamed);
-
-    if (res.statusCode == 200 || res.statusCode == 201) {
-      try {
-        return jsonDecode(res.body) as Map<String, dynamic>;
-      } catch (_) {
-        return {'success': true};
-      }
-    }
-
     try {
-      final err = jsonDecode(res.body) as Map<String, dynamic>;
+      final token = await SecureStorageService.getAccessToken();
+      _logToken('ProfileRepository.uploadProfileImage', token);
+      final uri = Uri.parse('$baseurl/profile/image');
+
+      final req = http.MultipartRequest('PATCH', uri);
+      if (token != null && token.isNotEmpty) {
+        req.headers['Authorization'] = 'Bearer $token';
+      }
+      req.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
+      final streamed = await req.send();
+      final res = await http.Response.fromStream(streamed);
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        try {
+          return jsonDecode(res.body) as Map<String, dynamic>;
+        } catch (_) {
+          return {'success': true};
+        }
+      }
+
+      try {
+        final err = jsonDecode(res.body) as Map<String, dynamic>;
+        return {
+          'success': false,
+          'message': err['message'] ?? 'Failed to upload profile picture',
+        };
+      } catch (_) {
+        return {
+          'success': false,
+          'message': 'Failed to upload profile picture: ${res.statusCode}',
+        };
+      }
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Network error uploading profile image: $e');
+      }
       return {
         'success': false,
-        'message': err['message'] ?? 'Failed to upload profile picture',
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
       };
-    } catch (_) {
+    } on TimeoutException catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Timeout error uploading profile image: $e');
+      }
       return {
         'success': false,
-        'message': 'Failed to upload profile picture: ${res.statusCode}',
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+      };
+    } on http.ClientException catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Client error uploading profile image: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error uploading profile image: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Failed to upload profile picture: ${e.toString()}',
       };
     }
   }

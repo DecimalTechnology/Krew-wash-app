@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../providers/cleaner_booking_provider.dart';
 import '../../domain/models/booking_model.dart';
 import 'staff_booking_details_screen.dart';
@@ -99,12 +100,11 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
                 child: Center(
                   child: Text(
                     'BOOKING HISTORY',
-                    style: TextStyle(
+                    style: AppTheme.bebasNeue(
                       color: Colors.white,
                       fontSize: isSmallScreen ? 18 : 20,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: 1.2,
-                      fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
                     ),
                   ),
                 ),
@@ -116,13 +116,13 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
                 ),
                 child: _buildSearchBar(isIOS, isSmallScreen),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Expanded(
                 child: Consumer<CleanerBookingProvider>(
                   builder: (context, bookingProvider, _) {
                     if (bookingProvider.isCompletedLoading &&
                         bookingProvider.completedBookings.isEmpty) {
-                      return const Center(
+                      return Center(
                         child: CupertinoActivityIndicator(color: Colors.white),
                       );
                     }
@@ -178,7 +178,7 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
                             isTablet: isTablet,
                           );
                         },
-                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        separatorBuilder: (_, __) => SizedBox(height: 16),
                         itemCount: bookingProvider.completedBookings.length,
                       ),
                     );
@@ -206,15 +206,15 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
             controller: _searchController,
             placeholder: 'SEARCH BOOKING ID',
             placeholderStyle: TextStyle(
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
               fontSize: isSmallScreen ? 12 : 14,
             ),
             style: const TextStyle(color: Colors.white),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -241,7 +241,7 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
             decoration: InputDecoration(
               hintText: 'SEARCH BOOKING ID',
               hintStyle: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 fontSize: isSmallScreen ? 12 : 14,
               ),
               suffixIcon: IconButton(
@@ -249,18 +249,18 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
                 onPressed: handleSearch,
               ),
               filled: true,
-              fillColor: Colors.white.withOpacity(0.1),
+              fillColor: Colors.white.withValues(alpha: 0.1),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -315,41 +315,37 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
                   children: [
                     Text(
                       title,
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: const Color(0xFF04CDFE),
                         fontSize: isSmallScreen ? 14 : 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         letterSpacing: 0.5,
-                        fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: Colors.white,
                         fontSize: isSmallScreen ? 12 : 14,
-                        fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     RichText(
                       text: TextSpan(
                         children: [
                           TextSpan(
                             text: 'ID : ',
-                            style: TextStyle(
+                            style: AppTheme.bebasNeue(
                               color: const Color(0xFF04CDFE),
                               fontSize: isSmallScreen ? 12 : 14,
-                              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                             ),
                           ),
                           TextSpan(
                             text: bookingId,
-                            style: TextStyle(
+                            style: AppTheme.bebasNeue(
                               color: Colors.white,
                               fontSize: isSmallScreen ? 12 : 14,
-                              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                             ),
                           ),
                         ],
@@ -371,25 +367,24 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
                 ),
                 child: Text(
                   status.toUpperCase(),
-                  style: TextStyle(
+                  style: AppTheme.bebasNeue(
                     color: const Color(0xFF04CDFE),
                     fontSize: isSmallScreen ? 10 : 12,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: 0.5,
-                    fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 18),
-          Divider(color: Colors.white.withOpacity(0.08), thickness: 1),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
+          Divider(color: Colors.white.withValues(alpha: 0.08), thickness: 1),
+          SizedBox(height: 18),
           // Service details
           _buildDetailRow('SERVICE', service, isIOS, isSmallScreen),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildDetailRow('LOCATION', location, isIOS, isSmallScreen),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildDetailRow(
             'DATE & TIME',
             dateTime,
@@ -397,7 +392,7 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
             isSmallScreen,
             isHighlighted: true,
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           // View Details Button
           Align(
             alignment: Alignment.center,
@@ -419,10 +414,10 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
                       },
                       child: Text(
                         'VIEW DETAILS',
-                        style: TextStyle(
+                        style: AppTheme.bebasNeue(
                           color: Colors.white,
                           fontSize: isSmallScreen ? 13 : 15,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w400,
                           letterSpacing: 1.1,
                         ),
                       ),
@@ -446,9 +441,9 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
                       },
                       child: Text(
                         'VIEW DETAILS',
-                        style: TextStyle(
+                        style: AppTheme.bebasNeue(
                           fontSize: isSmallScreen ? 13 : 15,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w400,
                           letterSpacing: 1.1,
                         ),
                       ),
@@ -474,21 +469,20 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
           width: isSmallScreen ? 80 : 100,
           child: Text(
             label,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white70,
               fontSize: isSmallScreen ? 12 : 14,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
             ),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: isHighlighted ? const Color(0xFF04CDFE) : Colors.white,
               fontSize: isSmallScreen ? 12 : 14,
               fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.normal,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+
               height: 1.4,
             ),
             textAlign: TextAlign.right,
@@ -511,14 +505,10 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
-            ),
+            style: AppTheme.bebasNeue(color: Colors.white, fontSize: 16),
           ),
-          const SizedBox(height: 16),
-          TextButton(onPressed: onRetry, child: const Text('Retry')),
+          SizedBox(height: 16),
+          TextButton(onPressed: onRetry, child: Text('Retry')),
         ],
       ),
     );
@@ -528,11 +518,7 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
     return Center(
       child: Text(
         'No completed bookings yet.',
-        style: TextStyle(
-          color: Colors.white70,
-          fontSize: 16,
-          fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
-        ),
+        style: AppTheme.bebasNeue(color: Colors.white70, fontSize: 16),
       ),
     );
   }

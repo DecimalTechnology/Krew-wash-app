@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'customer_home_screen.dart';
 import 'package_selection_screen.dart';
-import 'customer_history_screen.dart';
 import 'my_package_screen.dart';
 import 'customer_profile_screen.dart';
+import 'car_list_screen.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/constants/route_constants.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -17,13 +18,43 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
 
+  // Create separate navigation keys for each tab to maintain independent navigation stacks
+  final List<GlobalKey<NavigatorState>> _navigatorKeys = [
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+  ];
+
+  // Store screens to keep them alive
   final List<Widget> _screens = [
     const CustomerHomeScreen(),
     const PackageSelectionScreen(),
-    const CustomerHistoryScreen(),
+    const CarListScreen(),
     const MyPackageScreen(),
     const CustomerProfileScreen(),
   ];
+
+  Widget _buildNavigatorWrapper(int index) {
+    return _NavigatorWrapper(
+      key: ValueKey('nav_$index'),
+      navigatorKey: _navigatorKeys[index],
+      screen: _screens[index],
+    );
+  }
+
+  // Build navigator wrappers once to avoid re-creating nested Navigators
+  late final List<Widget> _navigatorScreens;
+
+  @override
+  void initState() {
+    super.initState();
+    _navigatorScreens = List<Widget>.generate(
+      _screens.length,
+      (index) => _buildNavigatorWrapper(index),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,81 +148,99 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     double iconSize,
     double navItemSize,
   ) {
-    return CupertinoPageScaffold(
-      backgroundColor: Colors.black,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Main content - fills entire space
-          Positioned.fill(child: _screens[_currentIndex]),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        // Handle back button: try to pop from the current tab's navigator first
+        final navigator = _navigatorKeys[_currentIndex].currentState;
+        final didInnerPop = navigator != null
+            ? await navigator.maybePop()
+            : false;
 
-          // Positioned bottom navigation bar - fixed at bottom
-          Positioned(
-            left: navBarMargin,
-            right: navBarMargin,
-            bottom: navBarMargin + MediaQuery.of(context).padding.bottom,
-            child: Container(
-              height: navBarHeight,
-              decoration: BoxDecoration(
-                color: AppTheme.cardColor,
-                borderRadius: BorderRadius.circular(navBarRadius),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: horizontalPadding,
-                  vertical: verticalPadding,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildIOSNavItem(
-                      0,
-                      CupertinoIcons.home,
-                      CupertinoIcons.house_fill,
-                      iconSize,
-                      navItemSize,
-                    ),
-                    _buildIOSNavItem(
-                      1,
-                      CupertinoIcons.grid,
-                      CupertinoIcons.grid,
-                      iconSize,
-                      navItemSize,
-                    ),
-                    _buildIOSNavItem(
-                      2,
-                      CupertinoIcons.car,
-                      CupertinoIcons.car_fill,
-                      iconSize,
-                      navItemSize,
-                    ),
-                    _buildIOSNavItem(
-                      3,
-                      CupertinoIcons.money_dollar_circle,
-                      CupertinoIcons.money_dollar_circle_fill,
-                      iconSize,
-                      navItemSize,
-                    ),
-                    _buildIOSNavItem(
-                      4,
-                      CupertinoIcons.person,
-                      CupertinoIcons.person_fill,
-                      iconSize,
-                      navItemSize,
+        if (!didInnerPop && _currentIndex > 0) {
+          // At root of this tab: move to previous tab
+          setState(() {
+            _currentIndex = _currentIndex - 1;
+          });
+        }
+      },
+      child: CupertinoPageScaffold(
+        backgroundColor: Colors.black,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Main content - use IndexedStack to keep all navigators alive
+            IndexedStack(index: _currentIndex, children: _navigatorScreens),
+
+            // Positioned bottom navigation bar - fixed at bottom
+            Positioned(
+              left: navBarMargin,
+              right: navBarMargin,
+              bottom: navBarMargin + MediaQuery.of(context).padding.bottom,
+              child: Container(
+                height: navBarHeight,
+                decoration: BoxDecoration(
+                  color: AppTheme.cardColor,
+                  borderRadius: BorderRadius.circular(navBarRadius),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
                     ),
                   ],
                 ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: verticalPadding,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildIOSNavItem(
+                        0,
+                        CupertinoIcons.home,
+                        CupertinoIcons.house_fill,
+                        iconSize,
+                        navItemSize,
+                      ),
+                      _buildIOSNavItem(
+                        1,
+                        CupertinoIcons.grid,
+                        CupertinoIcons.grid,
+                        iconSize,
+                        navItemSize,
+                      ),
+                      _buildIOSNavItem(
+                        2,
+                        CupertinoIcons.car,
+                        CupertinoIcons.car_fill,
+                        iconSize,
+                        navItemSize,
+                      ),
+                      _buildIOSNavItem(
+                        3,
+                        CupertinoIcons.money_dollar_circle,
+                        CupertinoIcons.money_dollar_circle_fill,
+                        iconSize,
+                        navItemSize,
+                      ),
+                      _buildIOSNavItem(
+                        4,
+                        CupertinoIcons.person,
+                        CupertinoIcons.person_fill,
+                        iconSize,
+                        navItemSize,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -205,81 +254,99 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     double iconSize,
     double navItemSize,
   ) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Main content - fills entire space
-          Positioned.fill(child: _screens[_currentIndex]),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        // Handle back button: try to pop from the current tab's navigator first
+        final navigator = _navigatorKeys[_currentIndex].currentState;
+        final didInnerPop = navigator != null
+            ? await navigator.maybePop()
+            : false;
 
-          // Positioned bottom navigation bar - fixed at bottom
-          Positioned(
-            left: navBarMargin,
-            right: navBarMargin,
-            bottom: navBarMargin + MediaQuery.of(context).padding.bottom,
-            child: Container(
-              height: navBarHeight,
-              decoration: BoxDecoration(
-                color: AppTheme.cardColor,
-                borderRadius: BorderRadius.circular(navBarRadius),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: horizontalPadding,
-                  vertical: verticalPadding,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildAndroidNavItem(
-                      0,
-                      Icons.home_outlined,
-                      Icons.home,
-                      iconSize,
-                      navItemSize,
-                    ),
-                    _buildAndroidNavItem(
-                      1,
-                      Icons.grid_view_outlined,
-                      Icons.grid_view,
-                      iconSize,
-                      navItemSize,
-                    ),
-                    _buildAndroidNavItem(
-                      2,
-                      Icons.directions_car_outlined,
-                      Icons.directions_car,
-                      iconSize,
-                      navItemSize,
-                    ),
-                    _buildAndroidNavItem(
-                      3,
-                      Icons.wallet_outlined,
-                      Icons.wallet,
-                      iconSize,
-                      navItemSize,
-                    ),
-                    _buildAndroidNavItem(
-                      4,
-                      Icons.person_outline,
-                      Icons.person,
-                      iconSize,
-                      navItemSize,
+        if (!didInnerPop && _currentIndex > 0) {
+          // At root of this tab: move to previous tab
+          setState(() {
+            _currentIndex = _currentIndex - 1;
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Main content - use IndexedStack to keep all navigators alive
+            IndexedStack(index: _currentIndex, children: _navigatorScreens),
+
+            // Positioned bottom navigation bar - fixed at bottom
+            Positioned(
+              left: navBarMargin,
+              right: navBarMargin,
+              bottom: navBarMargin + MediaQuery.of(context).padding.bottom,
+              child: Container(
+                height: navBarHeight,
+                decoration: BoxDecoration(
+                  color: AppTheme.cardColor,
+                  borderRadius: BorderRadius.circular(navBarRadius),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
                     ),
                   ],
                 ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: verticalPadding,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildAndroidNavItem(
+                        0,
+                        Icons.home_outlined,
+                        Icons.home,
+                        iconSize,
+                        navItemSize,
+                      ),
+                      _buildAndroidNavItem(
+                        1,
+                        Icons.grid_view_outlined,
+                        Icons.grid_view,
+                        iconSize,
+                        navItemSize,
+                      ),
+                      _buildAndroidNavItem(
+                        2,
+                        Icons.directions_car_outlined,
+                        Icons.directions_car,
+                        iconSize,
+                        navItemSize,
+                      ),
+                      _buildAndroidNavItem(
+                        3,
+                        Icons.wallet_outlined,
+                        Icons.wallet,
+                        iconSize,
+                        navItemSize,
+                      ),
+                      _buildAndroidNavItem(
+                        4,
+                        Icons.person_outline,
+                        Icons.person,
+                        iconSize,
+                        navItemSize,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -296,9 +363,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     return CupertinoButton(
       padding: EdgeInsets.zero,
       onPressed: () {
-        setState(() {
-          _currentIndex = index;
-        });
+        // If tapping the same tab, pop to root if there's a navigation stack
+        if (_currentIndex == index) {
+          final navigator = _navigatorKeys[index].currentState;
+          if (navigator != null && navigator.canPop()) {
+            navigator.popUntil((route) => route.isFirst);
+          }
+        } else {
+          setState(() {
+            _currentIndex = index;
+          });
+        }
       },
       child: Container(
         width: navItemSize,
@@ -327,9 +402,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _currentIndex = index;
-        });
+        // If tapping the same tab, pop to root if there's a navigation stack
+        if (_currentIndex == index) {
+          final navigator = _navigatorKeys[index].currentState;
+          if (navigator != null && navigator.canPop()) {
+            navigator.popUntil((route) => route.isFirst);
+          }
+        } else {
+          setState(() {
+            _currentIndex = index;
+          });
+        }
       },
       child: Container(
         width: navItemSize,
@@ -344,6 +427,61 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           size: iconSize,
         ),
       ),
+    );
+  }
+}
+
+// Separate widget to ensure Navigator is properly initialized
+class _NavigatorWrapper extends StatefulWidget {
+  const _NavigatorWrapper({
+    super.key,
+    required this.navigatorKey,
+    required this.screen,
+  });
+
+  final GlobalKey<NavigatorState> navigatorKey;
+  final Widget screen;
+
+  @override
+  State<_NavigatorWrapper> createState() => _NavigatorWrapperState();
+}
+
+class _NavigatorWrapperState extends State<_NavigatorWrapper> {
+  @override
+  Widget build(BuildContext context) {
+    return Navigator(
+      key: widget.navigatorKey,
+      initialRoute: '/',
+      onGenerateInitialRoutes:
+          (NavigatorState navigator, String initialRouteName) {
+            // Always generate the initial route to ensure Navigator has history
+            return [
+              MaterialPageRoute(
+                builder: (context) => widget.screen,
+                settings: const RouteSettings(name: '/'),
+              ),
+            ];
+          },
+      onGenerateRoute: (settings) {
+        // If it's the initial route, return the root screen
+        if (settings.name == null ||
+            settings.name == '/' ||
+            settings.name!.isEmpty) {
+          return MaterialPageRoute(
+            builder: (context) => widget.screen,
+            settings: const RouteSettings(name: '/'),
+          );
+        }
+
+        // For other routes, check if they exist in AppRoutes
+        final routeBuilder = AppRoutes.routes[settings.name];
+        if (routeBuilder != null) {
+          return MaterialPageRoute(builder: routeBuilder, settings: settings);
+        }
+
+        // Fallback to app's route generator for dynamic routes
+        return AppRoutes.generateRoute(settings);
+      },
     );
   }
 }

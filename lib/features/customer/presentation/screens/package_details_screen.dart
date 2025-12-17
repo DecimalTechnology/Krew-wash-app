@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 import '../../data/repositories/vehicle_repository.dart';
 import '../../presentation/providers/vehicle_provider.dart';
 import '../../../../core/constants/route_constants.dart';
@@ -111,16 +112,16 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
+                    SizedBox(height: 16),
+                    Text(
                       'Select Wash Dates',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: Colors.white,
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     CalendarDatePicker(
                       initialDate: DateTime.now(),
                       firstDate: DateTime.now(),
@@ -136,7 +137,7 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                         });
                       },
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Wrap(
@@ -144,9 +145,11 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                         runSpacing: 8,
                         children: tempSelection.isEmpty
                             ? [
-                                const Text(
+                                Text(
                                   'No dates selected yet.',
-                                  style: TextStyle(color: Colors.white54),
+                                  style: AppTheme.bebasNeue(
+                                    color: Colors.white54,
+                                  ),
                                 ),
                               ]
                             : tempSelection
@@ -170,7 +173,7 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                                   .toList(),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
@@ -182,10 +185,10 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                             onPressed: () {
                               setModalState(tempSelection.clear);
                             },
-                            child: const Text('CLEAR'),
+                            child: Text('CLEAR'),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
@@ -198,7 +201,7 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                                 _selectedDates = tempSelection.toList()..sort();
                               });
                             },
-                            child: const Text('DONE'),
+                            child: Text('DONE'),
                           ),
                         ),
                       ],
@@ -240,21 +243,21 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(context),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               if (_package != null) _buildPackageCard(_package!),
               if (_selectedAddOns.isNotEmpty) ...[
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 ..._selectedAddOns.map(_buildAddOnCard),
               ],
               if (_requiresDates) ...[
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 _buildDateSelector(),
               ],
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _buildVehicleSection(),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               _buildCheckoutButton(),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
             ],
           ),
         ),
@@ -265,21 +268,19 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
   Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
-        IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        const SizedBox(width: 12),
-        const Text(
-          'MY PACKAGE',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
+        StandardBackButton(onPressed: () => Navigator.pop(context)),
+        Expanded(
+          child: Text(
+            'MY PACKAGE',
+            textAlign: TextAlign.center,
+            style: AppTheme.bebasNeue(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 1.2,
+            ),
           ),
         ),
-        const Spacer(),
         if (widget.arguments?.vehicleTypeName != null)
           Container(
             padding: const EdgeInsets.symmetric(
@@ -295,10 +296,12 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
               style: const TextStyle(
                 color: Color(0xFF04CDFE),
                 fontSize: 12,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w400,
               ),
             ),
-          ),
+          )
+        else
+          SizedBox(width: 40), // Balance the back button width
       ],
     );
   }
@@ -314,10 +317,12 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
       decoration: BoxDecoration(
         color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF04CDFE).withOpacity(0.3)),
+        border: Border.all(
+          color: const Color(0xFF04CDFE).withValues(alpha: 0.3),
+        ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF04CDFE).withOpacity(0.15),
+            color: const Color(0xFF04CDFE).withValues(alpha: 0.15),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -338,11 +343,11 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                       style: const TextStyle(
                         color: Color(0xFF04CDFE),
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         letterSpacing: 1,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Text(
                       package['description']?.toString() ??
                           'Premium car wash package',
@@ -361,32 +366,32 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                     frequency,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     price,
                     style: const TextStyle(
                       color: Color(0xFF04CDFE),
                       fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          const Text(
+          SizedBox(height: 16),
+          Text(
             'FEATURES',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white70,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.8,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           ...features.map(
             (feature) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -400,7 +405,7 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       feature,
@@ -451,7 +456,9 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
       decoration: BoxDecoration(
         color: const Color(0xFF01061C),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF04CDFE).withOpacity(0.2)),
+        border: Border.all(
+          color: const Color(0xFF04CDFE).withValues(alpha: 0.2),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,11 +473,11 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                     (addOn['name'] ?? 'ADD-ON').toString().toUpperCase(),
                     style: const TextStyle(
                       color: Color(0xFF04CDFE),
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: 0.8,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     addOn['frequency']?.toString() ?? '',
                     style: const TextStyle(color: Colors.white54),
@@ -482,12 +489,12 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                 style: const TextStyle(
                   color: Color(0xFF04CDFE),
                   fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           ...features.map(
             (feature) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -501,7 +508,7 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       feature,
@@ -512,22 +519,25 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'EACH SERVICE',
-                    style: TextStyle(color: Colors.white54, fontSize: 12),
+                    style: AppTheme.bebasNeue(
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
                   ),
                   Text(
                     singlePriceLabel,
                     style: const TextStyle(
                       color: Color(0xFF04CDFE),
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ],
@@ -543,7 +553,7 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                     '${totalPrice.toStringAsFixed(2)} AED',
                     style: const TextStyle(
                       color: Color(0xFF04CDFE),
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                       fontSize: 16,
                     ),
                   ),
@@ -560,16 +570,16 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'SELECT DATES',
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: Colors.white,
             fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w400,
             letterSpacing: 1.2,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF04CDFE),
@@ -580,13 +590,13 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
             ),
           ),
           onPressed: _pickDates,
-          child: const Text('SELECT DATES'),
+          child: Text('SELECT DATES'),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         if (_selectedDates.isEmpty)
-          const Text(
+          Text(
             'No dates selected yet.',
-            style: TextStyle(color: Colors.white54),
+            style: AppTheme.bebasNeue(color: Colors.white54),
           )
         else
           Wrap(
@@ -626,12 +636,12 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'SELECT YOUR VEHICLE',
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: 16,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w400,
                 letterSpacing: 1.1,
               ),
             ),
@@ -648,19 +658,19 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                 }
               },
               icon: const Icon(Icons.add, color: Color(0xFF04CDFE)),
-              label: const Text(
+              label: Text(
                 'ADD',
-                style: TextStyle(color: Color(0xFF04CDFE)),
+                style: AppTheme.bebasNeue(color: Color(0xFF04CDFE)),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Consumer<VehicleProvider>(
           builder: (context, provider, _) {
             final vehicles = provider.vehicles;
             if (vehicles.isEmpty && provider.isLoadingVehicles) {
-              return const Center(
+              return Center(
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 24.0),
                   child: CircularProgressIndicator(color: Color(0xFF04CDFE)),
@@ -668,11 +678,11 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
               );
             }
             if (vehicles.isEmpty) {
-              return const Padding(
+              return Padding(
                 padding: EdgeInsets.symmetric(vertical: 24),
                 child: Text(
                   'No vehicles found. Please add a car to proceed.',
-                  style: TextStyle(color: Colors.white54),
+                  style: AppTheme.bebasNeue(color: Colors.white54),
                 ),
               );
             }
@@ -740,11 +750,11 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                           vehicle['vehicleModel']?.toString() ?? 'VEHICLE',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w400,
                             fontSize: 15,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: 6),
                         _buildVehicleInfoRow('TYPE', type),
                         _buildVehicleInfoRow('NUMBER', number),
                         _buildVehicleInfoRow('COLOR', color),
@@ -844,9 +854,12 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                   );
                 }
               : null,
-          child: const Text(
+          child: Text(
             'CHECKOUT',
-            style: TextStyle(letterSpacing: 1.2, fontWeight: FontWeight.bold),
+            style: AppTheme.bebasNeue(
+              letterSpacing: 1.2,
+              fontWeight: FontWeight.w400,
+            ),
           ),
         );
       },

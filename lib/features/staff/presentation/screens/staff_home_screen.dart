@@ -1,3 +1,4 @@
+import '../../../../core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
@@ -81,7 +82,7 @@ class StaffHomeScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                       // Welcome Header
                       _buildWelcomeHeader(
                         context,
@@ -90,7 +91,7 @@ class StaffHomeScreen extends StatelessWidget {
                         isTablet,
                         horizontalPadding,
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
                       Padding(
                         padding: EdgeInsets.symmetric(
                           horizontal: horizontalPadding,
@@ -105,7 +106,7 @@ class StaffHomeScreen extends StatelessWidget {
                               isSmallScreen,
                               isTablet,
                             ),
-                            const SizedBox(height: 32),
+                            SizedBox(height: 32),
                             // Today's Schedule Section
                             _buildTodaysScheduleSection(
                               context,
@@ -113,7 +114,7 @@ class StaffHomeScreen extends StatelessWidget {
                               isSmallScreen,
                               isTablet,
                             ),
-                            const SizedBox(height: 24),
+                            SizedBox(height: 24),
                           ],
                         ),
                       ),
@@ -175,9 +176,9 @@ class StaffHomeScreen extends StatelessWidget {
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                       colors: [
-                        Colors.black.withOpacity(0.92),
-                        Colors.black.withOpacity(0.5),
-                        Colors.black.withOpacity(0.15),
+                        Colors.black.withValues(alpha: 0.92),
+                        Colors.black.withValues(alpha: 0.5),
+                        Colors.black.withValues(alpha: 0.15),
                       ],
                     ),
                   ),
@@ -192,18 +193,17 @@ class StaffHomeScreen extends StatelessWidget {
                   children: [
                     Text(
                       'WELCOME BACK',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: const Color(0xFF7FB6D4),
                         fontSize: isSmallScreen ? 12 : 14,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 1.2,
-                        fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Text(
                       userName,
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: Colors.white,
                         fontSize: isSmallScreen
                             ? 28
@@ -212,18 +212,16 @@ class StaffHomeScreen extends StatelessWidget {
                             : 34,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1.1,
-                        fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     Text(
                       'ID : $userId',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: const Color(0xFF04CDFE),
                         fontSize: isSmallScreen ? 14 : 16,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.8,
-                        fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                       ),
                     ),
                   ],
@@ -280,9 +278,9 @@ class StaffHomeScreen extends StatelessWidget {
     return Container(
       height: isSmallScreen ? 110 : 120,
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.1),
+        color: Colors.black.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.15), width: 1.2),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.2),
       ),
       child: Center(
         child: Column(
@@ -290,7 +288,7 @@ class StaffHomeScreen extends StatelessWidget {
           children: [
             Text(
               number,
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: const Color(0xFF04CDFE),
                 fontSize: isSmallScreen
                     ? 36
@@ -298,19 +296,18 @@ class StaffHomeScreen extends StatelessWidget {
                     ? 54
                     : 44,
                 fontWeight: FontWeight.w700,
-                fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
+
                 letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             Text(
               label,
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: isSmallScreen ? 12 : 14,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1.3,
-                fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
               ),
             ),
           ],
@@ -330,15 +327,14 @@ class StaffHomeScreen extends StatelessWidget {
       children: [
         Text(
           'TODAY\'S SCHEDULE',
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: Colors.white,
             fontSize: isSmallScreen ? 16 : 18,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w400,
             letterSpacing: 1.2,
-            fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         _buildScheduleCard(context, isIOS, isSmallScreen, isTablet),
       ],
     );
@@ -356,9 +352,9 @@ class StaffHomeScreen extends StatelessWidget {
         vertical: isSmallScreen ? 20 : 26,
       ),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.12),
+        color: Colors.black.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(isIOS ? 26 : 22),
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.2),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -373,41 +369,37 @@ class StaffHomeScreen extends StatelessWidget {
                   children: [
                     Text(
                       'CHEVROLET AMED U-WA',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: const Color(0xFF04CDFE),
                         fontSize: isSmallScreen ? 14 : 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         letterSpacing: 0.5,
-                        fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       'JFM 824 J 12',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: Colors.white,
                         fontSize: isSmallScreen ? 12 : 14,
-                        fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     RichText(
                       text: TextSpan(
                         children: [
                           TextSpan(
                             text: 'ID : ',
-                            style: TextStyle(
+                            style: AppTheme.bebasNeue(
                               color: const Color(0xFF04CDFE),
                               fontSize: isSmallScreen ? 12 : 14,
-                              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                             ),
                           ),
                           TextSpan(
                             text: 'BOOKING 01',
-                            style: TextStyle(
+                            style: AppTheme.bebasNeue(
                               color: Colors.white,
                               fontSize: isSmallScreen ? 12 : 14,
-                              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                             ),
                           ),
                         ],
@@ -429,20 +421,19 @@ class StaffHomeScreen extends StatelessWidget {
                 ),
                 child: Text(
                   'PENDING',
-                  style: TextStyle(
+                  style: AppTheme.bebasNeue(
                     color: const Color(0xFF04CDFE),
                     fontSize: isSmallScreen ? 10 : 12,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: 0.5,
-                    fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 18),
-          Divider(color: Colors.white.withOpacity(0.08), thickness: 1),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
+          Divider(color: Colors.white.withValues(alpha: 0.08), thickness: 1),
+          SizedBox(height: 18),
           // Service details
           _buildDetailRow(
             context,
@@ -451,7 +442,7 @@ class StaffHomeScreen extends StatelessWidget {
             isIOS,
             isSmallScreen,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildDetailRow(
             context,
             'LOCATION',
@@ -459,7 +450,7 @@ class StaffHomeScreen extends StatelessWidget {
             isIOS,
             isSmallScreen,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildDetailRow(
             context,
             'DATE & TIME',
@@ -468,7 +459,7 @@ class StaffHomeScreen extends StatelessWidget {
             isSmallScreen,
             isHighlighted: true,
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           // View Details Button
           Align(
             alignment: Alignment.center,
@@ -500,10 +491,10 @@ class StaffHomeScreen extends StatelessWidget {
                           },
                           child: Text(
                             'VIEW DETAILS',
-                            style: TextStyle(
+                            style: AppTheme.bebasNeue(
                               color: Colors.white,
                               fontSize: isSmallScreen ? 13 : 15,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w400,
                               letterSpacing: 1.1,
                             ),
                           ),
@@ -530,9 +521,9 @@ class StaffHomeScreen extends StatelessWidget {
                           },
                           child: Text(
                             'VIEW DETAILS',
-                            style: TextStyle(
+                            style: AppTheme.bebasNeue(
                               fontSize: isSmallScreen ? 13 : 15,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w400,
                               letterSpacing: 1.1,
                             ),
                           ),
@@ -561,21 +552,20 @@ class StaffHomeScreen extends StatelessWidget {
           width: isSmallScreen ? 80 : 100,
           child: Text(
             label,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white70,
               fontSize: isSmallScreen ? 12 : 14,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
             ),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: isHighlighted ? const Color(0xFF04CDFE) : Colors.white,
               fontSize: isSmallScreen ? 12 : 14,
               fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.normal,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+
               height: 1.4,
             ),
             textAlign: TextAlign.right,

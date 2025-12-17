@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_theme.dart';
 
 class AppTextStyles {
@@ -14,11 +15,10 @@ class AppTextStyles {
     double? letterSpacing,
     double? height,
   }) {
-    return TextStyle(
-      fontFamily: AppTheme.fontFamily,
+    return AppTheme.bebasNeue(
       fontSize: fontSize,
       fontWeight: fontWeight,
-      color: color ?? AppTheme.textColor,
+      color: color,
       letterSpacing: letterSpacing,
       height: height,
     );
@@ -151,7 +151,7 @@ class AppTextStyles {
     return CupertinoTheme.of(context).textTheme.textStyle;
   }
 
-  /// Custom Cupertino-style text with San Francisco font feel
+  /// Custom Cupertino-style text with Bebas Neue font
   static TextStyle cupertino({
     double? fontSize,
     FontWeight? fontWeight,
@@ -159,12 +159,11 @@ class AppTextStyles {
     double? letterSpacing,
     double? height,
   }) {
-    return TextStyle(
-      fontFamily: '.SF Pro Text', // iOS system font
-      fontSize: fontSize ?? 17, // iOS default body size
-      fontWeight: fontWeight ?? FontWeight.normal,
+    return GoogleFonts.bebasNeue(
+      fontSize: fontSize ?? 17,
+      fontWeight: fontWeight ?? FontWeight.w400,
       color: color ?? AppTheme.textColor,
-      letterSpacing: letterSpacing ?? -0.41, // iOS default letter spacing
+      letterSpacing: letterSpacing ?? 0.5,
       height: height,
     );
   }

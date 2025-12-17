@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 import '../../domain/models/booking_model.dart';
 import '../providers/cleaner_booking_provider.dart';
 import 'staff_session_details_screen.dart';
@@ -135,7 +137,7 @@ class StaffServiceDetailsScreen extends StatelessWidget {
                       isSmallScreen,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   // Sessions List
                   Expanded(
                     child: ListView.builder(
@@ -191,33 +193,7 @@ class StaffServiceDetailsScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Back button in blue circular container on the left
-          Container(
-            width: 32,
-            height: 32,
-            decoration: const BoxDecoration(
-              color: Color(0xFF04CDFE),
-              shape: BoxShape.circle,
-            ),
-            child: isIOS
-                ? CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Icon(
-                      CupertinoIcons.arrow_left,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  )
-                : IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    onPressed: () => Navigator.of(context).pop(),
-                    padding: EdgeInsets.zero,
-                  ),
-          ),
+          StandardBackButton(onPressed: () => Navigator.of(context).pop()),
           // Spacer to push heading to center
           const Spacer(),
           // Centered heading
@@ -225,21 +201,19 @@ class StaffServiceDetailsScreen extends StatelessWidget {
             children: [
               Text(
                 'Booking Details',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
+                style: AppTheme.bebasNeue(
+                  color: Colors.white.withValues(alpha: 0.7),
                   fontSize: isSmallScreen ? 12 : 14,
-                  fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 serviceName.toUpperCase(),
-                style: TextStyle(
+                style: AppTheme.bebasNeue(
                   color: Colors.white,
                   fontSize: isSmallScreen ? 20 : 24,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: 1.2,
-                  fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
                 ),
               ),
             ],
@@ -247,7 +221,7 @@ class StaffServiceDetailsScreen extends StatelessWidget {
           // Spacer to balance the back button on the left
           const Spacer(),
           // Invisible placeholder to balance the back button
-          const SizedBox(width: 32),
+          SizedBox(width: 40),
         ],
       ),
     );
@@ -264,20 +238,18 @@ class StaffServiceDetailsScreen extends StatelessWidget {
       children: [
         Text(
           'SESSIONS',
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: const Color(0xFF04CDFE),
             fontSize: isSmallScreen ? 14 : 16,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w400,
             letterSpacing: 1.2,
-            fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
           ),
         ),
         Text(
           '$completedCount/$totalSessions COMPLETED',
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: Colors.white,
             fontSize: isSmallScreen ? 14 : 16,
-            fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
           ),
         ),
       ],
@@ -349,12 +321,11 @@ class StaffServiceDetailsScreen extends StatelessWidget {
               children: [
                 Text(
                   'SESSION $sessionNumber',
-                  style: TextStyle(
+                  style: AppTheme.bebasNeue(
                     color: Colors.white,
                     fontSize: isSmallScreen ? 14 : 16,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: 0.5,
-                    fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
                   ),
                 ),
                 if (isCompleted)
@@ -364,18 +335,17 @@ class StaffServiceDetailsScreen extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.2),
+                      color: Colors.green.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: Colors.green, width: 1),
                     ),
                     child: Text(
                       'COMPLETED',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: Colors.green,
                         fontSize: isSmallScreen ? 10 : 12,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         letterSpacing: 0.5,
-                        fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                       ),
                     ),
                   )
@@ -431,7 +401,9 @@ class StaffServiceDetailsScreen extends StatelessWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF04CDFE).withOpacity(0.2),
+                            color: const Color(
+                              0xFF04CDFE,
+                            ).withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: const Color(0xFF04CDFE),
@@ -454,14 +426,11 @@ class StaffServiceDetailsScreen extends StatelessWidget {
                                 )
                               : Text(
                                   'MARK COMPLETE',
-                                  style: TextStyle(
+                                  style: AppTheme.bebasNeue(
                                     color: const Color(0xFF04CDFE),
                                     fontSize: isSmallScreen ? 10 : 12,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.w400,
                                     letterSpacing: 0.5,
-                                    fontFamily: isIOS
-                                        ? '.SF Pro Text'
-                                        : 'Roboto',
                                   ),
                                 ),
                         ),
@@ -471,13 +440,12 @@ class StaffServiceDetailsScreen extends StatelessWidget {
               ],
             ),
             if (isCompleted && session != null) ...[
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
                 'COMPLETED ON ${_formatDate(session.date)}',
-                style: TextStyle(
+                style: AppTheme.bebasNeue(
                   color: Colors.white70,
                   fontSize: isSmallScreen ? 12 : 14,
-                  fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                 ),
               ),
             ],
@@ -523,7 +491,7 @@ class StaffServiceDetailsScreen extends StatelessWidget {
           content: Text(message),
           actions: [
             CupertinoDialogAction(
-              child: const Text('OK'),
+              child: Text('OK'),
               onPressed: () => Navigator.of(context).pop(),
             ),
           ],

@@ -1,5 +1,5 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter/foundation.dart';
+import 'dart:convert';
 
 class SecureStorageService {
   static const _storage = FlutterSecureStorage(
@@ -19,6 +19,9 @@ class SecureStorageService {
   static const String _staffAccessTokenKey = 'staff_access_token';
   static const String _staffDataKey = 'staff_data';
 
+  // Pending booking (for payment retry)
+  static const String _pendingBookingKey = 'pending_booking';
+
   // Save tokens
   static Future<void> saveTokens({
     String? UseraccessToken,
@@ -28,30 +31,17 @@ class SecureStorageService {
     try {
       if (UseraccessToken != null) {
         await _storage.write(key: _accessTokenKey, value: UseraccessToken);
-        if (kDebugMode) {
-          print(
-            '🔐 Access token saved to secure storageeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-          );
-        }
       }
 
       if (UserrefreshToken != null) {
         await _storage.write(key: _refreshTokenKey, value: UserrefreshToken);
-        if (kDebugMode) {
-          print('🔄 Refresh token saved to secure storage');
-        }
       }
 
       if (idToken != null) {
         await _storage.write(key: _idTokenKey, value: idToken);
-        if (kDebugMode) {
-          print('🆔 ID token saved to secure storage');
-        }
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error saving tokens: $e');
-      }
+      // Error saving tokens
     }
   }
 
@@ -68,9 +58,6 @@ class SecureStorageService {
         'idToken': idToken,
       };
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error reading tokens: $e');
-      }
       return {};
     }
   }
@@ -78,14 +65,8 @@ class SecureStorageService {
   // Get access token
   static Future<String?> getAccessToken() async {
     try {
-      print(
-        "access tokennnnnnnnnnnnnnnnnnnnnnnnnn: ${await _storage.read(key: _accessTokenKey)}",
-      );
       return await _storage.read(key: _accessTokenKey);
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error reading access token: $e');
-      }
       return null;
     }
   }
@@ -95,9 +76,6 @@ class SecureStorageService {
     try {
       return await _storage.read(key: _refreshTokenKey);
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error reading refresh token: $e');
-      }
       return null;
     }
   }
@@ -107,9 +85,6 @@ class SecureStorageService {
     try {
       return await _storage.read(key: _idTokenKey);
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error reading ID token: $e');
-      }
       return null;
     }
   }
@@ -118,13 +93,8 @@ class SecureStorageService {
   static Future<void> saveUserData(String userData) async {
     try {
       await _storage.write(key: _userDataKey, value: userData);
-      if (kDebugMode) {
-        print('👤 User data saved to secure storage');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error saving user data: $e');
-      }
+      // Error saving user data
     }
   }
 
@@ -133,9 +103,6 @@ class SecureStorageService {
     try {
       return await _storage.read(key: _userDataKey);
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error reading user data: $e');
-      }
       return null;
     }
   }
@@ -144,13 +111,8 @@ class SecureStorageService {
   static Future<void> clearAll() async {
     try {
       await _storage.deleteAll();
-      if (kDebugMode) {
-        print('🗑️ All secure storage cleared');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error clearing secure storage: $e');
-      }
+      // Error clearing secure storage
     }
   }
 
@@ -173,13 +135,8 @@ class SecureStorageService {
       }
 
       await _storage.delete(key: key);
-      if (kDebugMode) {
-        print('🗑️ $tokenType token cleared from secure storage');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error clearing $tokenType token: $e');
-      }
+      // Error clearing token
     }
   }
 
@@ -189,9 +146,6 @@ class SecureStorageService {
       final tokens = await getTokens();
       return tokens['accessToken'] != null || tokens['idToken'] != null;
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error checking login status: $e');
-      }
       return false;
     }
   }
@@ -204,13 +158,8 @@ class SecureStorageService {
   static Future<void> saveStaffTokens({required String accessToken}) async {
     try {
       await _storage.write(key: _staffAccessTokenKey, value: accessToken);
-      if (kDebugMode) {
-        print('🔐 Staff access token saved to secure storage');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error saving staff tokens: $e');
-      }
+      // Error saving staff tokens
     }
   }
 
@@ -219,9 +168,6 @@ class SecureStorageService {
     try {
       return await _storage.read(key: _staffAccessTokenKey);
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error reading staff access token: $e');
-      }
       return null;
     }
   }
@@ -230,13 +176,8 @@ class SecureStorageService {
   static Future<void> saveStaffData(String staffData) async {
     try {
       await _storage.write(key: _staffDataKey, value: staffData);
-      if (kDebugMode) {
-        print('👷 Staff data saved to secure storage');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error saving staff data: $e');
-      }
+      // Error saving staff data
     }
   }
 
@@ -245,9 +186,6 @@ class SecureStorageService {
     try {
       return await _storage.read(key: _staffDataKey);
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error reading staff data: $e');
-      }
       return null;
     }
   }
@@ -258,9 +196,6 @@ class SecureStorageService {
       final token = await getStaffAccessToken();
       return token != null && token.isNotEmpty;
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error checking staff login status: $e');
-      }
       return false;
     }
   }
@@ -270,13 +205,48 @@ class SecureStorageService {
     try {
       await _storage.delete(key: _staffAccessTokenKey);
       await _storage.delete(key: _staffDataKey);
-      if (kDebugMode) {
-        print('🗑️ Staff data cleared from secure storage');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error clearing staff data: $e');
-      }
+      // Error clearing staff data
+    }
+  }
+
+  // ============================================
+  // PENDING BOOKING (PAYMENT RETRY) METHODS
+  // ============================================
+
+  static Future<void> savePendingBooking({
+    required String bookingId,
+    required String signature,
+  }) async {
+    try {
+      final payload = jsonEncode({
+        'bookingId': bookingId,
+        'signature': signature,
+        'createdAt': DateTime.now().toIso8601String(),
+      });
+      await _storage.write(key: _pendingBookingKey, value: payload);
+    } catch (e) {
+      // Error saving pending booking
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getPendingBooking() async {
+    try {
+      final raw = await _storage.read(key: _pendingBookingKey);
+      if (raw == null || raw.isEmpty) return null;
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) return decoded;
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<void> clearPendingBooking() async {
+    try {
+      await _storage.delete(key: _pendingBookingKey);
+    } catch (e) {
+      // Error clearing pending booking
     }
   }
 }

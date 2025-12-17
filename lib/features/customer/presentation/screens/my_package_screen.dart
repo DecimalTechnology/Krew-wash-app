@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/text_styles.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 
 class MyPackageScreen extends StatelessWidget {
   const MyPackageScreen({super.key});
@@ -58,7 +59,7 @@ class MyPackageScreen extends StatelessWidget {
               // Add On Button
               _buildAddOnButton(context, isIOS),
 
-              const SizedBox(height: 40),
+              SizedBox(height: 40),
             ],
           ),
         ),
@@ -82,68 +83,39 @@ class MyPackageScreen extends StatelessWidget {
       child: Row(
         children: [
           // Back Button
-          Container(
-            width: isVeryLargeScreen
-                ? 55
-                : isLargeScreen
-                ? 50
-                : 40,
-            height: isVeryLargeScreen
-                ? 55
-                : isLargeScreen
-                ? 50
-                : 40,
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(
-                isVeryLargeScreen
-                    ? 28
+          StandardBackButton(
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final didPop = await navigator.maybePop();
+              if (!didPop) {
+                final rootNavigator = Navigator.of(
+                  context,
+                  rootNavigator: true,
+                );
+                if (rootNavigator != navigator) {
+                  await rootNavigator.maybePop();
+                }
+              }
+            },
+          ),
+          // Centered Title
+          Expanded(
+            child: Text(
+              'MY PACKAGE',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bebasNeue(
+                fontSize: isVeryLargeScreen
+                    ? 24
                     : isLargeScreen
-                    ? 25
+                    ? 22
                     : 20,
-              ),
-              border: Border.all(
+                fontWeight: FontWeight.w400,
                 color: Colors.white,
-                width: isVeryLargeScreen ? 1.5 : 1,
+                letterSpacing: 1.2,
               ),
             ),
-            child: isIOS
-                ? CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () => Navigator.pop(context),
-                    child: Icon(
-                      CupertinoIcons.back,
-                      color: Colors.white,
-                      size: isVeryLargeScreen
-                          ? 26
-                          : isLargeScreen
-                          ? 24
-                          : 20,
-                    ),
-                  )
-                : Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(
-                        isVeryLargeScreen
-                            ? 28
-                            : isLargeScreen
-                            ? 25
-                            : 20,
-                      ),
-                      onTap: () => Navigator.pop(context),
-                      child: Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                        size: isVeryLargeScreen
-                            ? 26
-                            : isLargeScreen
-                            ? 24
-                            : 20,
-                      ),
-                    ),
-                  ),
           ),
+          SizedBox(width: 40), // Balance the back button width
         ],
       ),
     );
@@ -152,7 +124,6 @@ class MyPackageScreen extends StatelessWidget {
   Widget _buildCarIllustrationSection(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final screenWidth = screenSize.width;
-    final screenHeight = screenSize.height;
     final isLargeScreen = screenWidth > 400;
     final isVeryLargeScreen = screenWidth > 600;
 
@@ -278,7 +249,7 @@ class MyPackageScreen extends StatelessWidget {
                   : isLargeScreen
                   ? 28
                   : 24,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
               color: Colors.white,
               letterSpacing: 2.0,
             ),
@@ -340,7 +311,7 @@ class MyPackageScreen extends StatelessWidget {
                   : isLargeScreen
                   ? 18
                   : 16,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
               color: const Color(0xFF04CDFE),
               letterSpacing: 1.5,
             ),
@@ -411,67 +382,51 @@ class MyPackageScreen extends StatelessWidget {
     final isLargeScreen = screenWidth > 400;
     final isVeryLargeScreen = screenWidth > 600;
 
-    return Container(
-      width: isVeryLargeScreen
-          ? 180
-          : isLargeScreen
-          ? 160
-          : screenWidth * 0.35,
-      height: isVeryLargeScreen
-          ? 90
-          : isLargeScreen
-          ? 80
-          : screenWidth * 0.175,
+    final progressWidth = isVeryLargeScreen
+        ? 180.0
+        : isLargeScreen
+        ? 160.0
+        : screenWidth * 0.35;
+    final progressHeight = isVeryLargeScreen
+        ? 90.0
+        : isLargeScreen
+        ? 80.0
+        : screenWidth * 0.175;
+
+    return SizedBox(
+      width: progressWidth,
+      height: progressHeight,
       child: Stack(
+        alignment: Alignment.center,
         children: [
           // Semi-circle background
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 10,
-            bottom: 0,
-            child: Container(
-              width: isVeryLargeScreen
-                  ? 180
-                  : isLargeScreen
-                  ? 160
-                  : screenWidth * 0.35,
-              height: isVeryLargeScreen
-                  ? 90
-                  : isLargeScreen
-                  ? 80
-                  : screenWidth * 0.175,
-              child: Image.asset(
-                'assets/CustomerHome/semicircle.png',
-                fit: BoxFit.contain,
-              ),
-            ),
+          Image.asset(
+            'assets/CustomerHome/semicircle.png',
+            width: progressWidth,
+            height: progressHeight,
+            fit: BoxFit.contain,
           ),
-          // Progress text
-          Positioned(
-            top: isVeryLargeScreen
-                ? 25
-                : isLargeScreen
-                ? 20
-                : 30,
-            left: 0,
-            right: 10,
-            child: Column(
-              children: [
-                Text(
-                  '2/5',
-                  style: AppTextStyles.bebasNeue(
-                    fontSize: isVeryLargeScreen
-                        ? 32
-                        : isLargeScreen
-                        ? 28
-                        : 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-              ],
+          // Progress text - centered
+          Padding(
+            padding: EdgeInsets.only(
+              top: isVeryLargeScreen
+                  ? 20
+                  : isLargeScreen
+                  ? 18
+                  : 16,
+            ),
+            child: Text(
+              '2/5',
+              style: AppTextStyles.bebasNeue(
+                fontSize: isVeryLargeScreen
+                    ? 32
+                    : isLargeScreen
+                    ? 28
+                    : 24,
+                fontWeight: FontWeight.w400,
+                color: Colors.white,
+                letterSpacing: 1.0,
+              ),
             ),
           ),
         ],
@@ -525,19 +480,36 @@ class MyPackageScreen extends StatelessWidget {
           ),
         ],
       ),
-      child: Text(
-        'NEXT CAR WASH: 11/11/2025',
-        style: AppTextStyles.bebasNeue(
-          fontSize: isVeryLargeScreen
-              ? 20
-              : isLargeScreen
-              ? 18
-              : 16,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-          letterSpacing: 0.8,
-        ),
-        textAlign: TextAlign.center,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.calendar_today,
+            color: const Color(0xFF04CDFE),
+            size: isVeryLargeScreen
+                ? 20
+                : isLargeScreen
+                ? 18
+                : 16,
+          ),
+          SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              'NEXT CAR WASH: 11/11/2025',
+              style: AppTextStyles.bebasNeue(
+                fontSize: isVeryLargeScreen
+                    ? 20
+                    : isLargeScreen
+                    ? 18
+                    : 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+                letterSpacing: 0.8,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -605,7 +577,7 @@ class MyPackageScreen extends StatelessWidget {
                           : isLargeScreen
                           ? 18
                           : 16,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                       color: Colors.white,
                       letterSpacing: 1.2,
                     ),
@@ -656,7 +628,7 @@ class MyPackageScreen extends StatelessWidget {
                       : isLargeScreen
                       ? 18
                       : 16,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w400,
                   color: Colors.white,
                   letterSpacing: 1.2,
                 ),

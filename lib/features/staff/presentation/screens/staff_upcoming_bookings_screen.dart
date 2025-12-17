@@ -123,12 +123,12 @@ class _StaffUpcomingBookingsScreenState
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'UPCOMING BOOKINGS',
-                          style: TextStyle(
+                          style: AppTheme.bebasNeue(
                             color: Colors.white,
                             fontSize: isSmallScreen ? 16 : 18,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w400,
                             letterSpacing: 1.2,
-                            fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
+                            
                           ),
                         ),
                       ),
@@ -170,15 +170,15 @@ class _StaffUpcomingBookingsScreenState
             controller: _searchController,
             placeholder: 'SEARCH BOOKING ID OR VEHICLE',
             placeholderStyle: TextStyle(
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
               fontSize: isSmallScreen ? 12 : 14,
             ),
             style: const TextStyle(color: Colors.white),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -205,22 +205,22 @@ class _StaffUpcomingBookingsScreenState
             decoration: InputDecoration(
               hintText: 'SEARCH BOOKING ID OR VEHICLE',
               hintStyle: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 fontSize: isSmallScreen ? 12 : 14,
               ),
               filled: true,
-              fillColor: Colors.white.withOpacity(0.1),
+              fillColor: Colors.white.withValues(alpha: 0.1),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -253,8 +253,8 @@ class _StaffUpcomingBookingsScreenState
         bookingProvider.assignedBookings.isEmpty) {
       return SliverList(
         delegate: SliverChildListDelegate([
-          const SizedBox(height: 40),
-          const Center(child: CupertinoActivityIndicator(color: Colors.white)),
+          SizedBox(height: 40),
+          Center(child: CupertinoActivityIndicator(color: Colors.white)),
         ]),
       );
     }
@@ -349,41 +349,41 @@ class _StaffUpcomingBookingsScreenState
                   children: [
                     Text(
                       title,
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: const Color(0xFF04CDFE),
                         fontSize: isSmallScreen ? 14 : 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         letterSpacing: 0.5,
-                        fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
+                        
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: Colors.white,
                         fontSize: isSmallScreen ? 12 : 14,
-                        fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+                        
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     RichText(
                       text: TextSpan(
                         children: [
                           TextSpan(
                             text: 'ID : ',
-                            style: TextStyle(
+                            style: AppTheme.bebasNeue(
                               color: const Color(0xFF04CDFE),
                               fontSize: isSmallScreen ? 12 : 14,
-                              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+                              
                             ),
                           ),
                           TextSpan(
                             text: bookingId,
-                            style: TextStyle(
+                            style: AppTheme.bebasNeue(
                               color: Colors.white,
                               fontSize: isSmallScreen ? 12 : 14,
-                              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+                              
                             ),
                           ),
                         ],
@@ -405,25 +405,25 @@ class _StaffUpcomingBookingsScreenState
                 ),
                 child: Text(
                   status.toUpperCase(),
-                  style: TextStyle(
+                  style: AppTheme.bebasNeue(
                     color: const Color(0xFF04CDFE),
                     fontSize: isSmallScreen ? 10 : 12,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: 0.5,
-                    fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+                    
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 18),
-          Divider(color: Colors.white.withOpacity(0.08), thickness: 1),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
+          Divider(color: Colors.white.withValues(alpha: 0.08), thickness: 1),
+          SizedBox(height: 18),
           // Service details
           _buildDetailRow('SERVICE', service, isIOS, isSmallScreen),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildDetailRow('LOCATION', location, isIOS, isSmallScreen),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildDetailRow(
             'DATE & TIME',
             dateTime,
@@ -431,7 +431,7 @@ class _StaffUpcomingBookingsScreenState
             isSmallScreen,
             isHighlighted: true,
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           // View Details Button
           Align(
             alignment: Alignment.center,
@@ -453,10 +453,10 @@ class _StaffUpcomingBookingsScreenState
                       },
                       child: Text(
                         'VIEW DETAILS',
-                        style: TextStyle(
+                        style: AppTheme.bebasNeue(
                           color: Colors.white,
                           fontSize: isSmallScreen ? 13 : 15,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w400,
                           letterSpacing: 1.1,
                         ),
                       ),
@@ -480,9 +480,9 @@ class _StaffUpcomingBookingsScreenState
                       },
                       child: Text(
                         'VIEW DETAILS',
-                        style: TextStyle(
+                        style: AppTheme.bebasNeue(
                           fontSize: isSmallScreen ? 13 : 15,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w400,
                           letterSpacing: 1.1,
                         ),
                       ),
@@ -508,21 +508,21 @@ class _StaffUpcomingBookingsScreenState
           width: isSmallScreen ? 80 : 100,
           child: Text(
             label,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white70,
               fontSize: isSmallScreen ? 12 : 14,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+              
             ),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: isHighlighted ? const Color(0xFF04CDFE) : Colors.white,
               fontSize: isSmallScreen ? 12 : 14,
               fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.normal,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+              
               height: 1.4,
             ),
             textAlign: TextAlign.right,
@@ -542,33 +542,33 @@ class _StaffUpcomingBookingsScreenState
       decoration: BoxDecoration(
         color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(isIOS ? 20 : 16),
-        border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Unable to load bookings',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
+              fontWeight: FontWeight.w400,
+              
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             message,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white70,
               fontSize: 14,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+              
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Align(
             alignment: Alignment.centerRight,
-            child: TextButton(onPressed: onRetry, child: const Text('Retry')),
+            child: TextButton(onPressed: onRetry, child: Text('Retry')),
           ),
         ],
       ),
@@ -581,27 +581,27 @@ class _StaffUpcomingBookingsScreenState
       decoration: BoxDecoration(
         color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(isIOS ? 20 : 16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'No bookings found',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
+              fontWeight: FontWeight.w400,
+              
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             'Assigned bookings will appear here. Try refreshing to check for new tasks.',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white70,
               fontSize: 14,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+              
             ),
           ),
         ],

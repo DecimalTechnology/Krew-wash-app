@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -76,7 +77,7 @@ class _SplashScreenState extends State<SplashScreen>
                         ), // More rounded for iOS
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF00D4AA).withOpacity(0.3),
+                            color: const Color(0xFF00D4AA).withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -92,60 +93,58 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     // KREW text
-                    const Text(
+                    Text(
                       'KREW',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         fontSize: 32,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         color: Colors.white,
                         letterSpacing: 2,
-                        fontFamily: '.SF Pro Display', // iOS system font
+                        // iOS system font
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     // CAR WASH text
-                    const Text(
+                    Text(
                       'CAR WASH',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         fontSize: 16,
                         fontWeight: FontWeight.w300,
                         color: Colors.white70,
                         letterSpacing: 4,
-                        fontFamily: '.SF Pro Text', // iOS system font
+                        // iOS system font
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 120),
+                SizedBox(height: 120),
                 // Tagline
                 Column(
                   children: [
-                    const Text(
+                    Text(
                       'PROFESSIONAL CAR CARE',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         color: Color(0xFF00D4AA), // Teal color
                         letterSpacing: 1,
-                        fontFamily: '.SF Pro Display',
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
+                    SizedBox(height: 4),
+                    Text(
                       'AT YOUR DOORSTEP',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         color: Colors.white,
                         letterSpacing: 1,
-                        fontFamily: '.SF Pro Display',
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 40),
+                SizedBox(height: 40),
                 // iOS-style loading indicator
                 const CupertinoActivityIndicator(
                   color: Color(0xFF00D4AA),
@@ -187,7 +186,7 @@ class _SplashScreenState extends State<SplashScreen>
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF00D4AA).withOpacity(0.3),
+                            color: const Color(0xFF00D4AA).withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -203,22 +202,22 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     // KREW text
-                    const Text(
+                    Text(
                       'KREW',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         fontSize: 32,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         color: Colors.white,
                         letterSpacing: 2,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     // CAR WASH text
-                    const Text(
+                    Text(
                       'CAR WASH',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         fontSize: 16,
                         fontWeight: FontWeight.w300,
                         color: Colors.white70,
@@ -227,34 +226,34 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ],
                 ),
-                const SizedBox(height: 120),
+                SizedBox(height: 120),
                 // Tagline
                 Column(
                   children: [
-                    const Text(
+                    Text(
                       'PROFESSIONAL CAR CARE',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         color: Color(0xFF00D4AA), // Teal color
                         letterSpacing: 1,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
+                    SizedBox(height: 4),
+                    Text(
                       'AT YOUR DOORSTEP',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         color: Colors.white,
                         letterSpacing: 1,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 40),
+                SizedBox(height: 40),
                 // Material Design loading indicator
-                const SizedBox(
+                SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(

@@ -1,7 +1,9 @@
 import 'package:carwash_app/core/constants/api.dart';
+import 'package:carwash_app/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 import '../../domain/models/booking_model.dart';
 import '../../../../core/services/socket_service.dart';
 import '../../data/repositories/chat_repository.dart';
@@ -643,48 +645,21 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Back button
-          Container(
-            width: 32,
-            height: 32,
-            decoration: const BoxDecoration(
-              color: Color(0xFF04CDFE),
-              shape: BoxShape.circle,
-            ),
-            child: isIOS
-                ? CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Icon(
-                      CupertinoIcons.arrow_left,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  )
-                : IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    onPressed: () => Navigator.of(context).pop(),
-                    padding: EdgeInsets.zero,
-                  ),
-          ),
+          StandardBackButton(onPressed: () => Navigator.of(context).pop(true)),
           const Spacer(),
           // Centered heading
           Text(
             widget.issueType,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: isSmallScreen ? 18 : 22,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
               letterSpacing: 1.0,
-              fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
             ),
           ),
           const Spacer(),
           // Invisible placeholder
-          const SizedBox(width: 32),
+          SizedBox(width: 40),
         ],
       ),
     );
@@ -708,25 +683,23 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Text(
             isResolved ? 'RESOLVED' : 'OPEN TICKET',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: isSmallScreen ? 12 : 14,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
               letterSpacing: 0.5,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
             ),
           ),
           const Spacer(),
           if (!isResolved && !_isConnected && !_showRefreshButton)
             Text(
               'Connecting...',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+              style: AppTheme.bebasNeue(
+                color: Colors.white.withValues(alpha: 0.5),
                 fontSize: isSmallScreen ? 10 : 12,
-                fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
               ),
             ),
         ],
@@ -747,9 +720,12 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.red.withOpacity(0.2),
+            color: Colors.red.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(isIOS ? 12 : 10),
-            border: Border.all(color: Colors.red.withOpacity(0.5), width: 1),
+            border: Border.all(
+              color: Colors.red.withValues(alpha: 0.5),
+              width: 1,
+            ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -759,14 +735,13 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
                 color: Colors.white,
                 size: isSmallScreen ? 18 : 20,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 'Connection Failed. Tap to Retry',
-                style: TextStyle(
+                style: AppTheme.bebasNeue(
                   color: Colors.white,
                   fontSize: isSmallScreen ? 12 : 14,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ],
@@ -786,13 +761,12 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
               const CupertinoActivityIndicator()
             else
               const CircularProgressIndicator(),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               'Loading messages...',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+              style: AppTheme.bebasNeue(
+                color: Colors.white.withValues(alpha: 0.5),
                 fontSize: isSmallScreen ? 14 : 16,
-                fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
               ),
             ),
           ],
@@ -804,10 +778,9 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
       return Center(
         child: Text(
           'No messages yet',
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.5),
+          style: AppTheme.bebasNeue(
+            color: Colors.white.withValues(alpha: 0.5),
             fontSize: isSmallScreen ? 14 : 16,
-            fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
           ),
         ),
       );
@@ -850,7 +823,7 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
           decoration: BoxDecoration(
             color: isUser
                 ? const Color(0xFF04CDFE)
-                : Colors.white.withOpacity(0.1),
+                : Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(isIOS ? 18 : 16),
           ),
           child: Column(
@@ -859,28 +832,25 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
               if (message.isAdmin)
                 Text(
                   'ADMIN: ',
-                  style: TextStyle(
+                  style: AppTheme.bebasNeue(
                     color: Colors.white,
                     fontSize: isSmallScreen ? 11 : 12,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               Text(
                 message.text,
-                style: TextStyle(
+                style: AppTheme.bebasNeue(
                   color: Colors.white,
                   fontSize: isSmallScreen ? 13 : 15,
-                  fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 timeString,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
+                style: AppTheme.bebasNeue(
+                  color: Colors.white.withValues(alpha: 0.7),
                   fontSize: isSmallScreen ? 10 : 11,
-                  fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                 ),
               ),
             ],
@@ -907,7 +877,7 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
         color: Colors.black,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -918,10 +888,10 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(isIOS ? 20 : 18),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -930,15 +900,10 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
                       controller: _messageController,
                       placeholder: 'TYPE A MESSAGE..',
                       placeholderStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha: 0.5),
                         fontSize: isSmallScreen ? 13 : 15,
-                        fontFamily: '.SF Pro Text',
                       ),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontFamily: '.SF Pro Text',
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 15),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 10,
@@ -948,15 +913,11 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
                     )
                   : TextField(
                       controller: _messageController,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontFamily: 'Roboto',
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 15),
                       decoration: InputDecoration(
                         hintText: 'TYPE A MESSAGE..',
                         hintStyle: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
+                          color: Colors.white.withValues(alpha: 0.5),
                           fontSize: isSmallScreen ? 13 : 15,
                         ),
                         border: InputBorder.none,
@@ -969,7 +930,7 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
                     ),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Container(
             width: isSmallScreen ? 44 : 48,
             height: isSmallScreen ? 44 : 48,

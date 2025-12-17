@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../../../core/constants/api.dart';
@@ -61,6 +63,33 @@ class ChatRepository {
               'Failed to initiate chat: ${response.statusCode}',
         };
       }
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        print('❌ Network error initiating chat: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
+    } on TimeoutException catch (e) {
+      if (kDebugMode) {
+        print('❌ Timeout error initiating chat: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+      };
+    } on http.ClientException catch (e) {
+      if (kDebugMode) {
+        print('❌ Client error initiating chat: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
     } catch (e) {
       if (kDebugMode) {
         print('❌ Initiate Chat Error: $e');
@@ -116,6 +145,33 @@ class ChatRepository {
               'Failed to get chat: ${response.statusCode}',
         };
       }
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        print('❌ Network error getting chat: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
+    } on TimeoutException catch (e) {
+      if (kDebugMode) {
+        print('❌ Timeout error getting chat: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+      };
+    } on http.ClientException catch (e) {
+      if (kDebugMode) {
+        print('❌ Client error getting chat: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
     } catch (e) {
       if (kDebugMode) {
         print('❌ Get Chat Error: $e');
@@ -168,6 +224,33 @@ class ChatRepository {
               'Failed to get messages: ${response.statusCode}',
         };
       }
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        print('❌ Network error getting chat messages: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
+    } on TimeoutException catch (e) {
+      if (kDebugMode) {
+        print('❌ Timeout error getting chat messages: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+      };
+    } on http.ClientException catch (e) {
+      if (kDebugMode) {
+        print('❌ Client error getting chat messages: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
     } catch (e) {
       if (kDebugMode) {
         print('❌ Get Chat Messages Error: $e');

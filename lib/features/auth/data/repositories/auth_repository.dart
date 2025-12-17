@@ -1,4 +1,6 @@
+import 'dart:async' show TimeoutException;
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:carwash_app/core/constants/api.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -19,9 +21,6 @@ class AuthRepository {
   }) async {
     try {
       const String url = '$baseurl/auth/register';
-      print(
-        "verificationMethoddddddddddddddddddddddddddd: $verificationMethod",
-      );
 
       final Map<String, dynamic> requestBody = {
         'email': email,
@@ -47,10 +46,25 @@ class AuthRepository {
           'message': 'Failed to register user: ${response.statusCode}',
         };
       }
+    } on SocketException catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
+    } on TimeoutException catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+      };
+    } on http.ClientException catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
     } catch (e) {
-      if (kDebugMode) {
-        print('Error registering user: $e');
-      }
       return {'success': false, 'message': 'Failed to register user: $e'};
     }
   }
@@ -68,9 +82,6 @@ class AuthRepository {
       }
       return null;
     } catch (e) {
-      if (kDebugMode) {
-        print('Error getting user: $e');
-      }
       return null;
     }
   }
@@ -89,6 +100,12 @@ class AuthRepository {
       } else {
         throw Exception('Failed to load data: ${response.statusCode}');
       }
+    } on SocketException catch (e) {
+      throw Exception('Network error: Please check your internet connection');
+    } on TimeoutException catch (e) {
+      throw Exception('Network error: Request timeout. Please try again');
+    } on http.ClientException catch (e) {
+      throw Exception('Network error: Please check your internet connection');
     } catch (e) {
       throw Exception('GET request error: $e');
     }
@@ -103,7 +120,6 @@ class AuthRepository {
       const String url = '$baseurl/auth/check-phone';
 
       final Map<String, dynamic> requestBody = {'phone': phone, 'email': email};
-      print("requestBodyrequestBodyrequestBodyrequestBody: $requestBody");
 
       final response = await http.post(
         Uri.parse(url),
@@ -113,11 +129,13 @@ class AuthRepository {
 
       final data = jsonDecode(response.body);
       return data;
+    } on SocketException catch (e) {
+      throw Exception('Network error: Please check your internet connection');
+    } on TimeoutException catch (e) {
+      throw Exception('Network error: Request timeout. Please try again');
+    } on http.ClientException catch (e) {
+      throw Exception('Network error: Please check your internet connection');
     } catch (e) {
-      print(e);
-      if (kDebugMode) {
-        print('Error checking phone and email existence: $e');
-      }
       throw Exception('Check user request error: $e');
     }
   }
@@ -135,9 +153,6 @@ class AuthRepository {
 
       return querySnapshot.docs.isNotEmpty;
     } catch (e) {
-      if (kDebugMode) {
-        print('Error checking user existence: $e');
-      }
       return false;
     }
   }
@@ -151,22 +166,11 @@ class AuthRepository {
 
       final Map<String, dynamic> requestBody = {'email': email};
 
-      if (kDebugMode) {
-        print('📧 Calling email login API: $url');
-        print('📦 Request body: $requestBody');
-      }
-
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );
-      print(response.body);
-
-      if (kDebugMode) {
-        print('📊 Email login API Response status: ${response.statusCode}');
-        print('📊 Email login API Response body: ${response.body}');
-      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
@@ -187,10 +191,25 @@ class AuthRepository {
               'Email login failed: ${response.statusCode}',
         };
       }
+    } on SocketException catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
+    } on TimeoutException catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+      };
+    } on http.ClientException catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
     } catch (e) {
-      if (kDebugMode) {
-        print('💥 Error calling email login API: $e');
-      }
       return {'success': false, 'message': 'Failed to login with email: $e'};
     }
   }
@@ -201,28 +220,16 @@ class AuthRepository {
     String? email,
     String? phoneNumber,
   }) async {
-    print("loginnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn");
     try {
       const String url = '$baseurl/auth/login-phone';
 
       final Map<String, dynamic> requestBody = {'phone': phoneNumber ?? ""};
-
-      if (kDebugMode) {
-        print('🔐 Calling login API: $url');
-        print('📦 Request body: $requestBody');
-      }
 
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );
-      print("responseresponseresponseresponse: $response");
-
-      if (kDebugMode) {
-        print('📊 API Response status: ${response.statusCode}');
-        print('📊 API Response body: ${response.body}');
-      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
@@ -242,10 +249,25 @@ class AuthRepository {
               errorData['message'] ?? 'Login failed: ${response.statusCode}',
         };
       }
+    } on SocketException catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
+    } on TimeoutException catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+      };
+    } on http.ClientException catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
     } catch (e) {
-      if (kDebugMode) {
-        print('💥 Error calling login API: $e');
-      }
       return {'success': false, 'message': 'Failed to login user: $e'};
     }
   }
@@ -273,8 +295,6 @@ class AuthRepository {
   static Future<Map<String, dynamic>> sendEmailOtp({
     required String email,
   }) async {
-    print("hiiiiiiiiiiiiiiiiiiiiiiiii");
-
     try {
       const String url = '$baseurl/auth/send-otp';
 
@@ -300,10 +320,25 @@ class AuthRepository {
           'message': errorData['message'] ?? 'Failed to send email OTP',
         };
       }
+    } on SocketException catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
+    } on TimeoutException catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+      };
+    } on http.ClientException catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
     } catch (e) {
-      if (kDebugMode) {
-        print('Error sending email OTP: $e');
-      }
       return {'success': false, 'message': 'Failed to send email OTP: $e'};
     }
   }
@@ -313,7 +348,6 @@ class AuthRepository {
     required String otp,
   }) async {
     try {
-      print("otpppppppppppppp$otp");
       const String url = '$baseurl/auth/verify-otp';
 
       final Map<String, dynamic> requestBody = {'email': email, 'otp': otp};
@@ -325,7 +359,6 @@ class AuthRepository {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print(response.body);
         final data = jsonDecode(response.body);
         return {
           'success': true,
@@ -339,10 +372,25 @@ class AuthRepository {
           'message': errorData['message'] ?? 'Invalid OTP',
         };
       }
+    } on SocketException catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
+    } on TimeoutException catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+      };
+    } on http.ClientException catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
     } catch (e) {
-      if (kDebugMode) {
-        print('Error verifying email OTP: $e');
-      }
       return {'success': false, 'message': 'Failed to verify email OTP: $e'};
     }
   }

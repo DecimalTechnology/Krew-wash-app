@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/network_error_dialog.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 import '../providers/auth_provider.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
@@ -102,23 +105,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 padding: const EdgeInsets.all(20.0),
                 child: Row(
                   children: [
-                    CupertinoButton(
-                      padding: EdgeInsets.zero,
-                      onPressed: () => Navigator.pop(context),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF00D4AA),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Icon(
-                          CupertinoIcons.back,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
+                    StandardBackButton(onPressed: () => Navigator.pop(context)),
                   ],
                 ),
               ),
@@ -132,17 +119,16 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 child: Column(
                   children: [
                     // Title
-                    const Text(
+                    Text(
                       'VERIFICATION',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         fontSize: 28,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         color: Color(0xFF00D4AA),
                         letterSpacing: 2,
-                        fontFamily: '.SF Pro Display',
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     // Instructions
                     Text(
@@ -154,20 +140,20 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         fontWeight: FontWeight.w500,
                         color: Colors.white,
                         letterSpacing: 1,
-                        fontFamily: '.SF Pro Text',
+
                         height: 1.4,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 40),
+                    SizedBox(height: 40),
 
                     // OTP Input Fields
                     _buildOtpFields(true),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Resend Code Button
                     _buildResendButton(true),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Continue Button
                     _buildContinueButton(true),
@@ -202,26 +188,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 padding: const EdgeInsets.all(20.0),
                 child: Row(
                   children: [
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF00D4AA),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    ),
+                    StandardBackButton(onPressed: () => Navigator.pop(context)),
                   ],
                 ),
               ),
@@ -235,16 +202,16 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 child: Column(
                   children: [
                     // Title
-                    const Text(
+                    Text(
                       'VERIFICATION',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         fontSize: 28,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         color: Color(0xFF00D4AA),
                         letterSpacing: 2,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     // Instructions
                     Text(
@@ -260,15 +227,15 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 40),
+                    SizedBox(height: 40),
 
                     // OTP Input Fields
                     _buildOtpFields(false),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Resend Code Button
                     _buildResendButton(false),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Continue Button
                     _buildContinueButton(false),
@@ -310,7 +277,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       style: const TextStyle(
         color: Colors.white,
         fontSize: 24,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w400,
       ),
       textAlign: TextAlign.center,
       keyboardType: TextInputType.number,
@@ -345,7 +312,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       style: const TextStyle(
         color: Colors.white,
         fontSize: 24,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w400,
       ),
       textAlign: TextAlign.center,
       keyboardType: TextInputType.number,
@@ -388,7 +355,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             borderRadius: BorderRadius.circular(isIOS ? 16 : 12),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF00D4AA).withOpacity(0.3),
+                color: const Color(0xFF00D4AA).withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -404,12 +371,12 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   child: Center(
                     child: authProvider.isLoading
                         ? const CupertinoActivityIndicator(color: Colors.white)
-                        : const Text(
+                        : Text(
                             'CONTINUE',
-                            style: TextStyle(
+                            style: AppTheme.bebasNeue(
                               color: Colors.white,
                               fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w400,
                               letterSpacing: 1,
                             ),
                           ),
@@ -425,7 +392,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         : _verifyOtp,
                     child: Center(
                       child: authProvider.isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
@@ -435,12 +402,12 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                 ),
                               ),
                             )
-                          : const Text(
+                          : Text(
                               'CONTINUE',
-                              style: TextStyle(
+                              style: AppTheme.bebasNeue(
                                 color: Colors.white,
                                 fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w400,
                                 letterSpacing: 1,
                               ),
                             ),
@@ -473,14 +440,13 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   _canResend
                       ? 'RESEND CODE'
                       : 'RESEND CODE IN ${_resendTimer}s',
-                  style: TextStyle(
+                  style: AppTheme.bebasNeue(
                     color: _canResend
                         ? const Color(0xFF00D4AA)
-                        : Colors.white.withOpacity(0.5),
+                        : Colors.white.withValues(alpha: 0.5),
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1,
-                    fontFamily: '.SF Pro Text',
                   ),
                 ),
               )
@@ -492,10 +458,10 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   _canResend
                       ? 'RESEND CODE'
                       : 'RESEND CODE IN ${_resendTimer}s',
-                  style: TextStyle(
+                  style: AppTheme.bebasNeue(
                     color: _canResend
                         ? const Color(0xFF00D4AA)
-                        : Colors.white.withOpacity(0.5),
+                        : Colors.white.withValues(alpha: 0.5),
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1,
@@ -656,13 +622,23 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 }
               }
             } else {
-              _showErrorMessage(loginResult['message'] ?? 'Failed to login');
+              // Check if it's a network error
+              if (loginResult['isNetworkError'] == true) {
+                NetworkErrorDialog.show(context);
+              } else {
+                _showErrorMessage(loginResult['message'] ?? 'Failed to login');
+              }
             }
           }
         } else {
-          _showErrorMessage(
-            result['message'] ?? 'Email OTP verification failed',
-          );
+          // Check if it's a network error
+          if (result['isNetworkError'] == true) {
+            NetworkErrorDialog.show(context);
+          } else {
+            _showErrorMessage(
+              result['message'] ?? 'Email OTP verification failed',
+            );
+          }
         }
       } else {
         // Handle phone OTP verification
@@ -790,14 +766,19 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 }
               }
 
-              // Check if phone number is not registered
-              if (errorMessage.toLowerCase().contains('not registered') ||
-                  errorMessage.toLowerCase().contains('not found') ||
-                  errorMessage.toLowerCase().contains('does not exist') ||
-                  errorMessage.toLowerCase().contains('user not found')) {
-                _showPhoneNotRegisteredError();
+              // Check if it's a network error
+              if (loginResult['isNetworkError'] == true) {
+                NetworkErrorDialog.show(context);
               } else {
-                _showErrorMessage(errorMessage);
+                // Check if phone number is not registered
+                if (errorMessage.toLowerCase().contains('not registered') ||
+                    errorMessage.toLowerCase().contains('not found') ||
+                    errorMessage.toLowerCase().contains('does not exist') ||
+                    errorMessage.toLowerCase().contains('user not found')) {
+                  _showPhoneNotRegisteredError();
+                } else {
+                  _showErrorMessage(errorMessage);
+                }
               }
             }
           }
@@ -817,11 +798,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       showCupertinoDialog(
         context: context,
         builder: (context) => CupertinoAlertDialog(
-          title: const Text('Success'),
+          title: Text('Success'),
           content: Text(message),
           actions: [
             CupertinoDialogAction(
-              child: const Text('OK'),
+              child: Text('OK'),
               onPressed: () => Navigator.pop(context),
             ),
           ],
@@ -846,11 +827,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       showCupertinoDialog(
         context: context,
         builder: (context) => CupertinoAlertDialog(
-          title: const Text('Error'),
+          title: Text('Error'),
           content: Text(message),
           actions: [
             CupertinoDialogAction(
-              child: const Text('OK'),
+              child: Text('OK'),
               onPressed: () => Navigator.pop(context),
             ),
           ],
@@ -875,13 +856,13 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       showCupertinoDialog(
         context: context,
         builder: (context) => CupertinoAlertDialog(
-          title: const Text('Phone Number Not Registered'),
-          content: const Text(
+          title: Text('Phone Number Not Registered'),
+          content: Text(
             'This phone number is not registered. Please sign up to create an account.',
           ),
           actions: [
             CupertinoDialogAction(
-              child: const Text('OK'),
+              child: Text('OK'),
               onPressed: () => Navigator.pop(context),
             ),
           ],
@@ -890,7 +871,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
+          content: Text(
             'Phone number not registered. Please sign up to create an account.',
           ),
           backgroundColor: Colors.orange[700],

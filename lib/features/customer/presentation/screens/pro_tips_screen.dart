@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:io';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 
 class ProTipsScreen extends StatelessWidget {
   const ProTipsScreen({super.key});
@@ -83,46 +84,17 @@ class ProTipsScreen extends StatelessWidget {
       child: Row(
         children: [
           // Back Button
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFF04CDFE),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Platform.isIOS
-                ? CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () => Navigator.pop(context),
-                    child: const Icon(
-                      CupertinoIcons.back,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  )
-                : Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-          ),
+          StandardBackButton(onPressed: () => Navigator.pop(context)),
 
           // Title
-          const Expanded(
+          Expanded(
             child: Text(
               'PRO TIPS',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w400,
                 letterSpacing: 1,
               ),
             ),
@@ -137,10 +109,10 @@ class ProTipsScreen extends StatelessWidget {
       padding: EdgeInsets.all(isLargeScreen ? 40 : 20),
       child: Text(
         'PRO TIPS & TRICKS',
-        style: TextStyle(
+        style: AppTheme.bebasNeue(
           color: Colors.white,
           fontSize: isLargeScreen ? 32 : (isTablet ? 28 : 24),
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w400,
           letterSpacing: 1,
         ),
         textAlign: TextAlign.center,
@@ -206,17 +178,17 @@ class ProTipsScreen extends StatelessWidget {
           SizedBox(height: isLargeScreen ? 24 : 16),
           Text(
             title,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: isLargeScreen ? 24 : (isTablet ? 20 : 18),
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
             ),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: isLargeScreen ? 12 : 8),
           Text(
             description,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white70,
               fontSize: isLargeScreen ? 18 : (isTablet ? 16 : 14),
             ),

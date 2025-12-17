@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../presentation/providers/edit_profile_provider.dart';
 import '../../presentation/providers/package_provider.dart';
@@ -22,7 +24,6 @@ class ProfileDetailsScreen extends StatefulWidget {
 class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
   final _nameController = TextEditingController();
   final _buildingController = TextEditingController();
-  final _apartmentController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
 
@@ -89,7 +90,6 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
     _buildingOverlay?.remove();
     _nameController.dispose();
     _buildingController.dispose();
-    _apartmentController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
     super.dispose();
@@ -131,10 +131,12 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                     decoration: BoxDecoration(
                       color: const Color(0xFF0B0E1F),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white.withOpacity(0.2)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                      ),
                     ),
                     child: isSearching && results.isEmpty
-                        ? const Padding(
+                        ? Padding(
                             padding: EdgeInsets.all(16.0),
                             child: Center(
                               child: SizedBox(
@@ -147,11 +149,11 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                             ),
                           )
                         : (!isSearching && results.isEmpty)
-                        ? const Padding(
+                        ? Padding(
                             padding: EdgeInsets.all(16.0),
                             child: Text(
                               'No buildings found',
-                              style: TextStyle(color: Colors.white70),
+                              style: AppTheme.bebasNeue(color: Colors.white70),
                             ),
                           )
                         : ListView.separated(
@@ -159,7 +161,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                             itemCount: results.length,
                             separatorBuilder: (_, __) => Divider(
                               height: 1,
-                              color: Colors.white.withOpacity(0.08),
+                              color: Colors.white.withValues(alpha: 0.08),
                             ),
                             itemBuilder: (context, index) {
                               final b = results[index];
@@ -211,7 +213,6 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
 
   Future<void> _handleSave(BuildContext context) async {
     final name = _nameController.text.trim();
-    final apartment = _apartmentController.text.trim();
     final phone = _phoneController.text.trim();
     final email = _emailController.text.trim();
 
@@ -221,10 +222,6 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
     }
     if (_selectedBuildingId == null || _selectedBuildingId!.isEmpty) {
       _showError('Please select your building');
-      return;
-    }
-    if (apartment.isEmpty) {
-      _showError('Please enter your apartment number');
       return;
     }
     if (phone.isEmpty) {
@@ -245,7 +242,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
       phone: phone,
       email: email,
       buildingId: _selectedBuildingId,
-      apartmentName: apartment,
+      apartmentName: null, // Apartment name field removed
     );
 
     if (!mounted) return;
@@ -256,11 +253,11 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
         showCupertinoDialog(
           context: context,
           builder: (context) => CupertinoAlertDialog(
-            title: const Text('Success'),
-            content: const Text('Profile updated successfully'),
+            title: Text('Success'),
+            content: Text('Profile updated successfully'),
             actions: [
               CupertinoDialogAction(
-                child: const Text('OK'),
+                child: Text('OK'),
                 onPressed: () {
                   Navigator.pop(context);
                   Navigator.pushNamedAndRemoveUntil(
@@ -299,11 +296,11 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
       showCupertinoDialog(
         context: context,
         builder: (context) => CupertinoAlertDialog(
-          title: const Text('Error'),
+          title: Text('Error'),
           content: Text(message),
           actions: [
             CupertinoDialogAction(
-              child: const Text('OK'),
+              child: Text('OK'),
               onPressed: () => Navigator.pop(context),
             ),
           ],
@@ -336,12 +333,12 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
           color: Colors.white,
           onPressed: () => Navigator.pop(context),
         ),
-        middle: const Text(
+        middle: Text(
           'PROFILE DETAILS',
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: Colors.white,
             fontSize: 18,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w400,
             letterSpacing: 1.2,
           ),
         ),
@@ -364,17 +361,17 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: StandardBackButton(onPressed: () => Navigator.pop(context)),
         ),
         centerTitle: true,
-        title: const Text(
+        title: Text(
           'PROFILE DETAILS',
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: Colors.white,
             fontSize: 20,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w400,
             letterSpacing: 1.2,
           ),
         ),
@@ -400,16 +397,16 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildLabel('NAME *'),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           _buildTextField(
             controller: _nameController,
             hintText: 'Enter your name',
             isIOS: isIOS,
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: 32),
 
           _buildLabel('BUILDING NAME *'),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           CompositedTransformTarget(
             link: _buildingFieldLink,
             child: isIOS
@@ -418,13 +415,13 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                     placeholder: 'Select your building',
                     style: const TextStyle(color: Colors.white),
                     placeholderStyle: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
+                      color: Colors.white.withValues(alpha: 0.5),
                     ),
                     decoration: BoxDecoration(
                       color: const Color(0x8001031C),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -489,20 +486,10 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                     },
                   ),
           ),
-          const SizedBox(height: 32),
-
-          _buildLabel('APARTMENT NUMBER *'),
-          const SizedBox(height: 10),
-
-          _buildTextField(
-            controller: _apartmentController,
-            hintText: 'Enter apartment number',
-            isIOS: isIOS,
-          ),
-          const SizedBox(height: 32),
+          SizedBox(height: 32),
 
           _buildLabel('PHONE NUMBER *'),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
 
           _buildTextField(
             controller: _phoneController,
@@ -510,10 +497,10 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
             keyboardType: TextInputType.phone,
             isIOS: isIOS,
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: 32),
 
           _buildLabel('EMAIL *'),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
 
           _buildTextField(
             controller: _emailController,
@@ -521,7 +508,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
             keyboardType: TextInputType.emailAddress,
             isIOS: isIOS,
           ),
-          const SizedBox(height: 40),
+          SizedBox(height: 40),
 
           _buildSaveButton(
             context: context,
@@ -557,11 +544,14 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
         placeholder: hintText,
         keyboardType: keyboardType,
         style: const TextStyle(color: Colors.white),
-        placeholderStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+        placeholderStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
         decoration: BoxDecoration(
           color: const Color(0x8001031C),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.3),
+            width: 1,
+          ),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       );
@@ -594,12 +584,12 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
               : () => _handleSave(context),
           child: editProfileProvider.isSaving
               ? const CupertinoActivityIndicator(color: Colors.white)
-              : const Text(
+              : Text(
                   'SAVE',
-                  style: TextStyle(
+                  style: AppTheme.bebasNeue(
                     color: Colors.white,
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: 1.5,
                   ),
                 ),
@@ -620,7 +610,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
             ),
           ),
           child: editProfileProvider.isSaving
-              ? const SizedBox(
+              ? SizedBox(
                   height: 20,
                   width: 20,
                   child: CircularProgressIndicator(
@@ -628,12 +618,12 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 )
-              : const Text(
+              : Text(
                   'SAVE',
-                  style: TextStyle(
+                  style: AppTheme.bebasNeue(
                     color: Colors.white,
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: 1.5,
                   ),
                 ),
@@ -654,11 +644,17 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.3), width: 1),
+        borderSide: BorderSide(
+          color: Colors.white.withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.3), width: 1),
+        borderSide: BorderSide(
+          color: Colors.white.withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(20),

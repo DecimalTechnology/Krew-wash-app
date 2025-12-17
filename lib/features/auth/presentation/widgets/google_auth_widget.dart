@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 
 class GoogleAuthWidget extends StatelessWidget {
@@ -25,7 +26,7 @@ class GoogleAuthWidget extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFDB4437).withOpacity(0.1),
+                        color: const Color(0xFFDB4437).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
@@ -34,10 +35,10 @@ class GoogleAuthWidget extends StatelessWidget {
                         size: 20,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    const Text(
+                    SizedBox(width: 12),
+                    Text(
                       'Continue with Google',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF1F2937),
@@ -45,7 +46,7 @@ class GoogleAuthWidget extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
 
                 // Google Sign In Button
                 OutlinedButton.icon(
@@ -53,7 +54,7 @@ class GoogleAuthWidget extends StatelessWidget {
                       ? null
                       : () => _handleGoogleSignIn(context),
                   icon: authProvider.isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
@@ -89,7 +90,7 @@ class GoogleAuthWidget extends StatelessWidget {
 
                 // Error message
                 if (authProvider.errorMessage != null) ...[
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -100,11 +101,11 @@ class GoogleAuthWidget extends StatelessWidget {
                     child: Row(
                       children: [
                         Icon(Icons.error, color: Colors.red[600], size: 20),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             authProvider.errorMessage!,
-                            style: TextStyle(
+                            style: AppTheme.bebasNeue(
                               color: Colors.red[700],
                               fontSize: 14,
                             ),

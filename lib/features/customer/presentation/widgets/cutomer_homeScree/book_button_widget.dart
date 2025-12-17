@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/constants/route_constants.dart';
 import '../../../../../core/constants/size_constants.dart';
+import '../../../../../core/theme/app_theme.dart';
 
 class BookButtonWidget extends StatelessWidget {
   const BookButtonWidget({super.key});
@@ -20,7 +21,10 @@ class BookButtonWidget extends StatelessWidget {
       ),
       child: ElevatedButton(
         onPressed: () {
-          Navigator.pushNamed(context, Routes.customerChooseSlot);
+          Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pushNamed(Routes.customerChooseSlot);
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF04CDFE),
@@ -38,13 +42,13 @@ class BookButtonWidget extends StatelessWidget {
         ),
         child: Text(
           'BOOK YOUR SLOT',
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: Colors.white,
             fontSize: SizeConstants.getResponsiveFontSize(
               screenWidth,
               SizeConstants.hugeFontSize,
             ),
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w400,
             letterSpacing: 1.5,
           ),
         ),

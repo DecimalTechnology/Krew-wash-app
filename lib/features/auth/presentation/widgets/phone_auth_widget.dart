@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 
 class PhoneAuthWidget extends StatefulWidget {
@@ -47,7 +48,7 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withOpacity(0.1),
+                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
@@ -56,7 +57,7 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
                           size: 20,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Text(
                         widget.isSignIn
                             ? 'Sign in with Phone'
@@ -69,7 +70,7 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
 
                   if (!_isCodeSent) ...[
                     // Phone number input
@@ -95,7 +96,7 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     // Send code button
                     ElevatedButton(
@@ -112,7 +113,7 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
                         elevation: 2,
                       ),
                       child: authProvider.isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
@@ -122,9 +123,9 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
                                 ),
                               ),
                             )
-                          : const Text(
+                          : Text(
                               'Send Verification Code',
-                              style: TextStyle(
+                              style: AppTheme.bebasNeue(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -154,7 +155,7 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     // Verify code button
                     ElevatedButton(
@@ -169,7 +170,7 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
                         elevation: 2,
                       ),
                       child: authProvider.isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
@@ -179,22 +180,22 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
                                 ),
                               ),
                             )
-                          : const Text(
+                          : Text(
                               'Verify Code',
-                              style: TextStyle(
+                              style: AppTheme.bebasNeue(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
 
                     // Resend code button
                     TextButton(
                       onPressed: authProvider.isLoading ? null : _resendCode,
-                      child: const Text(
+                      child: Text(
                         'Resend Code',
-                        style: TextStyle(
+                        style: AppTheme.bebasNeue(
                           color: Color(0xFF10B981),
                           fontWeight: FontWeight.w600,
                         ),
@@ -209,16 +210,16 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
                           _codeController.clear();
                         });
                       },
-                      child: const Text(
+                      child: Text(
                         'Change Phone Number',
-                        style: TextStyle(color: Color(0xFF6B7280)),
+                        style: AppTheme.bebasNeue(color: Color(0xFF6B7280)),
                       ),
                     ),
                   ],
 
                   // Error message
                   if (authProvider.errorMessage != null) ...[
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -229,11 +230,11 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
                       child: Row(
                         children: [
                           Icon(Icons.error, color: Colors.red[600], size: 20),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               authProvider.errorMessage!,
-                              style: TextStyle(
+                              style: AppTheme.bebasNeue(
                                 color: Colors.red[700],
                                 fontSize: 14,
                               ),

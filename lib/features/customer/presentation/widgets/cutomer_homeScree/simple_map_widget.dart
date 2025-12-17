@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../../core/config/map_styles.dart';
+import '../../../../../core/theme/app_theme.dart';
 
 class SimpleMapWidget extends StatefulWidget {
   const SimpleMapWidget({super.key});
@@ -26,7 +27,7 @@ class _SimpleMapWidgetState extends State<SimpleMapWidget> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -79,7 +80,7 @@ class _SimpleMapWidgetState extends State<SimpleMapWidget> {
             if (!_isMapReady)
               Container(
                 color: Colors.grey[900],
-                child: const Center(
+                child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -91,10 +92,10 @@ class _SimpleMapWidgetState extends State<SimpleMapWidget> {
                       SizedBox(height: 16),
                       Text(
                         'Loading Map...',
-                        style: TextStyle(
+                        style: AppTheme.bebasNeue(
                           color: Colors.white,
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ],
@@ -123,13 +124,13 @@ class _SimpleMapWidgetState extends State<SimpleMapWidget> {
                       color: Colors.white,
                       size: 16,
                     ),
-                    const SizedBox(width: 4),
-                    const Text(
+                    SizedBox(width: 4),
+                    Text(
                       'CAR WASH STATIONS',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: Colors.white,
                         fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ],

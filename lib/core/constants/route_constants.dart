@@ -3,6 +3,8 @@ import 'package:carwash_app/features/customer/presentation/screens/customer_prof
 import 'package:carwash_app/features/customer/presentation/screens/edit_profile_screen.dart';
 import 'package:carwash_app/features/customer/presentation/screens/profile_details_screen.dart';
 import 'package:carwash_app/features/customer/presentation/screens/customer_history_screen.dart';
+import 'package:carwash_app/features/customer/presentation/screens/settings_screen.dart';
+import 'package:carwash_app/features/customer/presentation/screens/notifications_screen.dart';
 import 'package:carwash_app/features/customer/presentation/screens/full_screen_map_page.dart';
 import 'package:carwash_app/features/customer/presentation/screens/package_selection_screen.dart';
 import 'package:carwash_app/features/customer/presentation/screens/pro_tips_screen.dart';
@@ -49,6 +51,8 @@ class Routes {
   static const String customerMyPackage = '/customer/my-package';
   static const String customerPackageDetails = '/customer/package-details';
   static const String customerBookingSummary = '/customer/booking-summary';
+  static const String customerSettings = '/customer/settings';
+  static const String customerNotifications = '/customer/notifications';
 
   // Staff routes
   static const String cleanerLogin = '/staff/cleaner-login';
@@ -102,6 +106,8 @@ class AppRoutes {
           ModalRoute.of(context)?.settings.arguments as PaymentScreenArguments?;
       return PaymentScreen(arguments: args);
     },
+    Routes.customerSettings: (context) => const SettingsScreen(),
+    Routes.customerNotifications: (context) => const NotificationsScreen(),
     Routes.cleanerLogin: (context) => const CleanerLoginScreen(),
     Routes.staffHome: (context) => const StaffMainNavigationScreen(),
     // Other routes will be added when screens are implemented

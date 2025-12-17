@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 
 class CustomerHistoryScreen extends StatelessWidget {
   const CustomerHistoryScreen({super.key});
@@ -69,38 +71,7 @@ class CustomerHistoryScreen extends StatelessWidget {
       child: Row(
         children: [
           // Back Button
-          Container(
-            width: screenWidth > 400 ? 50 : 40,
-            height: screenWidth > 400 ? 50 : 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFF04CDFE),
-              borderRadius: BorderRadius.circular(screenWidth > 400 ? 25 : 20),
-            ),
-            child: isIOS
-                ? CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () => Navigator.pop(context),
-                    child: Icon(
-                      CupertinoIcons.back,
-                      color: Colors.white,
-                      size: screenWidth > 400 ? 24 : 20,
-                    ),
-                  )
-                : Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(
-                        screenWidth > 400 ? 25 : 20,
-                      ),
-                      onTap: () => Navigator.pop(context),
-                      child: Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                        size: screenWidth > 400 ? 24 : 20,
-                      ),
-                    ),
-                  ),
-          ),
+          StandardBackButton(onPressed: () => Navigator.pop(context)),
         ],
       ),
     );
@@ -134,7 +105,7 @@ class CustomerHistoryScreen extends StatelessWidget {
           SizedBox(width: screenWidth > 400 ? 12 : 8),
           Text(
             'NEXT CAR WASH: 11/11/2025',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: screenWidth > 400 ? 16 : 14,
               fontWeight: FontWeight.w600,
@@ -168,10 +139,10 @@ class CustomerHistoryScreen extends StatelessWidget {
           // History Title
           Text(
             'HISTORY',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: screenWidth > 400 ? 24 : 20,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
               letterSpacing: 1.5,
             ),
           ),
@@ -220,7 +191,7 @@ class CustomerHistoryScreen extends StatelessWidget {
               children: [
                 Text(
                   item['date']!,
-                  style: TextStyle(
+                  style: AppTheme.bebasNeue(
                     color: Colors.white,
                     fontSize: screenWidth > 400 ? 14 : 12,
                     fontWeight: FontWeight.w500,
@@ -229,10 +200,10 @@ class CustomerHistoryScreen extends StatelessWidget {
                 SizedBox(height: screenWidth > 400 ? 8 : 6),
                 Text(
                   item['service']!,
-                  style: TextStyle(
+                  style: AppTheme.bebasNeue(
                     color: Colors.white,
                     fontSize: screenWidth > 400 ? 16 : 14,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: 0.5,
                   ),
                 ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../widgets/cutomer_homeScree/top_section_widget.dart';
 import '../widgets/cutomer_homeScree/user_info_card_widget.dart';
-import '../widgets/cutomer_homeScree/book_button_widget.dart';
 
 class CustomerHomeScreen extends StatefulWidget {
   const CustomerHomeScreen({super.key});
@@ -140,12 +139,6 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen>
                               // Spacer
                               SizedBox(height: isLargeScreen ? 15 : 5),
 
-                              // Book Your Slot Button
-                              ScaleTransition(
-                                scale: _scaleAnimation,
-                                child: const BookButtonWidget(),
-                              ),
-
                               // Bottom spacing
                               SizedBox(height: isLargeScreen ? 30 : 20),
                             ],
@@ -230,7 +223,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen>
           style: const TextStyle(
             color: Colors.white,
             fontSize: 14,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w400,
             letterSpacing: 1.2,
           ),
         ),
@@ -305,7 +298,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen>
             ),
             child: Icon(icon, color: iconColor, size: 16),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Text(
               title,

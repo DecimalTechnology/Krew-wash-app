@@ -27,7 +27,10 @@ class ActionCardsWidget extends StatelessWidget {
               title: 'PRO TIPS & TRICKS',
               icon: Icons.lightbulb_outline,
               onTap: () {
-                Navigator.pushNamed(context, Routes.customerProTips);
+                Navigator.of(
+                  context,
+                  rootNavigator: true,
+                ).pushNamed(Routes.customerProTips);
               },
             ),
           ),
@@ -57,7 +60,10 @@ class ActionCardsWidget extends StatelessWidget {
                   title: 'HISTORY',
                   icon: Icons.history,
                   onTap: () {
-                    Navigator.pushNamed(context, Routes.customerHistory);
+                    Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).pushNamed(Routes.customerHistory);
                   },
                 ),
               ],
@@ -104,14 +110,14 @@ class ActionCardsWidget extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: TextStyle(
+                    style: AppTheme.bebasNeue(
                       color: Colors.white,
                       fontSize: isSmallScreen
                           ? 12
                           : isMediumScreen
                           ? 14
                           : 16,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: 0.5,
                     ),
                     maxLines: 2,
@@ -162,7 +168,7 @@ class ActionCardsWidget extends StatelessWidget {
             // Rating text
             Text(
               'PROUDLY RATED',
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: isSmallScreen
                     ? 8
@@ -182,14 +188,14 @@ class ActionCardsWidget extends StatelessWidget {
             ),
             Text(
               '4.8 STARS ON GOOGLE',
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: isSmallScreen
                     ? 10
                     : isMediumScreen
                     ? 12
                     : 14,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w400,
                 letterSpacing: 0.3,
               ),
             ),
@@ -209,7 +215,6 @@ class ActionCardsWidget extends StatelessWidget {
     final screenWidth = screenSize.width;
     final isSmallScreen = screenWidth < 350;
     final isMediumScreen = screenWidth >= 350 && screenWidth < 400;
-    final isLargeScreen = screenWidth >= 400;
 
     return GestureDetector(
       onTap: onTap,
@@ -286,7 +291,7 @@ class ActionCardsWidget extends StatelessWidget {
             ),
             Text(
               title,
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: isSmallScreen
                     ? 12

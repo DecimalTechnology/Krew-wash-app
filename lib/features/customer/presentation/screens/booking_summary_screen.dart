@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/route_constants.dart';
+import '../../../../core/widgets/standard_back_button.dart';
+import '../../../../core/services/secure_storage_service.dart';
 import 'payment_screen.dart';
 
 class BookingSummaryArguments {
@@ -18,46 +20,88 @@ class BookingSummaryArguments {
   final Map<String, dynamic> selectedVehicle;
 }
 
-class BookingSummaryScreen extends StatelessWidget {
+class BookingSummaryScreen extends StatefulWidget {
   const BookingSummaryScreen({super.key, this.arguments});
 
   final BookingSummaryArguments? arguments;
 
   @override
+  State<BookingSummaryScreen> createState() => _BookingSummaryScreenState();
+}
+
+class _BookingSummaryScreenState extends State<BookingSummaryScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Clear pending booking only when app is being closed/terminated.
+    if (state == AppLifecycleState.detached) {
+      SecureStorageService.clearPendingBooking();
+    }
+    super.didChangeAppLifecycleState(state);
+  }
+
+  Future<void> _clearPendingBookingAndPop(BuildContext context) async {
+    await SecureStorageService.clearPendingBooking();
+    if (context.mounted) {
+      Navigator.pop(context);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (arguments == null) {
+    if (widget.arguments == null) {
       final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
       if (isIOS) {
         return CupertinoPageScaffold(
           backgroundColor: Colors.black,
-          child: const Center(
+          child: Center(
             child: Text(
               'Invalid booking data',
-              style: TextStyle(color: Colors.white),
+              style: AppTheme.bebasNeue(color: Colors.white),
             ),
           ),
         );
       }
       return Scaffold(
         backgroundColor: Colors.black,
-        body: const Center(
+        body: Center(
           child: Text(
             'Invalid booking data',
-            style: TextStyle(color: Colors.white),
+            style: AppTheme.bebasNeue(color: Colors.white),
           ),
         ),
       );
     }
 
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-    return isIOS ? _buildIOSScreen(context) : _buildAndroidScreen(context);
+    return PopScope(
+      canPop: true,
+      onPopInvoked: (didPop) async {
+        if (didPop) {
+          await SecureStorageService.clearPendingBooking();
+        }
+      },
+      child: isIOS ? _buildIOSScreen(context) : _buildAndroidScreen(context),
+    );
   }
 
   Widget _buildIOSScreen(BuildContext context) {
-    final package = arguments!.package;
-    final addOns = arguments!.selectedAddOns;
-    final dates = arguments!.selectedDates;
-    final vehicle = arguments!.selectedVehicle;
+    final package = widget.arguments!.package;
+    final addOns = widget.arguments!.selectedAddOns;
+    final dates = widget.arguments!.selectedDates;
+    final vehicle = widget.arguments!.selectedVehicle;
 
     // Calculate prices
     final basePrice =
@@ -80,9 +124,7 @@ class BookingSummaryScreen extends StatelessWidget {
     }
 
     final subtotal = basePrice + addOnTotal;
-    final taxRate = 0.10; // 10% tax
-    final taxAmount = subtotal * taxRate;
-    final total = subtotal + taxAmount;
+    final total = subtotal;
 
     return CupertinoPageScaffold(
       backgroundColor: Colors.black,
@@ -101,27 +143,26 @@ class BookingSummaryScreen extends StatelessWidget {
                   children: [
                     _buildPackageSection(package),
                     if (addOns.isNotEmpty) ...[
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                       ...addOns.map(
                         (addOn) => _buildAddOnSection(addOn, dates.length),
                       ),
                     ],
                     if (dates.isNotEmpty) ...[
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
                       _buildSelectedDatesSection(dates),
                     ],
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     _buildVehicleSection(vehicle),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     _buildPriceSummarySection(
                       basePrice,
                       addOns,
                       dates.length,
                       subtotal,
-                      taxAmount,
                       total,
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
                   ],
                 ),
               ),
@@ -134,10 +175,10 @@ class BookingSummaryScreen extends StatelessWidget {
   }
 
   Widget _buildAndroidScreen(BuildContext context) {
-    final package = arguments!.package;
-    final addOns = arguments!.selectedAddOns;
-    final dates = arguments!.selectedDates;
-    final vehicle = arguments!.selectedVehicle;
+    final package = widget.arguments!.package;
+    final addOns = widget.arguments!.selectedAddOns;
+    final dates = widget.arguments!.selectedDates;
+    final vehicle = widget.arguments!.selectedVehicle;
 
     // Calculate prices
     final basePrice =
@@ -160,9 +201,7 @@ class BookingSummaryScreen extends StatelessWidget {
     }
 
     final subtotal = basePrice + addOnTotal;
-    final taxRate = 0.10; // 10% tax
-    final taxAmount = subtotal * taxRate;
-    final total = subtotal + taxAmount;
+    final total = subtotal;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -181,27 +220,26 @@ class BookingSummaryScreen extends StatelessWidget {
                   children: [
                     _buildPackageSection(package),
                     if (addOns.isNotEmpty) ...[
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                       ...addOns.map(
                         (addOn) => _buildAddOnSection(addOn, dates.length),
                       ),
                     ],
                     if (dates.isNotEmpty) ...[
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
                       _buildSelectedDatesSection(dates),
                     ],
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     _buildVehicleSection(vehicle),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     _buildPriceSummarySection(
                       basePrice,
                       addOns,
                       dates.length,
                       subtotal,
-                      taxAmount,
                       total,
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
                   ],
                 ),
               ),
@@ -218,28 +256,22 @@ class BookingSummaryScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF04CDFE),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
-            ),
+          StandardBackButton(
+            onPressed: () => _clearPendingBookingAndPop(context),
           ),
-          const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Text(
               'BOOKING SUMMARY',
-              style: TextStyle(
+              textAlign: TextAlign.center,
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: 20,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w400,
                 letterSpacing: 1.2,
               ),
             ),
           ),
+          SizedBox(width: 40), // Balance the back button width
         ],
       ),
     );
@@ -250,35 +282,22 @@ class BookingSummaryScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
         children: [
-          CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () => Navigator.pop(context),
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: const BoxDecoration(
-                color: Color(0xFF04CDFE),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                CupertinoIcons.back,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
+          StandardBackButton(
+            onPressed: () => _clearPendingBookingAndPop(context),
           ),
-          const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Text(
               'BOOKING SUMMARY',
-              style: TextStyle(
+              textAlign: TextAlign.center,
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: 20,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w400,
                 letterSpacing: 1.2,
               ),
             ),
           ),
+          SizedBox(width: 40), // Balance the back button width
         ],
       ),
     );
@@ -307,11 +326,11 @@ class BookingSummaryScreen extends StatelessWidget {
             style: const TextStyle(
               color: Color(0xFF04CDFE),
               fontSize: 16,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
               letterSpacing: 1.0,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             description,
             style: const TextStyle(
@@ -349,11 +368,11 @@ class BookingSummaryScreen extends StatelessWidget {
             style: const TextStyle(
               color: Color(0xFF04CDFE),
               fontSize: 16,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
               letterSpacing: 1.0,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             description,
             style: const TextStyle(
@@ -371,16 +390,16 @@ class BookingSummaryScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'SELECTED DATES',
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: Color(0xFF04CDFE),
             fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w400,
             letterSpacing: 1.0,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -424,25 +443,25 @@ class BookingSummaryScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'SELECTED VEHICLE',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Color(0xFF04CDFE),
               fontSize: 16,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
               letterSpacing: 1.0,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Text(
             model,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 16,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildVehicleInfoRow('TYPE', type),
           _buildVehicleInfoRow('NUMBER', number),
           _buildVehicleInfoRow('COLOR', color),
@@ -480,7 +499,6 @@ class BookingSummaryScreen extends StatelessWidget {
     List<Map<String, dynamic>> addOns,
     int dateCount,
     double subtotal,
-    double taxAmount,
     double total,
   ) {
     return Container(
@@ -493,22 +511,22 @@ class BookingSummaryScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'PRICE SUMMARY',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Color(0xFF04CDFE),
               fontSize: 16,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
               letterSpacing: 1.0,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _buildPriceRow(
             'MONTHLY WASH (BASE)',
             '${basePrice.toStringAsFixed(0)} AED',
           ),
           if (addOns.isNotEmpty) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             ...addOns.map((addOn) {
               final addOnPrice =
                   (addOn['rawPrice'] as num?)?.toDouble() ??
@@ -531,24 +549,15 @@ class BookingSummaryScreen extends StatelessWidget {
                 ),
               );
             }),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             _buildPriceRow(
               'ADD-ON TOTAL',
               '${addOnTotal(addOns, dateCount).toStringAsFixed(0)} AED',
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             const Divider(color: Colors.white24, height: 1),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
           ],
-          _buildPriceRow('SUBTOTAL', '${subtotal.toStringAsFixed(0)} AED'),
-          const SizedBox(height: 8),
-          _buildPriceRow(
-            'TAX & FEE (10%)',
-            '${taxAmount.toStringAsFixed(0)} AED',
-          ),
-          const SizedBox(height: 12),
-          const Divider(color: Colors.white24, height: 1),
-          const SizedBox(height: 12),
           _buildPriceRow(
             'TOTAL',
             '${total.toStringAsFixed(0)} AED',
@@ -571,7 +580,7 @@ class BookingSummaryScreen extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: isTotal ? Colors.white : Colors.white70,
               fontSize: isTotal ? 16 : 14,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
@@ -580,7 +589,7 @@ class BookingSummaryScreen extends StatelessWidget {
         ),
         Text(
           value,
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: isTotal ? Colors.white : Colors.white70,
             fontSize: isTotal ? 18 : 14,
             fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
@@ -597,7 +606,7 @@ class BookingSummaryScreen extends StatelessWidget {
         color: Colors.black,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -617,11 +626,11 @@ class BookingSummaryScreen extends StatelessWidget {
           onPressed: () {
             _navigateToPayment(context, total);
           },
-          child: const Text(
+          child: Text(
             'CONFIRM & PROCEED TO PAYMENT',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               fontSize: 16,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
               letterSpacing: 1.2,
             ),
           ),
@@ -637,7 +646,7 @@ class BookingSummaryScreen extends StatelessWidget {
         color: Colors.black,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -653,12 +662,12 @@ class BookingSummaryScreen extends StatelessWidget {
           onPressed: () {
             _navigateToPayment(context, total);
           },
-          child: const Text(
+          child: Text(
             'CONFIRM & PROCEED TO PAYMENT',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: 16,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w400,
               letterSpacing: 1.2,
             ),
           ),
@@ -703,23 +712,31 @@ class BookingSummaryScreen extends StatelessWidget {
   }
 
   void _navigateToPayment(BuildContext context, double total) {
-    print('🚀 _navigateToPayment called');
-    print('   Total: $total');
-
-    if (arguments == null) {
-      print('❌ Arguments are null, cannot navigate');
+    if (widget.arguments == null) {
       return;
     }
 
-    final package = arguments!.package;
-    final addOns = arguments!.selectedAddOns;
-    final dates = arguments!.selectedDates;
-    final vehicle = arguments!.selectedVehicle;
+    final package = widget.arguments!.package;
+    final addOns = widget.arguments!.selectedAddOns;
+    final dates = widget.arguments!.selectedDates;
+    final vehicle = widget.arguments!.selectedVehicle;
 
-    print('   Package: ${package['name'] ?? 'N/A'}');
-    print('   AddOns count: ${addOns.length}');
-    print('   Dates count: ${dates.length}');
-    print('   Vehicle: ${vehicle['vehicleModel'] ?? 'N/A'}');
+    // LOG SELECTED VEHICLE DETAILS
+    print('═══════════════════════════════════════════════════════════');
+    print('🚗 [BookingSummary] SELECTED VEHICLE DETAILS');
+    print('═══════════════════════════════════════════════════════════');
+    print('📦 Full vehicle object: $vehicle');
+    print('📦 Vehicle keys: ${vehicle.keys.toList()}');
+    print('📦 Vehicle _id: ${vehicle['_id']}');
+    print('📦 Vehicle id: ${vehicle['id']}');
+    print('📦 Vehicle vehicleId: ${vehicle['vehicleId']}');
+    print('📦 Vehicle vehicle_id: ${vehicle['vehicle_id']}');
+    print('📦 Vehicle userId: ${vehicle['userId']}');
+    print('📦 Vehicle type: ${vehicle['type']}');
+    print('📦 Vehicle vehicleModel: ${vehicle['vehicleModel']}');
+    print('📦 Vehicle vehicleNumber: ${vehicle['vehicleNumber']}');
+    print('📦 All vehicle values: ${vehicle.values.toList()}');
+    print('═══════════════════════════════════════════════════════════');
 
     // Prepare booking data
     final bookingData = {
@@ -730,7 +747,6 @@ class BookingSummaryScreen extends StatelessWidget {
       'totalAmount': total,
     };
 
-    print('🔄 Navigating to payment screen...');
     try {
       Navigator.pushNamed(
         context,
@@ -745,11 +761,8 @@ class BookingSummaryScreen extends StatelessWidget {
           selectedVehicle: vehicle,
         ),
       );
-      print('✅ Navigation call completed');
-    } catch (e, stackTrace) {
-      print('❌❌❌ ERROR NAVIGATING TO PAYMENT ❌❌❌');
-      print('   Error: $e');
-      print('   StackTrace: $stackTrace');
+    } catch (e) {
+      // Error handling - navigation failed
     }
   }
 }

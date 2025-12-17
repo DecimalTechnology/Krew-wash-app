@@ -1,4 +1,7 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../../data/repositories/package_repository.dart';
 import '../../domain/models/building_model.dart';
 
@@ -58,6 +61,26 @@ class PackageProvider extends ChangeNotifier {
         final first = _vehicleTypes.first;
         _selectedVehicleTypeId = first['id'];
         _selectedCarTypeName = first['name'];
+      }
+    } on TimeoutException {
+      // Network timeout - keep existing types if any, otherwise empty
+      if (_vehicleTypes.isEmpty) {
+        _vehicleTypes = [];
+      }
+    } on SocketException {
+      // Network error - keep existing types if any, otherwise empty
+      if (_vehicleTypes.isEmpty) {
+        _vehicleTypes = [];
+      }
+    } on http.ClientException {
+      // Network error - keep existing types if any, otherwise empty
+      if (_vehicleTypes.isEmpty) {
+        _vehicleTypes = [];
+      }
+    } catch (e) {
+      // Other errors - keep existing types if any, otherwise empty
+      if (_vehicleTypes.isEmpty) {
+        _vehicleTypes = [];
       }
     } finally {
       _isFetchingVehicleTypes = false;

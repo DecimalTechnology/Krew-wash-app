@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/constants/route_constants.dart';
 import '../providers/staff_provider.dart';
 
 class StaffProfileScreen extends StatelessWidget {
@@ -50,31 +51,30 @@ class StaffProfileScreen extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
             child: Column(
               children: [
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 // Header Title
                 Text(
                   'PROFILE',
-                  style: TextStyle(
+                  style: AppTheme.bebasNeue(
                     color: Colors.white,
                     fontSize: isSmallScreen ? 18 : 20,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: 1.2,
-                    fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
                   ),
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 // Profile Picture
                 _buildProfilePicture(isIOS, isSmallScreen, isTablet),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 // User Name and ID
                 _buildUserInfo(isIOS, isSmallScreen, isTablet),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 // Contact Information
                 _buildContactInfo(context, isIOS, isSmallScreen, isTablet),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 // Logout Button
                 _buildLogoutButton(context, isIOS, isSmallScreen, isTablet),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
               ],
             ),
           ),
@@ -117,27 +117,25 @@ class StaffProfileScreen extends StatelessWidget {
           children: [
             Text(
               userName,
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: isSmallScreen
                     ? 20
                     : isTablet
                     ? 28
                     : 24,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w400,
                 letterSpacing: 1.0,
-                fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               cleanerId,
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: const Color(0xFF04CDFE),
                 fontSize: isSmallScreen ? 14 : 16,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.5,
-                fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
               ),
             ),
           ],
@@ -163,12 +161,15 @@ class StaffProfileScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(isIOS ? 20 : 16),
-            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.3),
+              width: 1,
+            ),
           ),
           child: Column(
             children: [
               _buildContactRow('PHONE', phone, isIOS, isSmallScreen),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               _buildContactRow('EMAIL', email, isIOS, isSmallScreen),
             ],
           ),
@@ -189,21 +190,19 @@ class StaffProfileScreen extends StatelessWidget {
           width: isSmallScreen ? 60 : 80,
           child: Text(
             label,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: isSmallScreen ? 12 : 14,
               fontWeight: FontWeight.w500,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
             ),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: isSmallScreen ? 12 : 14,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
             ),
             textAlign: TextAlign.right,
           ),
@@ -231,10 +230,10 @@ class StaffProfileScreen extends StatelessWidget {
               },
               child: Text(
                 'LOGOUT',
-                style: TextStyle(
+                style: AppTheme.bebasNeue(
                   color: Colors.white,
                   fontSize: isSmallScreen ? 16 : 18,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -253,9 +252,9 @@ class StaffProfileScreen extends StatelessWidget {
               },
               child: Text(
                 'LOGOUT',
-                style: TextStyle(
+                style: AppTheme.bebasNeue(
                   fontSize: isSmallScreen ? 16 : 18,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -268,8 +267,8 @@ class StaffProfileScreen extends StatelessWidget {
       showCupertinoDialog(
         context: context,
         builder: (dialogContext) => CupertinoAlertDialog(
-          title: const Text('Logout'),
-          content: const Text('Are you sure you want to logout?'),
+          title: Text('Logout'),
+          content: Text('Are you sure you want to logout?'),
           actions: [
             CupertinoDialogAction(
               isDestructiveAction: true,
@@ -279,12 +278,21 @@ class StaffProfileScreen extends StatelessWidget {
                   context,
                   listen: false,
                 ).logout();
+                if (context.mounted) {
+                  Navigator.of(
+                    context,
+                    rootNavigator: true,
+                  ).pushNamedAndRemoveUntil(
+                    Routes.authWrapper,
+                    (route) => false,
+                  );
+                }
               },
-              child: const Text('Logout'),
+              child: Text('Logout'),
             ),
             CupertinoDialogAction(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
+              child: Text('Cancel'),
             ),
           ],
         ),
@@ -294,15 +302,15 @@ class StaffProfileScreen extends StatelessWidget {
         context: context,
         builder: (dialogContext) => AlertDialog(
           backgroundColor: AppTheme.cardColor,
-          title: const Text('Logout', style: TextStyle(color: Colors.white)),
-          content: const Text(
+          title: Text('Logout', style: AppTheme.bebasNeue(color: Colors.white)),
+          content: Text(
             'Are you sure you want to logout?',
-            style: TextStyle(color: Colors.white70),
+            style: AppTheme.bebasNeue(color: Colors.white70),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
+              child: Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
@@ -311,8 +319,20 @@ class StaffProfileScreen extends StatelessWidget {
                   context,
                   listen: false,
                 ).logout();
+                if (context.mounted) {
+                  Navigator.of(
+                    context,
+                    rootNavigator: true,
+                  ).pushNamedAndRemoveUntil(
+                    Routes.authWrapper,
+                    (route) => false,
+                  );
+                }
               },
-              child: const Text('Logout', style: TextStyle(color: Colors.red)),
+              child: Text(
+                'Logout',
+                style: AppTheme.bebasNeue(color: Colors.red),
+              ),
             ),
           ],
         ),

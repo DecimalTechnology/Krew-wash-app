@@ -3,11 +3,136 @@ import 'package:flutter/cupertino.dart';
 import 'dart:io';
 import '../../../../../core/constants/route_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 import 'package:provider/provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../presentation/providers/package_provider.dart';
+import '../../data/repositories/profile_repository.dart';
+import '../../data/repositories/package_repository.dart';
+import '../../domain/models/building_model.dart';
 
-class CustomerProfileScreen extends StatelessWidget {
+class CustomerProfileScreen extends StatefulWidget {
   const CustomerProfileScreen({super.key});
+
+  @override
+  State<CustomerProfileScreen> createState() => _CustomerProfileScreenState();
+}
+
+class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
+  String? _buildingName;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileData();
+  }
+
+  Future<void> _loadProfileData() async {
+    try {
+      // First, try to get building ID from AuthProvider (most up-to-date)
+      final authProvider = context.read<AuthProvider>();
+      final user = authProvider.user;
+      String? buildingId = user?.buildingId;
+
+      // If not available from AuthProvider, try ProfileRepository
+      if (buildingId == null || buildingId.isEmpty) {
+        final profileRepo = const ProfileRepository();
+        final profileData = await profileRepo.getProfile();
+        if (profileData['success'] != false) {
+          buildingId = profileData['buildingId']?.toString();
+        }
+      }
+
+      if (buildingId == null || buildingId.isEmpty) {
+        return; // No building ID available
+      }
+
+      // At this point, buildingId is guaranteed to be non-null
+      final buildingIdString = buildingId;
+
+      // Check PackageProvider first (might already have the building name)
+      if (mounted) {
+        try {
+          final packageProvider = context.read<PackageProvider>();
+          if (packageProvider.selectedBuildingId == buildingIdString &&
+              (packageProvider.selectedBuildingName ?? '').isNotEmpty) {
+            setState(() {
+              _buildingName = packageProvider.selectedBuildingName;
+            });
+            return;
+          }
+        } catch (_) {
+          // Continue to fetch from API
+        }
+      }
+
+      // Fetch building name by searching buildings
+      // Try multiple search strategies to find the building
+      final repo = const PackageRepository();
+      List<BuildingModel> buildings = [];
+
+      // Strategy 1: Try searching with building ID (in case API supports ID search)
+      try {
+        buildings = await repo.searchBuildings(buildingIdString);
+        final building = buildings.firstWhere(
+          (b) => b.id == buildingIdString,
+          orElse: () => BuildingModel(id: buildingIdString, buildingName: ''),
+        );
+        if (building.buildingName.isNotEmpty && mounted) {
+          setState(() {
+            _buildingName = building.buildingName;
+          });
+          return;
+        }
+      } catch (_) {
+        // Continue to next strategy
+      }
+
+      // Strategy 2: Try searching with common characters to get all buildings
+      // Try 'a' first (most common starting letter)
+      try {
+        buildings = await repo.searchBuildings('a');
+        var building = buildings.firstWhere(
+          (b) => b.id == buildingIdString,
+          orElse: () => BuildingModel(id: buildingIdString, buildingName: ''),
+        );
+        if (building.buildingName.isEmpty) {
+          // Try 'e' if 'a' didn't work
+          buildings = await repo.searchBuildings('e');
+          building = buildings.firstWhere(
+            (b) => b.id == buildingIdString,
+            orElse: () => BuildingModel(id: buildingIdString, buildingName: ''),
+          );
+        }
+        if (building.buildingName.isNotEmpty && mounted) {
+          setState(() {
+            _buildingName = building.buildingName;
+          });
+          return;
+        }
+      } catch (_) {
+        // Continue to next strategy
+      }
+
+      // Strategy 3: Try empty search (might return all buildings)
+      try {
+        buildings = await repo.searchBuildings('');
+        final building = buildings.firstWhere(
+          (b) => b.id == buildingIdString,
+          orElse: () => BuildingModel(id: buildingIdString, buildingName: ''),
+        );
+        if (building.buildingName.isNotEmpty && mounted) {
+          setState(() {
+            _buildingName = building.buildingName;
+          });
+        }
+      } catch (_) {
+        // Ignore errors - building name will remain null
+      }
+    } catch (_) {
+      // Ignore errors
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +180,9 @@ class CustomerProfileScreen extends StatelessWidget {
                   // Edit Profile Button
                   _buildEditProfileButton(context, isLargeScreen),
 
+                  // History and My Cars Buttons (side by side)
+                  _buildHistoryAndCarsButtons(context, isLargeScreen),
+
                   // Logout Button
                   _buildLogoutButton(context, isLargeScreen),
 
@@ -96,11 +224,8 @@ class CustomerProfileScreen extends StatelessWidget {
                   // Edit Profile Button
                   _buildEditProfileButton(context, isLargeScreen),
 
-                  // View Car List Button
-                  _buildViewCarListButton(context, isLargeScreen),
-
-                  // View My Package Button
-                  _buildViewMyPackageButton(context, isLargeScreen),
+                  // History and My Cars Buttons (side by side)
+                  _buildHistoryAndCarsButtons(context, isLargeScreen),
 
                   // Logout Button
                   _buildLogoutButton(context, isLargeScreen),
@@ -124,14 +249,11 @@ class CustomerProfileScreen extends StatelessWidget {
       ),
       child: ElevatedButton(
         onPressed: () async {
+          final rootNav = Navigator.of(context, rootNavigator: true);
           await context.read<AuthProvider>().signOut();
-          // Navigate to auth screen and clear history
+          // Always go through AuthWrapper after auth changes (prevents bottom-nav leftovers)
           // ignore: use_build_context_synchronously
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            Routes.auth,
-            (route) => false,
-          );
+          rootNav.pushNamedAndRemoveUntil(Routes.authWrapper, (route) => false);
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFE53935),
@@ -154,11 +276,11 @@ class CustomerProfileScreen extends StatelessWidget {
               size: isLargeScreen ? 20 : 18,
             ),
             SizedBox(width: isLargeScreen ? 12 : 8),
-            const Text(
+            Text(
               'LOG OUT',
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w400,
                 letterSpacing: 1.0,
               ),
             ),
@@ -233,39 +355,42 @@ class CustomerProfileScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Back Button
+          StandardBackButton(
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final didPop = await navigator.maybePop();
+              if (!didPop) {
+                final rootNavigator = Navigator.of(
+                  context,
+                  rootNavigator: true,
+                );
+                if (rootNavigator != navigator) {
+                  await rootNavigator.maybePop();
+                }
+              }
+            },
+          ),
+          // Settings Icon
           CupertinoButton(
             padding: EdgeInsets.zero,
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pushNamed(Routes.customerSettings);
+            },
             child: Container(
-              width: isLargeScreen ? 40 : 35,
-              height: isLargeScreen ? 40 : 35,
+              width: isLargeScreen ? 50 : 40,
+              height: isLargeScreen ? 50 : 40,
               decoration: BoxDecoration(
                 color: const Color(0xFF04CDFE),
-                borderRadius: BorderRadius.circular(isLargeScreen ? 20 : 18),
+                borderRadius: BorderRadius.circular(isLargeScreen ? 25 : 20),
               ),
               child: Icon(
-                CupertinoIcons.back,
+                CupertinoIcons.settings,
                 color: CupertinoColors.white,
-                size: isLargeScreen ? 20 : 18,
+                size: isLargeScreen ? 24 : 20,
               ),
-            ),
-          ),
-          // Profile Icon
-          Container(
-            width: isLargeScreen ? 50 : 40,
-            height: isLargeScreen ? 50 : 40,
-            decoration: BoxDecoration(
-              color: CupertinoColors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(isLargeScreen ? 25 : 20),
-              border: Border.all(
-                color: CupertinoColors.white.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
-            child: Icon(
-              CupertinoIcons.person,
-              color: CupertinoColors.white,
-              size: isLargeScreen ? 24 : 20,
             ),
           ),
         ],
@@ -283,38 +408,41 @@ class CustomerProfileScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Back Button
+          StandardBackButton(
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final didPop = await navigator.maybePop();
+              if (!didPop) {
+                final rootNavigator = Navigator.of(
+                  context,
+                  rootNavigator: true,
+                );
+                if (rootNavigator != navigator) {
+                  await rootNavigator.maybePop();
+                }
+              }
+            },
+          ),
+          // Settings Icon
           GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pushNamed(Routes.customerSettings);
+            },
             child: Container(
-              width: isLargeScreen ? 40 : 35,
-              height: isLargeScreen ? 40 : 35,
+              width: isLargeScreen ? 50 : 40,
+              height: isLargeScreen ? 50 : 40,
               decoration: BoxDecoration(
                 color: const Color(0xFF04CDFE),
-                borderRadius: BorderRadius.circular(isLargeScreen ? 20 : 18),
+                borderRadius: BorderRadius.circular(isLargeScreen ? 25 : 20),
               ),
               child: Icon(
-                Icons.arrow_back,
+                Icons.settings,
                 color: Colors.white,
-                size: isLargeScreen ? 20 : 18,
+                size: isLargeScreen ? 24 : 20,
               ),
-            ),
-          ),
-          // Profile Icon
-          Container(
-            width: isLargeScreen ? 50 : 40,
-            height: isLargeScreen ? 50 : 40,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(isLargeScreen ? 25 : 20),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
-            child: Icon(
-              Icons.person_outline,
-              color: Colors.white,
-              size: isLargeScreen ? 24 : 20,
             ),
           ),
         ],
@@ -327,10 +455,10 @@ class CustomerProfileScreen extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: isLargeScreen ? 20.0 : 10.0),
       child: Text(
         'PROFILE',
-        style: TextStyle(
-          color: Colors.white,
+        style: AppTheme.bebasNeue(
           fontSize: isLargeScreen ? 28 : 24,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w400,
+          color: Colors.white,
           letterSpacing: 1.5,
         ),
       ),
@@ -395,32 +523,42 @@ class CustomerProfileScreen extends StatelessWidget {
   }
 
   Widget _buildProfileCard(bool isLargeScreen) {
-    return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: isLargeScreen ? 24.0 : 16.0,
-        vertical: isLargeScreen ? 16.0 : 8.0,
-      ),
-      padding: EdgeInsets.all(isLargeScreen ? 20.0 : 16.0),
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF04CDFE).withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          _buildInfoRow('NAME', 'ROY ALEX', isLargeScreen),
-          SizedBox(height: isLargeScreen ? 12 : 8),
-          _buildInfoRow('ID NUMBER', '74551', isLargeScreen),
-          SizedBox(height: isLargeScreen ? 12 : 8),
-          _buildInfoRow('PHONE', '+721 5889 369', isLargeScreen),
-          SizedBox(height: isLargeScreen ? 12 : 8),
-          _buildInfoRow('LOCATION', 'AL-JASEERA', isLargeScreen),
-          SizedBox(height: isLargeScreen ? 12 : 8),
-        ],
-      ),
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, _) {
+        final user = authProvider.user;
+        final name = user?.name ?? 'N/A';
+        final phone = user?.phone != null ? '+${user!.phone}' : 'N/A';
+        final email = user?.email ?? 'N/A';
+        final buildingName = _buildingName ?? 'N/A';
+
+        return Container(
+          margin: EdgeInsets.symmetric(
+            horizontal: isLargeScreen ? 24.0 : 16.0,
+            vertical: isLargeScreen ? 16.0 : 8.0,
+          ),
+          padding: EdgeInsets.all(isLargeScreen ? 20.0 : 16.0),
+          decoration: BoxDecoration(
+            color: AppTheme.cardColor.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFF04CDFE).withValues(alpha: 0.3),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              _buildInfoRow('NAME', name, isLargeScreen),
+              SizedBox(height: isLargeScreen ? 12 : 8),
+              _buildInfoRow('BUILDING NAME', buildingName, isLargeScreen),
+              SizedBox(height: isLargeScreen ? 12 : 8),
+              _buildInfoRow('PHONE', phone, isLargeScreen),
+              SizedBox(height: isLargeScreen ? 12 : 8),
+              _buildInfoRow('EMAIL', email, isLargeScreen),
+              SizedBox(height: isLargeScreen ? 12 : 8),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -430,7 +568,7 @@ class CustomerProfileScreen extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: Colors.white,
             fontSize: isLargeScreen ? 16 : 12,
             fontWeight: FontWeight.w500,
@@ -439,7 +577,7 @@ class CustomerProfileScreen extends StatelessWidget {
         ),
         Text(
           value,
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: Colors.white,
             fontSize: isLargeScreen ? 16 : 12,
             fontWeight: FontWeight.w500,
@@ -459,7 +597,11 @@ class CustomerProfileScreen extends StatelessWidget {
       ),
       child: ElevatedButton(
         onPressed: () {
-          Navigator.pushNamed(context, Routes.customerEditProfile);
+          // Push above MainNavigationScreen so bottom navbar is hidden
+          Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pushNamed(Routes.customerEditProfile);
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF00D4AA),
@@ -484,10 +626,10 @@ class CustomerProfileScreen extends StatelessWidget {
             SizedBox(width: isLargeScreen ? 12 : 8),
             Text(
               'EDIT PROFILE',
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: isLargeScreen ? 16 : 14,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w400,
                 letterSpacing: 1.0,
               ),
             ),
@@ -497,96 +639,79 @@ class CustomerProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildViewCarListButton(BuildContext context, bool isLargeScreen) {
-    return Container(
-      width: double.infinity,
-      margin: EdgeInsets.symmetric(
+  Widget _buildHistoryAndCarsButtons(BuildContext context, bool isLargeScreen) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
         horizontal: isLargeScreen ? 24.0 : 16.0,
-        vertical: isLargeScreen ? 16.0 : 12.0,
+        vertical: isLargeScreen ? 8.0 : 6.0,
       ),
-      child: ElevatedButton(
-        onPressed: () {
-          Navigator.pushNamed(context, Routes.customerCarList);
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF04CDFE),
-          padding: EdgeInsets.symmetric(
-            vertical: isLargeScreen ? 16.0 : 12.0,
-            horizontal: isLargeScreen ? 24.0 : 16.0,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
-          ),
-          elevation: 8,
-          shadowColor: const Color(0xFF04CDFE).withValues(alpha: 0.3),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.directions_car,
-              color: Colors.white,
-              size: isLargeScreen ? 20 : 18,
-            ),
-            SizedBox(width: isLargeScreen ? 12 : 8),
-            Text(
-              'VIEW CAR LIST',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: isLargeScreen ? 16 : 14,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.0,
+      child: Row(
+        children: [
+          // History Button
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () {
+                // Push above MainNavigationScreen so bottom navbar is hidden
+                Navigator.of(
+                  context,
+                  rootNavigator: true,
+                ).pushNamed(Routes.customerHistory);
+              },
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.symmetric(
+                  vertical: isLargeScreen ? 14.0 : 12.0,
+                  horizontal: isLargeScreen ? 20.0 : 16.0,
+                ),
+                side: const BorderSide(color: Color(0xFF04CDFE), width: 1.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
+                ),
+              ),
+              child: Text(
+                'HISTORY',
+                style: AppTheme.bebasNeue(
+                  color: const Color(0xFF04CDFE),
+                  fontSize: isLargeScreen ? 14 : 12,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 1.0,
+                ),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildViewMyPackageButton(BuildContext context, bool isLargeScreen) {
-    return Container(
-      width: double.infinity,
-      margin: EdgeInsets.symmetric(
-        horizontal: isLargeScreen ? 24.0 : 16.0,
-        vertical: isLargeScreen ? 16.0 : 12.0,
-      ),
-      child: ElevatedButton(
-        onPressed: () {
-          Navigator.pushNamed(context, Routes.customerMyPackage);
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF04CDFE),
-          padding: EdgeInsets.symmetric(
-            vertical: isLargeScreen ? 16.0 : 12.0,
-            horizontal: isLargeScreen ? 24.0 : 16.0,
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
-          ),
-          elevation: 8,
-          shadowColor: const Color(0xFF04CDFE).withValues(alpha: 0.3),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.card_membership,
-              color: Colors.white,
-              size: isLargeScreen ? 20 : 18,
-            ),
-            SizedBox(width: isLargeScreen ? 12 : 8),
-            Text(
-              'VIEW MY PACKAGE',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: isLargeScreen ? 16 : 14,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.0,
+          SizedBox(width: isLargeScreen ? 16 : 12),
+          // My Cars Button
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () {
+                // Use rootNavigator to push above MainNavigationScreen
+                // This will hide the bottom navigation bar
+                Navigator.of(
+                  context,
+                  rootNavigator: true,
+                ).pushNamed(Routes.customerCarList);
+              },
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.symmetric(
+                  vertical: isLargeScreen ? 14.0 : 12.0,
+                  horizontal: isLargeScreen ? 20.0 : 16.0,
+                ),
+                side: const BorderSide(color: Color(0xFF04CDFE), width: 1.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
+                ),
+              ),
+              child: Text(
+                'MY CARS',
+                style: AppTheme.bebasNeue(
+                  color: const Color(0xFF04CDFE),
+                  fontSize: isLargeScreen ? 14 : 12,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 1.0,
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

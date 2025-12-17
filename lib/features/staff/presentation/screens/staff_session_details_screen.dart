@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/standard_back_button.dart';
 import '../../domain/models/booking_model.dart';
 import '../providers/cleaner_booking_provider.dart';
 
@@ -85,17 +87,17 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
           actions: [
             CupertinoActionSheetAction(
               onPressed: () => Navigator.pop(context, ImageSource.camera),
-              child: const Text('Camera'),
+              child: Text('Camera'),
             ),
             CupertinoActionSheetAction(
               onPressed: () => Navigator.pop(context, ImageSource.gallery),
-              child: const Text('Gallery'),
+              child: Text('Gallery'),
             ),
           ],
           cancelButton: CupertinoActionSheetAction(
             isDestructiveAction: true,
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
         ),
       );
@@ -108,12 +110,12 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.camera_alt),
-                title: const Text('Camera'),
+                title: Text('Camera'),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library),
-                title: const Text('Gallery'),
+                title: Text('Gallery'),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
             ],
@@ -213,7 +215,7 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
           content: Text(message),
           actions: [
             CupertinoDialogAction(
-              child: const Text('OK'),
+              child: Text('OK'),
               onPressed: () => Navigator.of(context).pop(),
             ),
           ],
@@ -313,22 +315,21 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
                   children: [
                     Text(
                       _error!,
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: Colors.white,
                         fontSize: isSmallScreen ? 14 : 16,
-                        fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     isIOS
                         ? CupertinoButton(
                             onPressed: _fetchSessionDetails,
-                            child: const Text('Retry'),
+                            child: Text('Retry'),
                           )
                         : TextButton(
                             onPressed: _fetchSessionDetails,
-                            child: const Text('Retry'),
+                            child: Text('Retry'),
                           ),
                   ],
                 ),
@@ -366,7 +367,7 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
               children: [
                 // Header
                 _buildHeader(context, isIOS, isSmallScreen),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 // Sessions Overview
                 _buildSessionsOverview(
                   widget.completedCount,
@@ -374,7 +375,7 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
                   isIOS,
                   isSmallScreen,
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 // Session Details Card
                 _buildSessionDetailsCard(
                   isIOS,
@@ -385,7 +386,7 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
                   completedBy: completedBy,
                   sessionId: sessionId,
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 // Photos Section
                 _buildPhotosSection(
                   isIOS,
@@ -393,7 +394,7 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
                   isTablet,
                   images: images,
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
               ],
             ),
           ),
@@ -409,33 +410,7 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Back button in blue circular container on the left
-          Container(
-            width: 32,
-            height: 32,
-            decoration: const BoxDecoration(
-              color: Color(0xFF04CDFE),
-              shape: BoxShape.circle,
-            ),
-            child: isIOS
-                ? CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Icon(
-                      CupertinoIcons.arrow_left,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  )
-                : IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    onPressed: () => Navigator.of(context).pop(),
-                    padding: EdgeInsets.zero,
-                  ),
-          ),
+          StandardBackButton(onPressed: () => Navigator.of(context).pop()),
           // Spacer to push heading to center
           const Spacer(),
           // Centered heading
@@ -443,21 +418,19 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
             children: [
               Text(
                 'Session Details',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
+                style: AppTheme.bebasNeue(
+                  color: Colors.white.withValues(alpha: 0.7),
                   fontSize: isSmallScreen ? 12 : 14,
-                  fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 'SESSION ${widget.sessionNumber} DETAILS',
-                style: TextStyle(
+                style: AppTheme.bebasNeue(
                   color: Colors.white,
                   fontSize: isSmallScreen ? 20 : 24,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: 1.2,
-                  fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
                 ),
               ),
             ],
@@ -465,7 +438,7 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
           // Spacer to balance the back button on the left
           const Spacer(),
           // Invisible placeholder to balance the back button
-          const SizedBox(width: 32),
+          SizedBox(width: 40),
         ],
       ),
     );
@@ -482,20 +455,18 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
       children: [
         Text(
           'SESSIONS',
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: const Color(0xFF04CDFE),
             fontSize: isSmallScreen ? 14 : 16,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w400,
             letterSpacing: 1.2,
-            fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
           ),
         ),
         Text(
           '$completedCount/$totalSessions COMPLETED',
-          style: TextStyle(
+          style: AppTheme.bebasNeue(
             color: Colors.white,
             fontSize: isSmallScreen ? 14 : 16,
-            fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
           ),
         ),
       ],
@@ -529,12 +500,11 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
             children: [
               Text(
                 'SESSION ${widget.sessionNumber}',
-                style: TextStyle(
+                style: AppTheme.bebasNeue(
                   color: Colors.white,
                   fontSize: isSmallScreen ? 14 : 16,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: 0.5,
-                  fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
                 ),
               ),
               if (isCompleted)
@@ -544,29 +514,28 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.2),
+                    color: Colors.green.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Colors.green, width: 1),
                   ),
                   child: Text(
                     'COMPLETED',
-                    style: TextStyle(
+                    style: AppTheme.bebasNeue(
                       color: Colors.green,
                       fontSize: isSmallScreen ? 10 : 12,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: 0.5,
-                      fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
                     ),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 16),
-          Divider(color: Colors.white.withOpacity(0.1), thickness: 1),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
+          Divider(color: Colors.white.withValues(alpha: 0.1), thickness: 1),
+          SizedBox(height: 16),
           // Session ID
           _buildDetailRow('SESSION ID', sessionId, isIOS, isSmallScreen),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           // Completion Status
           _buildDetailRow(
             'STATUS',
@@ -576,7 +545,7 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
           ),
           // Show completion details only if completed
           if (isCompleted) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             if (date != null)
               _buildDetailRow(
                 'COMPLETED ON',
@@ -584,7 +553,7 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
                 isIOS,
                 isSmallScreen,
               ),
-            if (date != null) const SizedBox(height: 12),
+            if (date != null) SizedBox(height: 12),
             _buildDetailRow(
               'COMPLETED BY',
               _formatCompletedBy(completedBy),
@@ -610,20 +579,18 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
           width: isSmallScreen ? 100 : 120,
           child: Text(
             label,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white70,
               fontSize: isSmallScreen ? 12 : 14,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
             ),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: isSmallScreen ? 12 : 14,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
             ),
             textAlign: TextAlign.right,
           ),
@@ -646,12 +613,11 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
           children: [
             Text(
               'PHOTOS',
-              style: TextStyle(
+              style: AppTheme.bebasNeue(
                 color: const Color(0xFF04CDFE),
                 fontSize: isSmallScreen ? 14 : 16,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w400,
                 letterSpacing: 1.2,
-                fontFamily: isIOS ? '.SF Pro Display' : 'Roboto',
               ),
             ),
             _isUploadingImage
@@ -661,7 +627,7 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
                         ? const CupertinoActivityIndicator(
                             color: Color(0xFF04CDFE),
                           )
-                        : const SizedBox(
+                        : SizedBox(
                             width: 24,
                             height: 24,
                             child: CircularProgressIndicator(
@@ -682,15 +648,14 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
                           color: Color(0xFF04CDFE),
                           size: 24,
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6),
                         Text(
                           'ADD IMAGE',
-                          style: TextStyle(
+                          style: AppTheme.bebasNeue(
                             color: const Color(0xFF04CDFE),
                             fontSize: isSmallScreen ? 12 : 14,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w400,
                             letterSpacing: 1.2,
-                            fontFamily: '.SF Pro Display',
                           ),
                         ),
                       ],
@@ -705,13 +670,13 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
                           color: Color(0xFF04CDFE),
                           size: 24,
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6),
                         Text(
                           'ADD IMAGE',
-                          style: TextStyle(
+                          style: AppTheme.bebasNeue(
                             color: const Color(0xFF04CDFE),
                             fontSize: isSmallScreen ? 12 : 14,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w400,
                             letterSpacing: 1.2,
                           ),
                         ),
@@ -721,13 +686,13 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
                   ),
           ],
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         _buildPhotoPlaceholder(isIOS, isSmallScreen, isTablet, images: images),
         // Show selected image preview and upload button
         if (_selectedImagePath != null) ...[
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _buildSelectedImagePreview(isIOS, isSmallScreen),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _buildUploadButton(isIOS, isSmallScreen),
         ],
       ],
@@ -777,12 +742,11 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
                   ? const CupertinoActivityIndicator(color: Colors.white)
                   : Text(
                       'UPLOAD IMAGE',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: Colors.white,
                         fontSize: isSmallScreen ? 14 : 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         letterSpacing: 1.2,
-                        fontFamily: '.SF Pro Display',
                       ),
                     ),
             )
@@ -795,7 +759,7 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
                 ),
               ),
               child: _isUploadingImage
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
@@ -805,10 +769,10 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
                     )
                   : Text(
                       'UPLOAD IMAGE',
-                      style: TextStyle(
+                      style: AppTheme.bebasNeue(
                         color: Colors.white,
                         fontSize: isSmallScreen ? 14 : 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         letterSpacing: 1.2,
                       ),
                     ),
@@ -883,13 +847,12 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
             color: Colors.grey[600],
             size: isTablet ? 80 : 60,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
             'NO PHOTOS UPLOADED FOR THIS SESSION',
-            style: TextStyle(
+            style: AppTheme.bebasNeue(
               color: Colors.grey[600],
               fontSize: isSmallScreen ? 12 : 14,
-              fontFamily: isIOS ? '.SF Pro Text' : 'Roboto',
             ),
             textAlign: TextAlign.center,
           ),

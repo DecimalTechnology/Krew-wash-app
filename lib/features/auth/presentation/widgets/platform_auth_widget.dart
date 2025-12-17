@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../screens/otp_verification_screen.dart';
 import '../../../../core/widgets/country_code_picker.dart';
@@ -69,54 +70,54 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                     fit: BoxFit.cover,
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
               ],
 
               // SIGN IN heading for Sign In
               if (!_isSignUp)
-                const Text(
+                Text(
                   'SIGN IN',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: AppTheme.bebasNeue(
                     fontSize: 28,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w400,
                     color: Color(0xFF04CDFE),
                     letterSpacing: 1.5,
                   ),
                 ),
-              if (!_isSignUp) const SizedBox(height: 24),
+              if (!_isSignUp) SizedBox(height: 24),
 
               if (_isSignUp) ...[
                 // Sign Up Fields
                 _buildNameField(isIOS),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 _buildEmailField(isIOS),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 _buildPhoneField(isIOS),
               ] else ...[
                 // Sign In Fields
                 _buildEmailOrPhoneField(isIOS),
               ],
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
 
               // Social Login Buttons
               _buildSocialButtons(isIOS),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
 
               // Primary Button
               _buildPrimaryButton(isIOS, authProvider),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
 
               // Toggle Text
               _buildToggleText(isIOS),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
 
               // Login as Cleaner Button (only for Sign In)
               if (!_isSignUp) _buildLoginAsCleanerButton(isIOS),
 
               // Error Message
               if (authProvider.errorMessage != null) ...[
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 _buildErrorMessage(isIOS, authProvider.errorMessage!),
               ],
             ],
@@ -134,9 +135,9 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
             clearButtonMode: OverlayVisibilityMode.editing,
             style: const TextStyle(color: Colors.white),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           )
@@ -145,16 +146,16 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'NAME',
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
               filled: true,
-              fillColor: Colors.white.withOpacity(0.1),
+              fillColor: Colors.white.withValues(alpha: 0.1),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -186,9 +187,9 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
             clearButtonMode: OverlayVisibilityMode.editing,
             style: const TextStyle(color: Colors.white),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           )
@@ -198,16 +199,16 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'EMAIL',
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
               filled: true,
-              fillColor: Colors.white.withOpacity(0.1),
+              fillColor: Colors.white.withValues(alpha: 0.1),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -241,7 +242,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
           },
           initialSelection: _selectedCountryCode,
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Expanded(
           child: isIOS
               ? CupertinoTextField(
@@ -251,9 +252,9 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                   clearButtonMode: OverlayVisibilityMode.editing,
                   style: const TextStyle(color: Colors.white),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
                   ),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -266,19 +267,19 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     hintText: 'PHONE',
-                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.1),
+                    fillColor: Colors.white.withValues(alpha: 0.1),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -328,7 +329,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
             },
             initialSelection: _selectedCountryCode,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: isIOS
                 ? CupertinoTextField(
@@ -338,9 +339,9 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                     clearButtonMode: OverlayVisibilityMode.editing,
                     style: const TextStyle(color: Colors.white),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withOpacity(0.3)),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
                     ),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -354,20 +355,20 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                     decoration: InputDecoration(
                       hintText: 'PHONE',
                       hintStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                       ),
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.1),
+                      fillColor: Colors.white.withValues(alpha: 0.1),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -406,9 +407,9 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
             clearButtonMode: OverlayVisibilityMode.editing,
             style: const TextStyle(color: Colors.white),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             onChanged: (value) {
@@ -423,16 +424,16 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'EMAIL / PHONE',
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
               filled: true,
-              fillColor: Colors.white.withOpacity(0.1),
+              fillColor: Colors.white.withValues(alpha: 0.1),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -461,86 +462,8 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
   }
 
   Widget _buildSocialButtons(bool isIOS) {
-    return Column(
-      children: [
-        // Google Button
-        Container(
-          width: double.infinity,
-          height: 56,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(isIOS ? 16 : 12),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
-          ),
-          child: isIOS
-              ? CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: () async {
-                    if (_isSignUp) {
-                      await _handleSignUpWithGoogle();
-                    } else {
-                      await _handleSignInWithGoogle();
-                    }
-                  },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.g_mobiledata,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'SIGN UP WITH GOOGLE',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () async {
-                      if (_isSignUp) {
-                        await _handleSignUpWithGoogle();
-                      } else {
-                        await _handleSignInWithGoogle();
-                      }
-                    },
-                    child: Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.g_mobiledata,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'SIGN UP WITH GOOGLE',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-        ),
-      ],
-    );
+    // Google sign-in button is hidden
+    return const SizedBox.shrink();
   }
 
   Widget _buildPrimaryButton(bool isIOS, AuthProvider authProvider) {
@@ -552,7 +475,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
         borderRadius: BorderRadius.circular(isIOS ? 16 : 12),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF00D4AA).withOpacity(0.3),
+            color: const Color(0xFF00D4AA).withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -576,7 +499,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w400,
                           letterSpacing: 1,
                         ),
                       ),
@@ -595,7 +518,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                 },
                 child: Center(
                   child: authProvider.isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
@@ -610,7 +533,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w400,
                             letterSpacing: 1,
                           ),
                         ),
@@ -633,11 +556,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
             child: RichText(
               textAlign: TextAlign.center,
               text: TextSpan(
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.white,
-                  fontFamily: '.SF Pro Text',
-                ),
+                style: const TextStyle(fontSize: 14, color: Colors.white),
                 children: [
                   TextSpan(
                     text: _isSignUp
@@ -697,20 +616,20 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                 children: [
                   Text(
                     'LOGIN AS CLEANER',
-                    style: TextStyle(
+                    style: AppTheme.bebasNeue(
                       fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                       color: const Color(0xFF04CDFE),
                       letterSpacing: 1.0,
                       shadows: [
                         Shadow(
-                          color: const Color(0xFF04CDFE).withOpacity(0.5),
+                          color: const Color(0xFF04CDFE).withValues(alpha: 0.5),
                           blurRadius: 6,
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   // Double underline
                   Stack(
                     children: [
@@ -718,7 +637,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                         height: 2,
                         width: 120,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF04CDFE).withOpacity(0.8),
+                          color: const Color(0xFF04CDFE).withValues(alpha: 0.8),
                           borderRadius: BorderRadius.circular(1),
                         ),
                       ),
@@ -728,7 +647,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                           height: 2,
                           width: 120,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF04CDFE).withOpacity(0.6),
+                            color: const Color(0xFF04CDFE).withValues(alpha: 0.6),
                             borderRadius: BorderRadius.circular(1),
                           ),
                         ),
@@ -750,20 +669,20 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                 children: [
                   Text(
                     'LOGIN AS CLEANER',
-                    style: TextStyle(
+                    style: AppTheme.bebasNeue(
                       fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                       color: const Color(0xFF04CDFE),
                       letterSpacing: 1.0,
                       shadows: [
                         Shadow(
-                          color: const Color(0xFF04CDFE).withOpacity(0.5),
+                          color: const Color(0xFF04CDFE).withValues(alpha: 0.5),
                           blurRadius: 6,
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   // Double underline
                   Stack(
                     children: [
@@ -771,7 +690,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                         height: 2,
                         width: 120,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF04CDFE).withOpacity(0.8),
+                          color: const Color(0xFF04CDFE).withValues(alpha: 0.8),
                           borderRadius: BorderRadius.circular(1),
                         ),
                       ),
@@ -781,7 +700,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                           height: 2,
                           width: 120,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF04CDFE).withOpacity(0.6),
+                            color: const Color(0xFF04CDFE).withValues(alpha: 0.6),
                             borderRadius: BorderRadius.circular(1),
                           ),
                         ),
@@ -798,9 +717,9 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.1),
+        color: Colors.red.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(isIOS ? 16 : 12),
-        border: Border.all(color: Colors.red.withOpacity(0.3)),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
       ),
       child: Text(
         message,
@@ -885,22 +804,20 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
       return await showCupertinoDialog<String>(
         context: context,
         builder: (context) => CupertinoAlertDialog(
-          title: const Text('Choose Verification Method'),
-          content: const Text(
-            'How would you like to receive the verification code?',
-          ),
+          title: Text('Choose Verification Method'),
+          content: Text('How would you like to receive the verification code?'),
           actions: [
             CupertinoDialogAction(
-              child: const Text('Phone Number'),
+              child: Text('Phone Number'),
               onPressed: () => Navigator.pop(context, 'phone'),
             ),
             CupertinoDialogAction(
-              child: const Text('Email'),
+              child: Text('Email'),
               onPressed: () => Navigator.pop(context, 'email'),
             ),
             CupertinoDialogAction(
               isDestructiveAction: true,
-              child: const Text('Cancel'),
+              child: Text('Cancel'),
               onPressed: () => Navigator.pop(context),
             ),
           ],
@@ -910,22 +827,20 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
       return await showDialog<String>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Choose Verification Method'),
-          content: const Text(
-            'How would you like to receive the verification code?',
-          ),
+          title: Text('Choose Verification Method'),
+          content: Text('How would you like to receive the verification code?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, 'phone'),
-              child: const Text('Phone Number'),
+              child: Text('Phone Number'),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, 'email'),
-              child: const Text('Email'),
+              child: Text('Email'),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text('Cancel'),
             ),
           ],
         ),
@@ -1023,7 +938,9 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
         final phoneRegistered = !hasMessage;
 
         if (kDebugMode) {
-          print('📱 Phone registered check: hasMessage=$hasMessage, phoneRegistered=$phoneRegistered');
+          print(
+            '📱 Phone registered check: hasMessage=$hasMessage, phoneRegistered=$phoneRegistered',
+          );
         }
 
         if (phoneRegistered) {
@@ -1185,11 +1102,11 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
       showCupertinoDialog(
         context: context,
         builder: (context) => CupertinoAlertDialog(
-          title: const Text('Success'),
+          title: Text('Success'),
           content: Text(message),
           actions: [
             CupertinoDialogAction(
-              child: const Text('OK'),
+              child: Text('OK'),
               onPressed: () => Navigator.pop(context),
             ),
           ],
@@ -1214,11 +1131,11 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
       showCupertinoDialog(
         context: context,
         builder: (context) => CupertinoAlertDialog(
-          title: const Text('Error'),
+          title: Text('Error'),
           content: Text(message),
           actions: [
             CupertinoDialogAction(
-              child: const Text('OK'),
+              child: Text('OK'),
               onPressed: () => Navigator.pop(context),
             ),
           ],
@@ -1243,13 +1160,13 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
       showCupertinoDialog(
         context: context,
         builder: (context) => CupertinoAlertDialog(
-          title: const Text('Phone Number Not Registered'),
-          content: const Text(
+          title: Text('Phone Number Not Registered'),
+          content: Text(
             'This phone number is not registered. Please sign up to create an account.',
           ),
           actions: [
             CupertinoDialogAction(
-              child: const Text('OK'),
+              child: Text('OK'),
               onPressed: () => Navigator.pop(context),
             ),
           ],
@@ -1258,7 +1175,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
+          content: Text(
             'Phone number not registered. Please sign up to create an account.',
           ),
           backgroundColor: Colors.orange[700],
@@ -1270,60 +1187,60 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
     }
   }
 
-  // Google Sign-In Functions
-  Future<void> _handleSignUpWithGoogle() async {
-    print('helooooooooooooooooo');
-    try {
-      final authProvider = context.read<AuthProvider>();
+  // Google Sign-In Functions (commented out - Google sign-in button is hidden)
+  // Future<void> _handleSignUpWithGoogle() async {
+  //   print('helooooooooooooooooo');
+  //   try {
+  //     final authProvider = context.read<AuthProvider>();
 
-      final result = await authProvider.signInWithGoogle();
+  //     final result = await authProvider.signInWithGoogle();
 
-      if (result['success'] && result['user'] != null) {
-        final userData = result['user'];
-        print(userData['email']);
-        print(userData['displayName']);
-        print(userData['photoURL']);
-        _showSuccessMessage('Google sign-up successful');
+  //     if (result['success'] && result['user'] != null) {
+  //       final userData = result['user'];
+  //       print(userData['email']);
+  //       print(userData['displayName']);
+  //       print(userData['photoURL']);
+  //       _showSuccessMessage('Google sign-up successful');
 
-        // Register user with backend API
-        final registerResult = await authProvider.registerUserAfterVerification(
-          email: userData['email'] ?? '',
-          name: userData['displayName'] ?? '',
-          phoneNumber: "",
-          photoURL: userData['photoURL'],
-          verificationMethod: "google",
-        );
+  //       // Register user with backend API
+  //       final registerResult = await authProvider.registerUserAfterVerification(
+  //         email: userData['email'] ?? '',
+  //         name: userData['displayName'] ?? '',
+  //         phoneNumber: "",
+  //         photoURL: userData['photoURL'],
+  //         verificationMethod: "google",
+  //       );
 
-        if (registerResult['success']) {
-          _showSuccessMessage('Account created successfully');
-          // Navigation will be handled by AuthProvider state change
-        } else {
-          _showErrorMessage(
-            registerResult['message'] ?? 'Failed to create account',
-          );
-        }
-      } else {
-        _showErrorMessage(result['message'] ?? 'Google sign-up failed');
-      }
-    } catch (e) {
-      _showErrorMessage('Google sign-up failed: $e');
-    }
-  }
+  //       if (registerResult['success']) {
+  //         _showSuccessMessage('Account created successfully');
+  //         // Navigation will be handled by AuthProvider state change
+  //       } else {
+  //         _showErrorMessage(
+  //           registerResult['message'] ?? 'Failed to create account',
+  //         );
+  //       }
+  //     } else {
+  //       _showErrorMessage(result['message'] ?? 'Google sign-up failed');
+  //     }
+  //   } catch (e) {
+  //     _showErrorMessage('Google sign-up failed: $e');
+  //   }
+  // }
 
-  Future<void> _handleSignInWithGoogle() async {
-    try {
-      final authProvider = context.read<AuthProvider>();
+  // Future<void> _handleSignInWithGoogle() async {
+  //   try {
+  //     final authProvider = context.read<AuthProvider>();
 
-      final result = await authProvider.signInWithGoogle();
+  //     final result = await authProvider.signInWithGoogle();
 
-      if (result['success'] && result['user'] != null) {
-        _showSuccessMessage('Google sign-in successful');
-        // Navigation will be handled by AuthProvider state change
-      } else {
-        _showErrorMessage(result['message'] ?? 'Google sign-in failed');
-      }
-    } catch (e) {
-      _showErrorMessage('Google sign-in failed: $e');
-    }
-  }
+  //     if (result['success'] && result['user'] != null) {
+  //       _showSuccessMessage('Google sign-in successful');
+  //       // Navigation will be handled by AuthProvider state change
+  //     } else {
+  //       _showErrorMessage(result['message'] ?? 'Google sign-in failed');
+  //     }
+  //   } catch (e) {
+  //     _showErrorMessage('Google sign-in failed: $e');
+  //   }
+  // }
 }
