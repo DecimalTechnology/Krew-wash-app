@@ -241,53 +241,162 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
   }
 
   Widget _buildLogoutButton(BuildContext context, bool isLargeScreen) {
+    final isIOS = Platform.isIOS;
+
     return Container(
       width: double.infinity,
       margin: EdgeInsets.symmetric(
         horizontal: isLargeScreen ? 24.0 : 16.0,
         vertical: isLargeScreen ? 16.0 : 12.0,
       ),
-      child: ElevatedButton(
-        onPressed: () async {
-          final rootNav = Navigator.of(context, rootNavigator: true);
-          await context.read<AuthProvider>().signOut();
-          // Always go through AuthWrapper after auth changes (prevents bottom-nav leftovers)
-          // ignore: use_build_context_synchronously
-          rootNav.pushNamedAndRemoveUntil(Routes.authWrapper, (route) => false);
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFE53935),
-          padding: EdgeInsets.symmetric(
-            vertical: isLargeScreen ? 16.0 : 12.0,
-            horizontal: isLargeScreen ? 24.0 : 16.0,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
-          ),
-          elevation: 6,
-          shadowColor: const Color(0xFFE53935).withValues(alpha: 0.3),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.logout,
-              color: Colors.white,
-              size: isLargeScreen ? 20 : 18,
+      child: isIOS
+          ? CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: () => _showLogoutDialog(context, isIOS),
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(
+                  vertical: isLargeScreen ? 16.0 : 12.0,
+                  horizontal: isLargeScreen ? 24.0 : 16.0,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE53935),
+                  borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      CupertinoIcons.arrow_right_square,
+                      color: Colors.white,
+                      size: isLargeScreen ? 20 : 18,
+                    ),
+                    SizedBox(width: isLargeScreen ? 12 : 8),
+                    Text(
+                      'LOG OUT',
+                      style: AppTheme.bebasNeue(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : ElevatedButton(
+              onPressed: () => _showLogoutDialog(context, isIOS),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE53935),
+                padding: EdgeInsets.symmetric(
+                  vertical: isLargeScreen ? 16.0 : 12.0,
+                  horizontal: isLargeScreen ? 24.0 : 16.0,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
+                ),
+                elevation: 6,
+                shadowColor: const Color(0xFFE53935).withValues(alpha: 0.3),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.logout,
+                    color: Colors.white,
+                    size: isLargeScreen ? 20 : 18,
+                  ),
+                  SizedBox(width: isLargeScreen ? 12 : 8),
+                  Text(
+                    'LOG OUT',
+                    style: AppTheme.bebasNeue(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            SizedBox(width: isLargeScreen ? 12 : 8),
-            Text(
-              'LOG OUT',
-              style: AppTheme.bebasNeue(
-                color: Colors.white,
-                fontWeight: FontWeight.w400,
-                letterSpacing: 1.0,
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context, bool isIOS) {
+    if (isIOS) {
+      showCupertinoDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (dialogContext) => CupertinoAlertDialog(
+          title: const Text('Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.of(dialogContext, rootNavigator: true).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () async {
+                Navigator.of(dialogContext, rootNavigator: true).pop();
+                final rootNav = Navigator.of(context, rootNavigator: true);
+                await context.read<AuthProvider>().signOut();
+                if (context.mounted) {
+                  rootNav.pushNamedAndRemoveUntil(
+                    Routes.authWrapper,
+                    (route) => false,
+                  );
+                }
+              },
+              child: const Text('Logout'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (dialogContext) => AlertDialog(
+          backgroundColor: AppTheme.cardColor,
+          title: Text('Logout', style: AppTheme.bebasNeue(color: Colors.white)),
+          content: Text(
+            'Are you sure you want to logout?',
+            style: AppTheme.bebasNeue(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext, rootNavigator: true).pop();
+              },
+              child: Text(
+                'Cancel',
+                style: AppTheme.bebasNeue(color: Colors.white),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(dialogContext, rootNavigator: true).pop();
+                final rootNav = Navigator.of(context, rootNavigator: true);
+                await context.read<AuthProvider>().signOut();
+                if (context.mounted) {
+                  rootNav.pushNamedAndRemoveUntil(
+                    Routes.authWrapper,
+                    (route) => false,
+                  );
+                }
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+              child: Text(
+                'Logout',
+                style: AppTheme.bebasNeue(color: Colors.redAccent),
               ),
             ),
           ],
         ),
-      ),
-    );
+      );
+    }
   }
 
   Widget _buildBackgroundImages() {
@@ -356,18 +465,16 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         children: [
           // Back Button
           StandardBackButton(
-            onPressed: () async {
-              final navigator = Navigator.of(context);
-              final didPop = await navigator.maybePop();
-              if (!didPop) {
-                final rootNavigator = Navigator.of(
-                  context,
-                  rootNavigator: true,
-                );
-                if (rootNavigator != navigator) {
-                  await rootNavigator.maybePop();
-                }
-              }
+            onPressed: () {
+              // Navigate to customer home screen with tab index 0
+              Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pushNamedAndRemoveUntil(
+                Routes.customerHome,
+                (route) => false,
+                arguments: 0, // Set bottom navbar index to 0 (Home tab)
+              );
             },
           ),
           // Settings Icon
@@ -409,18 +516,16 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         children: [
           // Back Button
           StandardBackButton(
-            onPressed: () async {
-              final navigator = Navigator.of(context);
-              final didPop = await navigator.maybePop();
-              if (!didPop) {
-                final rootNavigator = Navigator.of(
-                  context,
-                  rootNavigator: true,
-                );
-                if (rootNavigator != navigator) {
-                  await rootNavigator.maybePop();
-                }
-              }
+            onPressed: () {
+              // Navigate to customer home screen with tab index 0
+              Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pushNamedAndRemoveUntil(
+                Routes.customerHome,
+                (route) => false,
+                arguments: 0, // Set bottom navbar index to 0 (Home tab)
+              );
             },
           ),
           // Settings Icon
@@ -651,11 +756,15 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
           Expanded(
             child: OutlinedButton(
               onPressed: () {
-                // Push above MainNavigationScreen so bottom navbar is hidden
+                // Navigate to bookings tab (index 3) in MainNavigationScreen
                 Navigator.of(
                   context,
                   rootNavigator: true,
-                ).pushNamed(Routes.customerHistory);
+                ).pushNamedAndRemoveUntil(
+                  Routes.customerHome,
+                  (route) => false,
+                  arguments: 3, // Bookings tab index
+                );
               },
               style: OutlinedButton.styleFrom(
                 padding: EdgeInsets.symmetric(

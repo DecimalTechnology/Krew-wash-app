@@ -7,10 +7,11 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/edit_profile_provider.dart';
-import '../../../auth/presentation/screens/otp_verification_screen.dart';
+import '../widgets/edit_profile_otp_dialog.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/standard_back_button.dart';
+import '../../../../core/widgets/country_code_picker.dart';
 import '../../presentation/providers/package_provider.dart';
 import '../../../../core/constants/route_constants.dart';
 import '../../../../core/utils/network_error_dialog.dart';
@@ -28,6 +29,7 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _phoneDisplayController = TextEditingController();
   final _emailController = TextEditingController();
   final _buildingSearchController = TextEditingController();
   final LayerLink _buildingFieldLink = LayerLink();
@@ -43,6 +45,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? _selectedBuildingName;
   File? _selectedImageFile;
   final ImagePicker _imagePicker = ImagePicker();
+
+  // Country code for phone number
+  CountryCode _selectedCountryCode = const CountryCode(
+    name: 'United Arab Emirates',
+    code: 'AE',
+    dialCode: '+971',
+    flag: '🇦🇪',
+  );
 
   @override
   void initState() {
@@ -61,7 +71,81 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     if (user != null) {
       _nameController.text = user.name ?? '';
-      _phoneController.text = user.phone?.toString() ?? '';
+
+      // Extract country code from phone if it starts with +
+      final phoneStr = user.phone?.toString() ?? '';
+      if (phoneStr.startsWith('+')) {
+        // Get all available country codes and sort by length (longest first)
+        // This ensures we match +971 before +9, +91 before +9, etc.
+        final allCountries = _getAllCountryCodes();
+        allCountries.sort(
+          (a, b) => b.dialCode.length.compareTo(a.dialCode.length),
+        );
+
+        CountryCode? matchedCountry;
+        String remainingPhone = phoneStr;
+
+        // Try to match country codes from longest to shortest
+        for (final country in allCountries) {
+          if (phoneStr.startsWith(country.dialCode)) {
+            matchedCountry = country;
+            remainingPhone = phoneStr.substring(country.dialCode.length).trim();
+            break;
+          }
+        }
+
+        if (matchedCountry != null) {
+          _selectedCountryCode = matchedCountry;
+          _phoneController.text = remainingPhone;
+          _syncPhoneDisplay();
+        } else {
+          // If no match found, try to extract first 1-4 digits as country code
+          final match = RegExp(r'^\+(\d{1,4})').firstMatch(phoneStr);
+          if (match != null) {
+            final dialCode = '+${match.group(1)}';
+            final remainingPhone = phoneStr.substring(match.end).trim();
+            _phoneController.text = remainingPhone;
+            // Try to find country, keep default if not found
+            final country = _findCountryByDialCode(dialCode);
+            if (country != null) {
+              _selectedCountryCode = country;
+            }
+            _syncPhoneDisplay();
+          } else {
+            _phoneController.text = phoneStr;
+            _syncPhoneDisplay();
+          }
+        }
+      } else {
+        // If phone doesn't start with +, try to detect country code
+        // Get all country codes and try matching from longest to shortest
+        final allCountries = _getAllCountryCodes();
+        allCountries.sort(
+          (a, b) => b.dialCode.length.compareTo(a.dialCode.length),
+        );
+
+        bool found = false;
+        for (final country in allCountries) {
+          // Remove + from dial code for comparison
+          final codeWithoutPlus = country.dialCode.substring(1);
+          if (phoneStr.startsWith(codeWithoutPlus) &&
+              phoneStr.length > codeWithoutPlus.length) {
+            _selectedCountryCode = country;
+            _phoneController.text = phoneStr
+                .substring(codeWithoutPlus.length)
+                .trim();
+            found = true;
+            break;
+          }
+        }
+
+        if (!found) {
+          // Default: assume it's just the number without country code
+          _phoneController.text = phoneStr;
+        }
+        _syncPhoneDisplay();
+      }
+
       _emailController.text = user.email ?? '';
 
       // Load building ID from user data if available
@@ -71,6 +155,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _fetchBuildingName(user.buildingId!);
       }
     }
+  }
+
+  void _syncPhoneDisplay() {
+    final phoneNumber = _phoneController.text.trim();
+    final full = phoneNumber.isNotEmpty
+        ? '${_selectedCountryCode.dialCode}$phoneNumber'
+        : '';
+    _phoneDisplayController.text = full;
   }
 
   Future<void> _fetchBuildingName(String buildingId) async {
@@ -87,90 +179,108 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
 
       // Fetch building name by searching buildings
-      // Try multiple search strategies to find the building
       final repo = const PackageRepository();
-      List<BuildingModel> buildings = [];
 
-      // Strategy 1: Try searching with building ID (in case API supports ID search)
+      // Try empty search first (usually returns all buildings or a good subset)
       try {
-        buildings = await repo.searchBuildings(buildingId);
+        final buildings = await repo.searchBuildings('');
         final building = buildings.firstWhere(
           (b) => b.id == buildingId,
           orElse: () => BuildingModel(id: buildingId, buildingName: ''),
         );
-        if (building.buildingName.isNotEmpty) {
-          if (mounted) {
-            setState(() {
-              _selectedBuildingName = building.buildingName;
-              _buildingSearchController.text = building.buildingName;
-            });
-          }
+        if (building.buildingName.isNotEmpty && mounted) {
+          setState(() {
+            _selectedBuildingName = building.buildingName;
+            _buildingSearchController.text = building.buildingName;
+            // Also update the package provider for consistency
+            packageProvider.selectBuilding(
+              id: buildingId,
+              name: building.buildingName,
+            );
+          });
           return;
         }
-      } catch (_) {
-        // Continue to next strategy
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error in empty search: $e');
+        }
       }
 
-      // Strategy 2: Try searching with common characters to get all buildings
-      // Try 'a' first (most common starting letter)
+      // If empty search didn't work, try searching with the building ID itself
       try {
-        buildings = await repo.searchBuildings('a');
-        var building = buildings.firstWhere(
+        final buildings = await repo.searchBuildings(buildingId);
+        final building = buildings.firstWhere(
           (b) => b.id == buildingId,
           orElse: () => BuildingModel(id: buildingId, buildingName: ''),
         );
-        if (building.buildingName.isEmpty) {
-          // Try 'e' if 'a' didn't work
-          buildings = await repo.searchBuildings('e');
-          building = buildings.firstWhere(
+        if (building.buildingName.isNotEmpty && mounted) {
+          setState(() {
+            _selectedBuildingName = building.buildingName;
+            _buildingSearchController.text = building.buildingName;
+            // Also update the package provider for consistency
+            packageProvider.selectBuilding(
+              id: buildingId,
+              name: building.buildingName,
+            );
+          });
+          return;
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error in ID search: $e');
+        }
+      }
+
+      // If still not found, try a few common search terms to get more results
+      final searchTerms = ['a', 'e', 'i', 'the'];
+      for (final term in searchTerms) {
+        try {
+          final buildings = await repo.searchBuildings(term);
+          final building = buildings.firstWhere(
             (b) => b.id == buildingId,
             orElse: () => BuildingModel(id: buildingId, buildingName: ''),
           );
+          if (building.buildingName.isNotEmpty && mounted) {
+            setState(() {
+              _selectedBuildingName = building.buildingName;
+              _buildingSearchController.text = building.buildingName;
+              // Also update the package provider for consistency
+              packageProvider.selectBuilding(
+                id: buildingId,
+                name: building.buildingName,
+              );
+            });
+            return;
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('Error searching with "$term": $e');
+          }
+          continue;
         }
-        if (building.buildingName.isNotEmpty && mounted) {
-          setState(() {
-            _selectedBuildingName = building.buildingName;
-            _buildingSearchController.text = building.buildingName;
-          });
-          return;
-        }
-      } catch (_) {
-        // Continue to next strategy
       }
 
-      // Strategy 3: Try empty search (might return all buildings)
-      try {
-        buildings = await repo.searchBuildings('');
-        final building = buildings.firstWhere(
-          (b) => b.id == buildingId,
-          orElse: () => BuildingModel(id: buildingId, buildingName: ''),
-        );
-        if (building.buildingName.isNotEmpty && mounted) {
-          setState(() {
-            _selectedBuildingName = building.buildingName;
-            _buildingSearchController.text = building.buildingName;
-          });
-          return;
-        }
-      } catch (_) {
-        // If all strategies fail, show building ID
-      }
-
-      // If all strategies fail, at least show the building ID
+      // If all strategies fail, leave the field empty or show placeholder
+      // Don't show the building ID as it's not user-friendly
       if (mounted) {
         setState(() {
-          _buildingSearchController.text = buildingId;
+          _selectedBuildingName = null;
+          _buildingSearchController.clear();
         });
+        if (kDebugMode) {
+          print('Could not find building name for ID: $buildingId');
+        }
       }
     } catch (e) {
       // Log error for debugging
       if (kDebugMode) {
         print('Error fetching building name: $e');
       }
-      // If fetching fails, at least show the building ID
+      // If fetching fails, leave the field empty
       if (mounted) {
         setState(() {
-          _buildingSearchController.text = buildingId;
+          _selectedBuildingName = null;
+          _buildingSearchController.clear();
         });
       }
     }
@@ -182,6 +292,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _hideBuildingSuggestions();
     _nameController.dispose();
     _phoneController.dispose();
+    _phoneDisplayController.dispose();
     _emailController.dispose();
     _buildingSearchController.dispose();
     super.dispose();
@@ -404,7 +515,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final user = authProvider.user;
     final photoUrl = user?.photo;
 
-    // Show selected image if available, otherwise show network image or default
+    // Show selected image if available, otherwise show network image or avatar icon
     Widget imageWidget;
     if (_selectedImageFile != null) {
       imageWidget = Image.file(_selectedImageFile!, fit: BoxFit.cover);
@@ -413,17 +524,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         photoUrl,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
-          return Image.asset(
-            'assets/CustomerProfile/image1.png',
-            fit: BoxFit.cover,
-          );
+          return Icon(Icons.person, size: 60, color: Colors.white);
         },
       );
     } else {
-      imageWidget = Image.asset(
-        'assets/CustomerProfile/image1.png',
-        fit: BoxFit.cover,
-      );
+      // Show avatar icon when image is null
+      imageWidget = Icon(Icons.person, size: 60, color: Colors.white);
     }
 
     return Column(
@@ -708,7 +814,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'NAME',
+              'NAME *',
               style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: 14,
@@ -751,7 +857,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'PHONE',
+              'PHONE *',
               style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: 14,
@@ -762,7 +868,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             GestureDetector(
               onTap: () {
                 setState(() {
-                  _isEditingPhone = !_isEditingPhone;
+                  // If cancelling edit, restore original value
+                  if (_isEditingPhone) {
+                    _isEditingPhone = false;
+                    _loadUserData();
+                  } else {
+                    _isEditingPhone = true;
+                  }
+                  _syncPhoneDisplay();
                 });
               },
               child: Text(
@@ -777,11 +890,169 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ],
         ),
         SizedBox(height: 12),
-        _buildTextField(
-          controller: _phoneController,
-          enabled: _isEditingPhone,
-          keyboardType: TextInputType.phone,
-          isIOS: isIOS,
+        _buildPhoneFieldWithCountryCode(isIOS: isIOS),
+      ],
+    );
+  }
+
+  List<CountryCode> _getAllCountryCodes() {
+    // List of common country codes matching the CountryCodePicker
+    return [
+      const CountryCode(
+        name: 'United Arab Emirates',
+        code: 'AE',
+        dialCode: '+971',
+        flag: '🇦🇪',
+      ),
+      const CountryCode(
+        name: 'Saudi Arabia',
+        code: 'SA',
+        dialCode: '+966',
+        flag: '🇸🇦',
+      ),
+      const CountryCode(
+        name: 'Kuwait',
+        code: 'KW',
+        dialCode: '+965',
+        flag: '🇰🇼',
+      ),
+      const CountryCode(
+        name: 'Qatar',
+        code: 'QA',
+        dialCode: '+974',
+        flag: '🇶🇦',
+      ),
+      const CountryCode(
+        name: 'Bahrain',
+        code: 'BH',
+        dialCode: '+973',
+        flag: '🇧🇭',
+      ),
+      const CountryCode(
+        name: 'Oman',
+        code: 'OM',
+        dialCode: '+968',
+        flag: '🇴🇲',
+      ),
+      const CountryCode(
+        name: 'India',
+        code: 'IN',
+        dialCode: '+91',
+        flag: '🇮🇳',
+      ),
+      const CountryCode(
+        name: 'United States',
+        code: 'US',
+        dialCode: '+1',
+        flag: '🇺🇸',
+      ),
+      const CountryCode(
+        name: 'United Kingdom',
+        code: 'GB',
+        dialCode: '+44',
+        flag: '🇬🇧',
+      ),
+      const CountryCode(
+        name: 'Canada',
+        code: 'CA',
+        dialCode: '+1',
+        flag: '🇨🇦',
+      ),
+      const CountryCode(
+        name: 'Australia',
+        code: 'AU',
+        dialCode: '+61',
+        flag: '🇦🇺',
+      ),
+      const CountryCode(
+        name: 'Pakistan',
+        code: 'PK',
+        dialCode: '+92',
+        flag: '🇵🇰',
+      ),
+      const CountryCode(
+        name: 'Bangladesh',
+        code: 'BD',
+        dialCode: '+880',
+        flag: '🇧🇩',
+      ),
+      const CountryCode(
+        name: 'Philippines',
+        code: 'PH',
+        dialCode: '+63',
+        flag: '🇵🇭',
+      ),
+      const CountryCode(
+        name: 'Egypt',
+        code: 'EG',
+        dialCode: '+20',
+        flag: '🇪🇬',
+      ),
+      const CountryCode(
+        name: 'Jordan',
+        code: 'JO',
+        dialCode: '+962',
+        flag: '🇯🇴',
+      ),
+      const CountryCode(
+        name: 'Lebanon',
+        code: 'LB',
+        dialCode: '+961',
+        flag: '🇱🇧',
+      ),
+      const CountryCode(
+        name: 'Turkey',
+        code: 'TR',
+        dialCode: '+90',
+        flag: '🇹🇷',
+      ),
+    ];
+  }
+
+  CountryCode? _findCountryByDialCode(String dialCode) {
+    final countries = _getAllCountryCodes();
+    try {
+      return countries.firstWhere((country) => country.dialCode == dialCode);
+    } catch (e) {
+      return null; // Return null if not found
+    }
+  }
+
+  Widget _buildPhoneFieldWithCountryCode({required bool isIOS}) {
+    // When NOT editing: show a single disabled field with full phone including +country code
+    if (!_isEditingPhone) {
+      _syncPhoneDisplay();
+      return _buildTextField(
+        controller: _phoneDisplayController,
+        enabled: false,
+        keyboardType: TextInputType.phone,
+        hintText: 'PHONE',
+        isIOS: isIOS,
+      );
+    }
+
+    // When editing: show country code picker + editable local phone field
+    return Row(
+      children: [
+        CountryCodePicker(
+          onChanged: (country) {
+            setState(() {
+              _selectedCountryCode = country;
+              _syncPhoneDisplay();
+            });
+          },
+          initialSelection: _selectedCountryCode,
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          child: _buildTextField(
+            controller: _phoneController,
+            enabled: true,
+            keyboardType: TextInputType.phone,
+            hintText: 'PHONE',
+            isIOS: isIOS,
+            onChanged: (_) => _syncPhoneDisplay(),
+          ),
         ),
       ],
     );
@@ -795,7 +1066,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'EMAIL',
+              'EMAIL *',
               style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: 14,
@@ -839,7 +1110,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'BUILDING NAME',
+              'BUILDING NAME *',
               style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: 14,
@@ -1249,7 +1520,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final ep = context.read<EditProfileProvider>();
     final current = authProvider.user;
     final newEmail = _emailController.text.trim();
-    final newPhone = _phoneController.text.trim();
+    // Combine country code with phone number
+    final phoneNumber = _phoneController.text.trim();
+    final newPhone = phoneNumber.isNotEmpty
+        ? '${_selectedCountryCode.dialCode}$phoneNumber'
+        : '';
 
     if (kDebugMode) {
       print('📧 Current email: ${current?.email}, New email: $newEmail');
@@ -1295,32 +1570,91 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       try {
         // If phone also changed and we haven't verified it yet, verify phone first
         if (phoneChanged && !skipPhoneVerification) {
-          final phoneOtp = await authProvider.sendPhoneVerificationCode(
-            phoneNumber: newPhone,
-          );
-          if (phoneOtp.isSuccess && phoneOtp.verificationId != null) {
+          try {
+            // Store current route and auth state before making the call
+            final routeBeforeCall = ModalRoute.of(context)?.settings.name;
+            final wasAuthenticated = authProvider.isAuthenticated;
+
+            final phoneOtp = await authProvider
+                .sendPhoneVerificationCodeForProfile(phoneNumber: newPhone);
+
+            // Immediately check if navigation occurred or auth state changed
             if (!mounted) return;
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => OtpVerificationScreen(
+
+            final routeAfterCall = ModalRoute.of(context)?.settings.name;
+            final isStillAuthenticated = authProvider.isAuthenticated;
+
+            // If navigation occurred or user is no longer authenticated, don't proceed
+            if (routeBeforeCall != routeAfterCall ||
+                routeAfterCall != Routes.customerEditProfile ||
+                !isStillAuthenticated ||
+                !wasAuthenticated) {
+              // Navigation has occurred or auth state changed, don't show dialog or errors
+              return;
+            }
+
+            if (phoneOtp.isSuccess && phoneOtp.verificationId != null) {
+              if (!mounted) return;
+              // Verify we're still on the edit profile screen before showing dialog
+              final currentRoute = ModalRoute.of(context)?.settings.name;
+              if (currentRoute != Routes.customerEditProfile &&
+                  currentRoute != null) {
+                // Navigation has occurred, don't show dialog
+                return;
+              }
+              // Verify user is still authenticated
+              if (!authProvider.isAuthenticated) {
+                return;
+              }
+              // Show OTP dialog instead of full screen navigation
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => EditProfileOtpDialog(
                   phoneNumber: newPhone,
                   otpMethod: 'phone',
                   verificationId: phoneOtp.verificationId,
-                  isSignUp: false,
                   onVerified: () async {
                     await doSaveContact(skipPhoneVerification: true);
                   },
+                  onResendPhone: () async {
+                    return await authProvider
+                        .sendPhoneVerificationCodeForProfile(
+                          phoneNumber: newPhone,
+                        );
+                  },
                 ),
-              ),
-            );
-            return;
-          } else {
-            final msg = phoneOtp.errorMessage ?? 'Failed to send phone OTP';
+              );
+              return;
+            } else {
+              final msg = phoneOtp.errorMessage ?? 'Failed to send phone OTP';
+              if (!mounted) return;
+              // Check if it's a network error
+              if (NetworkErrorUtils.isNetworkErrorString(msg)) {
+                NetworkErrorDialog.show(context);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(msg),
+                    backgroundColor: Colors.red[700],
+                  ),
+                );
+              }
+              return;
+            }
+          } catch (e) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(msg), backgroundColor: Colors.red[700]),
-            );
+            // Check if it's a network error
+            if (NetworkErrorUtils.isNetworkErrorString(e.toString())) {
+              NetworkErrorDialog.show(context);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Error sending phone OTP: ${e.toString()}'),
+                  backgroundColor: Colors.red[700],
+                ),
+              );
+            }
             return;
           }
         }
@@ -1372,22 +1706,55 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     // Email OTP verification (if email changed)
     if (emailChanged) {
       try {
+        // Store current route and auth state before making the call
+        final routeBeforeCall = ModalRoute.of(context)?.settings.name;
+        final wasAuthenticated = authProvider.isAuthenticated;
+
         final result = await authProvider.sendEmailOtp(email: newEmail);
+
+        // Immediately check if navigation occurred or auth state changed
+        if (!mounted) return;
+
+        final routeAfterCall = ModalRoute.of(context)?.settings.name;
+        final isStillAuthenticated = authProvider.isAuthenticated;
+
+        // If navigation occurred or user is no longer authenticated, don't proceed
+        if (routeBeforeCall != routeAfterCall ||
+            routeAfterCall != Routes.customerEditProfile ||
+            !isStillAuthenticated ||
+            !wasAuthenticated) {
+          // Navigation has occurred or auth state changed, don't show dialog or errors
+          return;
+        }
+
         if (result['success'] == true) {
           if (!mounted) return;
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => OtpVerificationScreen(
-                phoneNumber: newEmail,
-                otpMethod: 'email',
-                email: newEmail,
-                isSignUp: false,
-                onVerified: () async {
-                  // After email verification, check if phone also needs verification
-                  await doSaveContact();
-                },
-              ),
+          // Verify we're still on the edit profile screen before showing dialog
+          final currentRoute = ModalRoute.of(context)?.settings.name;
+          if (currentRoute != Routes.customerEditProfile &&
+              currentRoute != null) {
+            // Navigation has occurred, don't show dialog
+            return;
+          }
+          // Verify user is still authenticated
+          if (!authProvider.isAuthenticated) {
+            return;
+          }
+          // Show OTP dialog instead of full screen navigation
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => EditProfileOtpDialog(
+              phoneNumber: newEmail,
+              otpMethod: 'email',
+              email: newEmail,
+              onVerified: () async {
+                // After email verification, check if phone also needs verification
+                await doSaveContact();
+              },
+              onResendEmail: () async {
+                return await authProvider.sendEmailOtp(email: newEmail);
+              },
             ),
           );
           return;
@@ -1406,12 +1773,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         }
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error sending email OTP: ${e.toString()}'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
+        // Check if it's a network error
+        if (NetworkErrorUtils.isNetworkErrorString(e.toString())) {
+          NetworkErrorDialog.show(context);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error sending email OTP: ${e.toString()}'),
+              backgroundColor: Colors.red[700],
+            ),
+          );
+        }
         return;
       }
     }
@@ -1436,16 +1808,45 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final packageProvider = context.read<PackageProvider>();
       final current = authProvider.user;
       final newEmail = _emailController.text.trim();
-      final newPhone = _phoneController.text.trim();
+      // Combine country code with phone number for proper comparison
+      final phoneNumber = _phoneController.text.trim();
+      final newPhone = phoneNumber.isNotEmpty
+          ? '${_selectedCountryCode.dialCode}$phoneNumber'
+          : '';
+      // Only check for changes if the field is in edit mode
+      // This prevents OTP verification when only country code is changed
       final emailChanged =
-          newEmail.isNotEmpty && newEmail != (current?.email ?? '');
+          _isEditingEmail &&
+          newEmail.isNotEmpty &&
+          newEmail.toLowerCase() != (current?.email?.toLowerCase() ?? '');
+
+      // For phone, only check if in edit mode AND the full phone number (with country code) has changed
+      // Normalize phone numbers for comparison (remove +, spaces, dashes)
+      String normalizePhone(String phone) {
+        return phone.replaceAll(RegExp(r'[+\s\-]'), '');
+      }
+
+      final currentPhone = current?.phone?.toString() ?? '';
+      final normalizedCurrentPhone = normalizePhone(currentPhone);
+      final normalizedNewPhone = normalizePhone(newPhone);
+
+      // Only consider phone changed if in edit mode AND the normalized numbers are different
       final phoneChanged =
+          _isEditingPhone &&
           newPhone.isNotEmpty &&
-          newPhone != ((current?.phone?.toString()) ?? '');
+          normalizedNewPhone.isNotEmpty &&
+          normalizedNewPhone != normalizedCurrentPhone;
 
       if (kDebugMode) {
         print('📦 [EditProfileScreen] emailChanged: $emailChanged');
         print('📦 [EditProfileScreen] phoneChanged: $phoneChanged');
+        print('📦 [EditProfileScreen] _isEditingPhone: $_isEditingPhone');
+        print('📦 [EditProfileScreen] currentPhone: $currentPhone');
+        print('📦 [EditProfileScreen] newPhone: $newPhone');
+        print(
+          '📦 [EditProfileScreen] normalizedCurrentPhone: $normalizedCurrentPhone',
+        );
+        print('📦 [EditProfileScreen] normalizedNewPhone: $normalizedNewPhone');
       }
 
       // Get building ID from selected building, package provider, or current user
@@ -1468,8 +1869,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           name: _nameController.text.trim().isEmpty
               ? null
               : _nameController.text.trim(),
-          phone: newPhone.isEmpty ? null : newPhone,
-          email: newEmail.isEmpty ? null : newEmail,
+          phone: phoneChanged ? newPhone : null,
+          email: emailChanged ? newEmail : null,
           buildingId: buildingIdToSave,
           apartmentName: null, // Apartment name field removed
         );
@@ -1488,11 +1889,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 backgroundColor: Color(0xFF00D4AA),
               ),
             );
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              Routes.customerHome,
-              (route) => false,
-            );
+            // Pop back to Profile screen (Edit Profile was opened from Profile)
+            Navigator.of(context, rootNavigator: true).pop();
           }
         } else {
           final msg = ep.error ?? 'Failed to update profile';
@@ -1509,63 +1907,234 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
 
       // Email OTP verification
-      if (emailChanged) {
-        final result = await authProvider.sendEmailOtp(email: newEmail);
-        if (result['success'] == true) {
+      // Only send OTP if email edit button is active AND email has changed
+      if (emailChanged && _isEditingEmail) {
+        try {
+          // Verify user is still authenticated before sending OTP
+          if (!authProvider.isAuthenticated) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Please log in again to continue'),
+                backgroundColor: Colors.red[700],
+              ),
+            );
+            return;
+          }
+
+          // Store current route and auth state before making the call
+          final routeBeforeCall = ModalRoute.of(context)?.settings.name;
+          final wasAuthenticated = authProvider.isAuthenticated;
+
+          final result = await authProvider.sendEmailOtp(email: newEmail);
+
+          // Immediately check if navigation occurred or auth state changed
           if (!mounted) return;
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => OtpVerificationScreen(
+
+          final routeAfterCall = ModalRoute.of(context)?.settings.name;
+          final isStillAuthenticated = authProvider.isAuthenticated;
+
+          // If navigation occurred or user is no longer authenticated, don't proceed
+          if (routeBeforeCall != routeAfterCall ||
+              routeAfterCall != Routes.customerEditProfile ||
+              !isStillAuthenticated ||
+              !wasAuthenticated) {
+            // Navigation has occurred or auth state changed, don't show dialog or errors
+            return;
+          }
+
+          if (result['success'] == true) {
+            if (!mounted) return;
+            // Verify we're still on the edit profile screen before showing dialog
+            final currentRoute = ModalRoute.of(context)?.settings.name;
+            if (currentRoute != Routes.customerEditProfile &&
+                currentRoute != null) {
+              // Navigation has occurred, don't show dialog
+              return;
+            }
+            // Verify user is still authenticated
+            if (!authProvider.isAuthenticated) {
+              return;
+            }
+            // Show OTP dialog instead of full screen navigation
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => EditProfileOtpDialog(
                 phoneNumber: newEmail,
                 otpMethod: 'email',
                 email: newEmail,
-                isSignUp: false,
                 onVerified: () async {
                   await doSave();
                 },
+                onResendEmail: () async {
+                  return await authProvider.sendEmailOtp(email: newEmail);
+                },
               ),
-            ),
-          );
+            );
+          } else {
+            final msg = result['message'] ?? 'Failed to send email OTP';
+            if (!mounted) return;
+            // Double-check we're still on edit profile screen before showing error
+            final currentRoute = ModalRoute.of(context)?.settings.name;
+            if (currentRoute != Routes.customerEditProfile &&
+                currentRoute != null) {
+              // Navigation has occurred, don't show error
+              return;
+            }
+            // Check if it's a network error
+            if (result['isNetworkError'] == true) {
+              NetworkErrorDialog.show(context);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(msg), backgroundColor: Colors.red[700]),
+              );
+            }
+          }
           return;
-        } else {
-          final msg = result['message'] ?? 'Failed to send email OTP';
+        } catch (e) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg), backgroundColor: Colors.red[700]),
-          );
+          // Check if navigation occurred before showing error
+          final currentRoute = ModalRoute.of(context)?.settings.name;
+          if (currentRoute != Routes.customerEditProfile &&
+              currentRoute != null) {
+            // Navigation has occurred, don't show error
+            return;
+          }
+          // Verify user is still authenticated before showing error
+          if (!authProvider.isAuthenticated) {
+            // Don't show error if user is no longer authenticated (navigation likely occurred)
+            return;
+          }
+          // Check if it's a network error
+          if (NetworkErrorUtils.isNetworkErrorString(e.toString())) {
+            NetworkErrorDialog.show(context);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error sending email OTP: ${e.toString()}'),
+                backgroundColor: Colors.red[700],
+              ),
+            );
+          }
           return;
         }
       }
 
       // Phone OTP verification (Firebase)
-      if (phoneChanged) {
-        final phoneOtp = await authProvider.sendPhoneVerificationCode(
-          phoneNumber: newPhone,
-        );
-        if (phoneOtp.isSuccess && phoneOtp.verificationId != null) {
+      // Only send OTP if phone edit button is active AND phone has changed
+      if (phoneChanged && _isEditingPhone) {
+        try {
+          // Verify user is still authenticated before sending OTP
+          if (!authProvider.isAuthenticated) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Please log in again to continue'),
+                backgroundColor: Colors.red[700],
+              ),
+            );
+            return;
+          }
+
+          // Store current route and auth state before making the call
+          final routeBeforeCall = ModalRoute.of(context)?.settings.name;
+          final wasAuthenticated = authProvider.isAuthenticated;
+
+          final phoneOtp = await authProvider
+              .sendPhoneVerificationCodeForProfile(phoneNumber: newPhone);
+
+          // Immediately check if navigation occurred or auth state changed
           if (!mounted) return;
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => OtpVerificationScreen(
+
+          final routeAfterCall = ModalRoute.of(context)?.settings.name;
+          final isStillAuthenticated = authProvider.isAuthenticated;
+
+          // If navigation occurred or user is no longer authenticated, don't proceed
+          if (routeBeforeCall != routeAfterCall ||
+              routeAfterCall != Routes.customerEditProfile ||
+              !isStillAuthenticated ||
+              !wasAuthenticated) {
+            // Navigation has occurred or auth state changed, don't show dialog or errors
+            return;
+          }
+
+          if (phoneOtp.isSuccess && phoneOtp.verificationId != null) {
+            if (!mounted) return;
+            // Verify we're still on the edit profile screen before showing dialog
+            final currentRoute = ModalRoute.of(context)?.settings.name;
+            if (currentRoute != Routes.customerEditProfile &&
+                currentRoute != null) {
+              // Navigation has occurred, don't show dialog
+              return;
+            }
+            // Verify user is still authenticated
+            if (!authProvider.isAuthenticated) {
+              return;
+            }
+            // Show OTP dialog instead of full screen navigation
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => EditProfileOtpDialog(
                 phoneNumber: newPhone,
                 otpMethod: 'phone',
                 verificationId: phoneOtp.verificationId,
-                isSignUp: false,
                 onVerified: () async {
                   await doSave();
                 },
+                onResendPhone: () async {
+                  return await authProvider.sendPhoneVerificationCodeForProfile(
+                    phoneNumber: newPhone,
+                  );
+                },
               ),
-            ),
-          );
+            );
+          } else {
+            final msg = phoneOtp.errorMessage ?? 'Failed to send phone OTP';
+            if (!mounted) return;
+            // Double-check we're still on edit profile screen before showing error
+            final currentRoute = ModalRoute.of(context)?.settings.name;
+            if (currentRoute != Routes.customerEditProfile &&
+                currentRoute != null) {
+              // Navigation has occurred, don't show error
+              return;
+            }
+            // Check if it's a network error
+            if (NetworkErrorUtils.isNetworkErrorString(msg)) {
+              NetworkErrorDialog.show(context);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(msg), backgroundColor: Colors.red[700]),
+              );
+            }
+          }
           return;
-        } else {
-          final msg = phoneOtp.errorMessage ?? 'Failed to send phone OTP';
+        } catch (e) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg), backgroundColor: Colors.red[700]),
-          );
+          // Check if navigation occurred before showing error
+          final currentRoute = ModalRoute.of(context)?.settings.name;
+          if (currentRoute != Routes.customerEditProfile &&
+              currentRoute != null) {
+            // Navigation has occurred, don't show error
+            return;
+          }
+          // Verify user is still authenticated before showing error
+          if (!authProvider.isAuthenticated) {
+            // Don't show error if user is no longer authenticated (navigation likely occurred)
+            return;
+          }
+          // Check if it's a network error
+          if (NetworkErrorUtils.isNetworkErrorString(e.toString())) {
+            NetworkErrorDialog.show(context);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error sending phone OTP: ${e.toString()}'),
+                backgroundColor: Colors.red[700],
+              ),
+            );
+          }
           return;
         }
       }

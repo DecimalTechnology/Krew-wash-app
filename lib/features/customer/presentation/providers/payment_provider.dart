@@ -21,7 +21,7 @@ class PaymentProvider extends ChangeNotifier {
   String? get reference => _reference;
 
   Future<Map<String, dynamic>> createBookingBeforePayment({
-    required String packageId,
+    String? packageId,
     required String vehicleId,
     required String vehicleTypeId,
     required List<Map<String, dynamic>> addons,

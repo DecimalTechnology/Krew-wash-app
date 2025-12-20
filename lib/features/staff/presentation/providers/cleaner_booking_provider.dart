@@ -82,13 +82,20 @@ class CleanerBookingProvider extends ChangeNotifier {
     String? search,
   }) async {
     if (_isAssignedLoading) return;
-    if (_hasLoadedAssigned && !force && search == null) return;
+
+    // Normalize search: treat null and empty string as empty
+    final normalizedSearch = search?.trim() ?? '';
+
+    // Check if search has changed
+    final searchChanged = normalizedSearch != _assignedSearch;
+
+    // Only skip if already loaded, not forcing, and search hasn't changed
+    if (_hasLoadedAssigned && !force && !searchChanged) return;
 
     _isAssignedLoading = true;
     _assignedError = null;
-    if (search != null) {
-      _assignedSearch = search;
-    }
+    // Update search value
+    _assignedSearch = normalizedSearch;
     notifyListeners();
 
     final token = await SecureStorageService.getStaffAccessToken();
@@ -195,9 +202,25 @@ class CleanerBookingProvider extends ChangeNotifier {
     );
 
     if (response['success'] == true && response['data'] != null) {
-      _selectedBooking = CleanerBooking.fromMap(
-        response['data'] as Map<String, dynamic>,
-      );
+      final bookingData = response['data'] as Map<String, dynamic>;
+
+      // Debug: Print vehicle data from API
+      if (kDebugMode) {
+        print('🔵 BOOKING DETAILS API RESPONSE:');
+        print('VehicleId type: ${bookingData['vehicleId'].runtimeType}');
+        print('VehicleId data: ${bookingData['vehicleId']}');
+      }
+
+      _selectedBooking = CleanerBooking.fromMap(bookingData);
+
+      // Debug: Print parsed vehicle info
+      if (kDebugMode) {
+        print('🔵 PARSED BOOKING VEHICLE INFO:');
+        print('VehicleInfo: ${_selectedBooking?.vehicleInfo}');
+        print('VehicleModel: ${_selectedBooking?.vehicleInfo?.vehicleModel}');
+        print('VehicleNumber: ${_selectedBooking?.vehicleInfo?.vehicleNumber}');
+        print('VehicleColor: ${_selectedBooking?.vehicleInfo?.color}');
+      }
     } else {
       _detailsError =
           response['message']?.toString() ?? 'Failed to load booking';

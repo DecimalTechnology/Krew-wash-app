@@ -2,7 +2,17 @@ import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_theme.dart';
 
 class UserInfoCardWidget extends StatefulWidget {
-  const UserInfoCardWidget({super.key});
+  const UserInfoCardWidget({
+    super.key,
+    this.userName,
+    this.userId,
+    this.sessionText,
+  });
+
+  final String? userName;
+  final String? userId;
+  /// Text shown under ID (example: "SESSIONS: 3")
+  final String? sessionText;
 
   @override
   State<UserInfoCardWidget> createState() => _UserInfoCardWidgetState();
@@ -58,6 +68,15 @@ class _UserInfoCardWidgetState extends State<UserInfoCardWidget>
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final screenWidth = screenSize.width;
+    final name = (widget.userName?.trim().isNotEmpty == true)
+        ? widget.userName!.trim().toUpperCase()
+        : 'USER';
+    final idValue = (widget.userId?.trim().isNotEmpty == true)
+        ? widget.userId!.trim()
+        : '---';
+    final sessionValue = (widget.sessionText?.trim().isNotEmpty == true)
+        ? widget.sessionText!.trim().toUpperCase()
+        : 'SESSIONS';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,7 +96,7 @@ class _UserInfoCardWidgetState extends State<UserInfoCardWidget>
           child: FadeTransition(
             opacity: _textAnimation,
             child: Text(
-              'HI, ANOOP',
+              'HI, $name',
               style: AppTheme.bebasNeue(
                 color: Colors.white,
                 fontSize: screenWidth > 400
@@ -142,7 +161,7 @@ class _UserInfoCardWidgetState extends State<UserInfoCardWidget>
               animation: _glowAnimation,
               builder: (context, child) {
                 return Text(
-                  'ID : 147587',
+                  'ID : $idValue',
                   style: AppTheme.bebasNeue(
                     color: const Color(0xFF04CDFE),
                     fontSize: screenWidth > 400
@@ -165,6 +184,20 @@ class _UserInfoCardWidgetState extends State<UserInfoCardWidget>
             ),
           ),
         ),
+        SizedBox(height: screenWidth > 400 ? 10 : 6),
+        FadeTransition(
+          opacity: _textAnimation,
+          child: Text(
+            sessionValue,
+            style: AppTheme.bebasNeue(
+              color: Colors.white.withValues(alpha: 0.75),
+              fontSize: screenWidth > 400 ? 16 : 14,
+              letterSpacing: 1.0,
+            ),
+          ),
+        ),
+        // Extra spacing below SESSIONS
+        SizedBox(height: screenWidth > 400 ? 28 : 24),
       ],
     );
   }

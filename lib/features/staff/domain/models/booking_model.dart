@@ -12,6 +12,7 @@ class CleanerBooking {
     this.user,
     this.package,
     this.vehicleId,
+    this.vehicleInfo,
     this.buildingId,
     this.buildingInfo,
     this.totalPrice,
@@ -32,6 +33,7 @@ class CleanerBooking {
   final BookingUser? user;
   final BookingPackage? package;
   final String? vehicleId;
+  final VehicleInfo? vehicleInfo;
   final String? buildingId;
   final BuildingInfo? buildingInfo;
   final double? totalPrice;
@@ -64,7 +66,15 @@ class CleanerBooking {
       package: map['package'] != null
           ? BookingPackage.fromMap(map['package'] as Map<String, dynamic>)
           : null,
-      vehicleId: map['vehicleId']?.toString(),
+      vehicleId: map['vehicleId'] is String
+          ? map['vehicleId'] as String
+          : map['vehicleId'] is Map<String, dynamic>
+          ? ((map['vehicleId'] as Map<String, dynamic>)['_id']?.toString() ??
+                (map['vehicleId'] as Map<String, dynamic>)['id']?.toString())
+          : null,
+      vehicleInfo: map['vehicleId'] is Map<String, dynamic>
+          ? VehicleInfo.fromMap(map['vehicleId'] as Map<String, dynamic>)
+          : null,
       buildingId: map['buildingId'] is String
           ? map['buildingId'] as String
           : map['buildingId'] is Map<String, dynamic>
@@ -110,7 +120,7 @@ class CleanerBooking {
       'payment': payment?.toMap(),
       'userId': user?.toMap(),
       'package': package?.toMap(),
-      'vehicleId': vehicleId,
+      'vehicleId': vehicleInfo?.toMap() ?? vehicleId,
       'buildingId': buildingInfo?.toMap() ?? buildingId,
       'totalPrice': totalPrice,
       'startDate': startDate?.toUtc().toIso8601String(),
@@ -325,6 +335,7 @@ class PackageSession {
 class BookingAddon {
   BookingAddon({
     required this.addonId,
+    this.addonName,
     required this.totalSessions,
     required this.sessions,
     this.price,
@@ -332,14 +343,39 @@ class BookingAddon {
   });
 
   final String addonId;
+  final String? addonName;
   final int totalSessions;
   final List<AddonSession> sessions;
   final double? price;
   final List<DateTime> dates;
 
+  String get displayName {
+    final name = addonName?.trim() ?? '';
+    if (name.isNotEmpty) return name;
+    return addonId;
+  }
+
   factory BookingAddon.fromMap(Map<String, dynamic> map) {
+    final rawAddon = map['addonId'];
+    String addonId = '';
+    String? addonName;
+
+    // Support multiple backend shapes:
+    // - addonId: "6900c030..." (string id)
+    // - addonId: { _id: "...", name: "..." } (object)
+    // - addonId: "Interior Cleaning" (string name) + optional addonName/addOnName
+    if (rawAddon is Map<String, dynamic>) {
+      addonId = rawAddon['_id']?.toString() ?? rawAddon['id']?.toString() ?? '';
+      addonName =
+          rawAddon['name']?.toString() ?? rawAddon['addonName']?.toString();
+    } else {
+      addonId = rawAddon?.toString() ?? '';
+      addonName = map['addonName']?.toString() ?? map['addOnName']?.toString();
+    }
+
     return BookingAddon(
-      addonId: map['addonId']?.toString() ?? '',
+      addonId: addonId,
+      addonName: addonName,
       totalSessions: map['totalSessions'] is num
           ? (map['totalSessions'] as num).toInt()
           : int.tryParse(map['totalSessions']?.toString() ?? '') ?? 0,
@@ -361,6 +397,7 @@ class BookingAddon {
   Map<String, dynamic> toMap() {
     return {
       'addonId': addonId,
+      'addonName': addonName,
       'totalSessions': totalSessions,
       'sessions': sessions.map((session) => session.toMap()).toList(),
       'price': price,
@@ -422,6 +459,38 @@ class BuildingInfo {
 
   Map<String, dynamic> toMap() {
     return {'_id': id, 'buildingName': name};
+  }
+}
+
+class VehicleInfo {
+  VehicleInfo({
+    required this.id,
+    this.vehicleNumber,
+    this.vehicleModel,
+    this.color,
+  });
+
+  final String id;
+  final String? vehicleNumber;
+  final String? vehicleModel;
+  final String? color;
+
+  factory VehicleInfo.fromMap(Map<String, dynamic> map) {
+    return VehicleInfo(
+      id: map['_id']?.toString() ?? map['id']?.toString() ?? '',
+      vehicleNumber: map['vehicleNumber']?.toString(),
+      vehicleModel: map['vehicleModel']?.toString(),
+      color: map['color']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      '_id': id,
+      'vehicleNumber': vehicleNumber,
+      'vehicleModel': vehicleModel,
+      'color': color,
+    };
   }
 }
 

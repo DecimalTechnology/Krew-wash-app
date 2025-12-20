@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/constants/route_constants.dart';
 import '../widgets/cutomer_homeScree/top_section_widget.dart';
 import '../widgets/cutomer_homeScree/user_info_card_widget.dart';
+import 'package:provider/provider.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 class CustomerHomeScreen extends StatefulWidget {
-  const CustomerHomeScreen({super.key});
+  const CustomerHomeScreen({super.key, this.onNavigateToPackages});
+
+  /// Callback to switch to Package Selection tab (index 1)
+  final VoidCallback? onNavigateToPackages;
 
   @override
   State<CustomerHomeScreen> createState() => _CustomerHomeScreenState();
@@ -18,7 +24,6 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen>
 
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
@@ -48,9 +53,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
-    );
+    // Scale controller kept for future interactive elements (currently unused).
 
     // Start animations
     _fadeController.forward();
@@ -137,7 +140,10 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen>
                               _buildInformationCards(context),
 
                               // Spacer
-                              SizedBox(height: isLargeScreen ? 15 : 5),
+                              SizedBox(height: isLargeScreen ? 20 : 16),
+
+                              // Book Your Service Button
+                              _buildBookServiceButton(context, isLargeScreen),
 
                               // Bottom spacing
                               SizedBox(height: isLargeScreen ? 30 : 20),
@@ -164,7 +170,24 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen>
                                   curve: Curves.easeOutCubic,
                                 ),
                               ),
-                          child: const UserInfoCardWidget(),
+                          child: Consumer<AuthProvider>(
+                            builder: (context, auth, _) {
+                              final name = auth.user?.name?.trim();
+                              final email = auth.user?.email?.trim();
+                              final fallbackName =
+                                  (email != null && email.contains('@'))
+                                  ? email.split('@').first
+                                  : null;
+
+                              return UserInfoCardWidget(
+                                userName: (name != null && name.isNotEmpty)
+                                    ? name
+                                    : fallbackName,
+                                userId: auth.user?.uid,
+                                sessionText: 'SESSIONS',
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -313,6 +336,51 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBookServiceButton(BuildContext context, bool isLargeScreen) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: isLargeScreen ? 24 : 20),
+      child: GestureDetector(
+        onTap: () {
+          // Use callback to switch tabs if available, otherwise fallback to navigation
+          if (widget.onNavigateToPackages != null) {
+            widget.onNavigateToPackages!();
+          } else {
+            Navigator.of(context).pushNamed(Routes.customerPackageSelection);
+          }
+        },
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(
+            vertical: isLargeScreen ? 16 : 14,
+            horizontal: isLargeScreen ? 24 : 20,
+          ),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              'BOOK YOUR SERVICE',
+              style: AppTheme.bebasNeue(
+                color: Colors.white,
+                fontSize: isLargeScreen ? 18 : 16,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.5,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

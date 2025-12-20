@@ -7,7 +7,7 @@ import '../../domain/models/booking_model.dart';
 import '../providers/cleaner_booking_provider.dart';
 import 'staff_session_details_screen.dart';
 
-class StaffServiceDetailsScreen extends StatelessWidget {
+class StaffServiceDetailsScreen extends StatefulWidget {
   final CleanerBooking booking;
   final String serviceName;
   final List<PackageSession> sessions;
@@ -23,6 +23,23 @@ class StaffServiceDetailsScreen extends StatelessWidget {
     required this.totalSessions,
     this.addonId,
   });
+
+  @override
+  State<StaffServiceDetailsScreen> createState() =>
+      _StaffServiceDetailsScreenState();
+}
+
+class _StaffServiceDetailsScreenState extends State<StaffServiceDetailsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch latest booking details when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CleanerBookingProvider>().fetchBookingDetails(
+        widget.booking.id,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,16 +102,18 @@ class StaffServiceDetailsScreen extends StatelessWidget {
         return Consumer<CleanerBookingProvider>(
           builder: (context, bookingProvider, _) {
             // Use selected booking from provider if available, otherwise use passed booking
-            final currentBooking = bookingProvider.selectedBooking ?? booking;
+            final currentBooking =
+                bookingProvider.selectedBooking ?? widget.booking;
 
             // Get sessions based on whether it's an addon or package
             final List<PackageSession> currentSessions;
-            if (addonId != null) {
+            if (widget.addonId != null) {
               // For addon sessions, get from the addon
               final addon = currentBooking.addons.firstWhere(
-                (a) => a.addonId == addonId,
-                orElse: () =>
-                    booking.addons.firstWhere((a) => a.addonId == addonId),
+                (a) => a.addonId == widget.addonId,
+                orElse: () => widget.booking.addons.firstWhere(
+                  (a) => a.addonId == widget.addonId,
+                ),
               );
               currentSessions = addon.sessions.map((addonSession) {
                 return PackageSession(
@@ -107,7 +126,8 @@ class StaffServiceDetailsScreen extends StatelessWidget {
               }).toList();
             } else {
               // For package sessions, get from package
-              currentSessions = currentBooking.package?.sessions ?? sessions;
+              currentSessions =
+                  currentBooking.package?.sessions ?? widget.sessions;
             }
 
             final completedCount = currentSessions
@@ -132,7 +152,7 @@ class StaffServiceDetailsScreen extends StatelessWidget {
                     ),
                     child: _buildSessionsOverview(
                       completedCount,
-                      totalSessions,
+                      widget.totalSessions,
                       isIOS,
                       isSmallScreen,
                     ),
@@ -140,36 +160,44 @@ class StaffServiceDetailsScreen extends StatelessWidget {
                   SizedBox(height: 16),
                   // Sessions List
                   Expanded(
-                    child: ListView.builder(
-                      padding: EdgeInsets.fromLTRB(
-                        horizontalPadding,
-                        0,
-                        horizontalPadding,
-                        bottomPadding,
-                      ),
-                      itemCount: totalSessions,
-                      itemBuilder: (context, index) {
-                        final sessionNumber = index + 1;
-                        final session = index < currentSessions.length
-                            ? currentSessions[index]
-                            : null;
-                        final isCompleted = session?.isCompleted ?? false;
-
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _buildSessionCard(
-                            context,
-                            currentBooking,
-                            currentSessions,
-                            sessionNumber,
-                            session,
-                            isCompleted,
-                            isIOS,
-                            isSmallScreen,
-                            isTablet,
-                          ),
-                        );
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        await context
+                            .read<CleanerBookingProvider>()
+                            .fetchBookingDetails(currentBooking.id);
                       },
+                      child: ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(
+                          horizontalPadding,
+                          0,
+                          horizontalPadding,
+                          bottomPadding,
+                        ),
+                        itemCount: widget.totalSessions,
+                        itemBuilder: (context, index) {
+                          final sessionNumber = index + 1;
+                          final session = index < currentSessions.length
+                              ? currentSessions[index]
+                              : null;
+                          final isCompleted = session?.isCompleted ?? false;
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: _buildSessionCard(
+                              context,
+                              currentBooking,
+                              currentSessions,
+                              sessionNumber,
+                              session,
+                              isCompleted,
+                              isIOS,
+                              isSmallScreen,
+                              isTablet,
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ],
@@ -208,7 +236,7 @@ class StaffServiceDetailsScreen extends StatelessWidget {
               ),
               SizedBox(height: 4),
               Text(
-                serviceName.toUpperCase(),
+                widget.serviceName.toUpperCase(),
                 style: AppTheme.bebasNeue(
                   color: Colors.white,
                   fontSize: isSmallScreen ? 20 : 24,
@@ -275,29 +303,29 @@ class StaffServiceDetailsScreen extends StatelessWidget {
                 ? CupertinoPageRoute(
                     builder: (_) => StaffSessionDetailsScreen(
                       booking: booking,
-                      serviceName: serviceName,
+                      serviceName: widget.serviceName,
                       session: session,
                       sessionNumber: sessionNumber,
-                      totalSessions: totalSessions,
+                      totalSessions: widget.totalSessions,
                       completedCount: currentSessions
                           .where((s) => s.isCompleted)
                           .length,
-                      addonId: addonId,
-                      sessionType: addonId != null ? 'addon' : 'package',
+                      addonId: widget.addonId,
+                      sessionType: widget.addonId != null ? 'addon' : 'package',
                     ),
                   )
                 : MaterialPageRoute(
                     builder: (_) => StaffSessionDetailsScreen(
                       booking: booking,
-                      serviceName: serviceName,
+                      serviceName: widget.serviceName,
                       session: session,
                       sessionNumber: sessionNumber,
-                      totalSessions: totalSessions,
+                      totalSessions: widget.totalSessions,
                       completedCount: currentSessions
                           .where((s) => s.isCompleted)
                           .length,
-                      addonId: addonId,
-                      sessionType: addonId != null ? 'addon' : 'package',
+                      addonId: widget.addonId,
+                      sessionType: widget.addonId != null ? 'addon' : 'package',
                     ),
                   ),
           );
@@ -359,15 +387,20 @@ class StaffServiceDetailsScreen extends StatelessWidget {
                       return GestureDetector(
                         onTap: () async {
                           if (session != null && !isUpdating) {
+                            // Show confirmation dialog before completing
+                            final shouldComplete =
+                                await _showCompleteConfirmation(context, isIOS);
+                            if (!shouldComplete) return;
+
                             // Check if it's an addon session (true) or package session (false)
-                            final isAddon = addonId != null;
+                            final isAddon = widget.addonId != null;
 
                             final result = await bookingProvider.updateSession(
                               bookingId: booking.id,
                               sessionId: session.id,
                               sessionType: isAddon ? 'addon' : 'package',
-                              addonId:
-                                  addonId, // null for package, addonId for addon
+                              addonId: widget
+                                  .addonId, // null for package, addonId for addon
                             );
                             if (result['success'] == true) {
                               // Refresh booking details
@@ -442,7 +475,7 @@ class StaffServiceDetailsScreen extends StatelessWidget {
             if (isCompleted && session != null) ...[
               SizedBox(height: 12),
               Text(
-                'COMPLETED ON ${_formatDate(session.date)}',
+                'COMPLETED ON ${_formatDateWithTime(session.date)}',
                 style: AppTheme.bebasNeue(
                   color: Colors.white70,
                   fontSize: isSmallScreen ? 12 : 14,
@@ -455,7 +488,7 @@ class StaffServiceDetailsScreen extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime? date) {
+  String _formatDateWithTime(DateTime? date) {
     if (date == null) return 'N/A';
     final d = date.toLocal();
     final months = [
@@ -472,7 +505,73 @@ class StaffServiceDetailsScreen extends StatelessWidget {
       'NOV',
       'DEC',
     ];
-    return '${months[(d.month - 1).clamp(0, 11)]} ${d.day}';
+    final hour = d.hour > 12 ? d.hour - 12 : (d.hour == 0 ? 12 : d.hour);
+    final minute = d.minute.toString().padLeft(2, '0');
+    final amPm = d.hour >= 12 ? 'pm' : 'am';
+    final time = '$hour:$minute $amPm';
+    return '${months[(d.month - 1).clamp(0, 11)]} ${d.day}, $time';
+  }
+
+  Future<bool> _showCompleteConfirmation(
+    BuildContext context,
+    bool isIOS,
+  ) async {
+    if (isIOS) {
+      return await showCupertinoDialog<bool>(
+            context: context,
+            builder: (dialogContext) => CupertinoAlertDialog(
+              title: const Text('Complete Session'),
+              content: const Text(
+                'Are you sure you want to mark this session as completed?',
+              ),
+              actions: [
+                CupertinoDialogAction(
+                  isDefaultAction: true,
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('Complete'),
+                ),
+                CupertinoDialogAction(
+                  isDestructiveAction: true,
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Cancel'),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+    } else {
+      return await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              backgroundColor: AppTheme.cardColor,
+              title: Text(
+                'Complete Session',
+                style: AppTheme.bebasNeue(color: Colors.white),
+              ),
+              content: Text(
+                'Are you sure you want to mark this session as completed?',
+                style: AppTheme.bebasNeue(color: Colors.white70),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: Text(
+                    'Cancel',
+                    style: AppTheme.bebasNeue(color: Colors.white),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: Text(
+                    'Complete',
+                    style: AppTheme.bebasNeue(color: const Color(0xFF04CDFE)),
+                  ),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+    }
   }
 
   void _showMessage(

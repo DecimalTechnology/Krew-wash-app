@@ -236,29 +236,35 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: SingleChildScrollView(
-          controller: _scrollController,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context),
-              SizedBox(height: 24),
-              if (_package != null) _buildPackageCard(_package!),
-              if (_selectedAddOns.isNotEmpty) ...[
-                SizedBox(height: 20),
-                ..._selectedAddOns.map(_buildAddOnCard),
-              ],
-              if (_requiresDates) ...[
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await context.read<VehicleProvider>().loadVehicles();
+          },
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(context),
                 SizedBox(height: 24),
-                _buildDateSelector(),
+                if (_package != null) _buildPackageCard(_package!),
+                if (_selectedAddOns.isNotEmpty) ...[
+                  SizedBox(height: 20),
+                  ..._selectedAddOns.map(_buildAddOnCard),
+                ],
+                if (_requiresDates) ...[
+                  SizedBox(height: 24),
+                  _buildDateSelector(),
+                ],
+                SizedBox(height: 24),
+                _buildVehicleSection(),
+                SizedBox(height: 32),
+                _buildCheckoutButton(),
+                SizedBox(height: 32),
               ],
-              SizedBox(height: 24),
-              _buildVehicleSection(),
-              SizedBox(height: 32),
-              _buildCheckoutButton(),
-              SizedBox(height: 32),
-            ],
+            ),
           ),
         ),
       ),
@@ -570,13 +576,28 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'SELECT DATES',
-          style: AppTheme.bebasNeue(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-            letterSpacing: 1.2,
+        RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: 'SELECT DATES ',
+                style: AppTheme.bebasNeue(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              TextSpan(
+                text: '(it may vary based on staff availability)',
+                style: AppTheme.bebasNeue(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ],
           ),
         ),
         SizedBox(height: 12),
@@ -590,7 +611,7 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
             ),
           ),
           onPressed: _pickDates,
-          child: Text('SELECT DATES'),
+          child: Text('SELECT DATES '),
         ),
         SizedBox(height: 12),
         if (_selectedDates.isEmpty)
@@ -797,8 +818,12 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
   Widget _buildCheckoutButton() {
     final requiresDates = _requiresDates;
     final hasDates = _selectedDates.isNotEmpty;
+    // Allow checkout if: vehicle is selected AND (no dates required OR dates selected) AND (package exists OR add-ons selected)
+    final hasPackageOrAddOns = _package != null || _selectedAddOns.isNotEmpty;
     final isEnabled =
-        _selectedVehicleId != null && (!requiresDates || hasDates);
+        _selectedVehicleId != null &&
+        (!requiresDates || hasDates) &&
+        hasPackageOrAddOns;
     return Consumer<VehicleProvider>(
       builder: (context, vehicleProvider, _) {
         return ElevatedButton(
@@ -828,10 +853,11 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                     return;
                   }
 
-                  if (_package == null) {
+                  // Allow checkout with add-ons only (no package required)
+                  if (_package == null && _selectedAddOns.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Package information is missing'),
+                        content: Text('Please select a package or add-on'),
                       ),
                     );
                     return;
@@ -846,7 +872,7 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                     context,
                     Routes.customerBookingSummary,
                     arguments: BookingSummaryArguments(
-                      package: _package!,
+                      package: _package,
                       selectedAddOns: _selectedAddOns,
                       selectedDates: datesToUse,
                       selectedVehicle: selectedVehicle,

@@ -21,7 +21,7 @@ class PaymentScreenArguments {
     required this.amount,
     required this.currency,
     required this.bookingData,
-    required this.package,
+    this.package,
     required this.selectedAddOns,
     required this.selectedDates,
     required this.selectedVehicle,
@@ -30,7 +30,7 @@ class PaymentScreenArguments {
   final double amount;
   final String currency;
   final Map<String, dynamic> bookingData;
-  final Map<String, dynamic> package;
+  final Map<String, dynamic>? package;
   final List<Map<String, dynamic>> selectedAddOns;
   final List<DateTime> selectedDates;
   final Map<String, dynamic> selectedVehicle;
@@ -119,9 +119,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
       });
 
       // Step 1: Create booking first
-      final packageId =
-          widget.arguments!.package['_id']?.toString() ??
-          widget.arguments!.package['id']?.toString();
+      final packageId = widget.arguments!.package != null
+          ? (widget.arguments!.package!['_id']?.toString() ??
+              widget.arguments!.package!['id']?.toString())
+          : null;
       // Extract vehicle ID - prioritize _id field (MongoDB standard)
       String? vehicleId;
 
@@ -330,7 +331,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
         );
       }
 
-      if (packageId == null || vehicleId.isEmpty || vehicleTypeId.isEmpty) {
+      // Allow packageId to be null if add-ons are present
+      final hasAddOns = widget.arguments!.selectedAddOns.isNotEmpty;
+      if ((packageId == null && !hasAddOns) || vehicleId.isEmpty || vehicleTypeId.isEmpty) {
         setState(() {
           _isProcessing = false;
           _statusMessage = 'Error: Missing booking information';
@@ -409,7 +412,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           })
           .join('|');
       final pendingSignature =
-          '$packageId::$vehicleId::$vehicleTypeId::$addonsSignaturePart';
+          '${packageId ?? ''}::$vehicleId::$vehicleTypeId::$addonsSignaturePart';
 
       String? bookingIdToUse;
       final pendingBooking = await SecureStorageService.getPendingBooking();
@@ -637,7 +640,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
         final errorMessage = result.message.isNotEmpty
             ? result.message
             : 'Payment was cancelled or failed. Please try again.';
-        _showErrorWithRetry(errorMessage);
+        if (_isCancelMessage(errorMessage)) {
+          _showPaymentCancelledDialog();
+        } else {
+          _showPaymentFailedDialog();
+        }
       }
     } on PlatformException catch (e) {
       if (!mounted) {
@@ -703,12 +710,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   paymentProvider.reference ??
                   DateTime.now().millisecondsSinceEpoch.toString();
 
+              final resolvedMessage =
+                  message ??
+                  (success
+                      ? 'Payment completed successfully'
+                      : 'Payment cancelled by user');
+              final cancelled = !success && _isCancelMessage(resolvedMessage);
+              final failed = !success && !cancelled;
+
               await _handlePaymentSuccess(
-                message ??
-                    (success
-                        ? 'Payment completed successfully'
-                        : 'Payment was cancelled or declined'),
+                resolvedMessage,
                 referenceForStatus,
+                initialCancelled: cancelled,
+                initialFailed: failed,
               );
             },
           ),
@@ -733,8 +747,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Future<void> _handlePaymentSuccess(
     String transactionMessage,
-    String cartId,
-  ) async {
+    String cartId, {
+    bool initialCancelled = false,
+    bool initialFailed = false,
+  }) async {
     // Booking is already created before payment via createBookingBeforePayment
     // Check payment status using reference ID
     if (!mounted) {
@@ -956,14 +972,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
       // Show payment status UI
       _showPaymentStatusDialog(statusResponse);
 
-      if (statusText.toLowerCase() == 'paid' ||
-          bookingStatus.toUpperCase() == 'CONFIRMED') {
-        // Payment successful - navigate to booking history page after dialog
-        _scheduleGoToHistory(const Duration(seconds: 5));
-      } else {
-        // Payment status is not paid - navigate to booking history page after dialog
-        _scheduleGoToHistory(const Duration(seconds: 3));
-      }
+      // Payment successful - don't auto-navigate, let user click button
+      // Removed automatic navigation - user will click button in dialog
     } else {
       // Payment status check failed
       if (kDebugMode) {
@@ -986,8 +996,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
           );
         }
         NetworkErrorDialog.show(context);
-        // Navigate to booking history page even on network error
-        _scheduleGoToHistory(const Duration(seconds: 2));
       } else {
         // Call payments/cancel when status API returns success:false
         // Backend asked for orderRef; use response data.ref if present, otherwise fallback to the
@@ -1019,9 +1027,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
           }
         }
 
-        final errorMessage =
+        final rawErrorMessage =
             statusResponse['message']?.toString() ??
             'Failed to verify payment status. Please try again.';
+        final errorMessage = _sanitizePaymentErrorMessage(rawErrorMessage);
 
         if (kDebugMode) {
           print('⚠️ [PaymentScreen] Payment verification failed');
@@ -1029,18 +1038,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
           print('   Showing payment error dialog');
         }
 
-        // Show error dialog with option to view history
-        _showPaymentErrorDialog(errorMessage);
-        _scheduleGoToHistory(const Duration(seconds: 3));
+        // If user cancelled/failed, never show raw backend errors (e.g., 404).
+        if (initialCancelled) {
+          _showPaymentCancelledDialog();
+        } else if (initialFailed) {
+          _showPaymentFailedDialog();
+        } else {
+          _showPaymentErrorDialog(errorMessage);
+        }
       }
     }
-  }
-
-  void _scheduleGoToHistory(Duration delay) {
-    Future.delayed(delay, () {
-      if (!mounted || _hasNavigatedToHistory) return;
-      _goToHistory();
-    });
   }
 
   void _goToHistory() {
@@ -1055,16 +1062,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
       }
     }
 
-    // IMPORTANT:
-    // If we replace the whole stack with ONLY CustomerHistoryScreen,
-    // pressing back can lead to a blank route / unexpected behavior.
-    // So we reset to MainNavigationScreen (customerHome) first, then push history on top.
+    // Navigate to MainNavigationScreen with bookings tab (index 3) selected
     final rootNavigator = Navigator.of(context, rootNavigator: true);
     rootNavigator.pushNamedAndRemoveUntil(
       Routes.customerHome,
       (route) => false,
+      arguments: 3, // Pass bookings tab index (3) as argument
     );
-    rootNavigator.pushNamed(Routes.customerHistory);
   }
 
   void _showError(String message) {
@@ -1158,6 +1162,305 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
       );
     }
+  }
+
+  bool _isCancelMessage(String? message) {
+    final m = (message ?? '').toLowerCase();
+    return m.contains('cancel') ||
+        m.contains('cancelled') ||
+        m.contains('canceled');
+  }
+
+  String _sanitizePaymentErrorMessage(String message) {
+    final lower = message.toLowerCase();
+    if (lower.contains('404') ||
+        lower.contains('not found') ||
+        lower.contains('route not found')) {
+      return 'Payment service is currently unavailable. Please try again later.';
+    }
+    return message;
+  }
+
+  void _showPaymentCancelledDialog() {
+    const accent = Color(0xFF94A3B8); // slate
+    _isAnyDialogOpen = true;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 24,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppTheme.cardColor,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: accent.withValues(alpha: 0.7),
+                  width: 1.5,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 46,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: accent.withValues(alpha: 0.18),
+                            border: Border.all(
+                              color: accent.withValues(alpha: 0.65),
+                              width: 1.2,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            color: accent,
+                            size: 26,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'PAYMENT CANCELLED',
+                                style: AppTheme.bebasNeue(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.2,
+                                  color: AppTheme.textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              const Text(
+                                'You cancelled the payment.',
+                                style: TextStyle(
+                                  color: AppTheme.textSecondaryColor,
+                                  fontSize: 14,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(dialogContext),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.20),
+                              ),
+                              foregroundColor: AppTheme.textColor,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: Text(
+                              'CLOSE',
+                              style: AppTheme.bebasNeue(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(dialogContext);
+                              _goToHistory();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: Text(
+                              'VIEW HISTORY',
+                              style: AppTheme.bebasNeue(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    ).whenComplete(() {
+      if (mounted) _isAnyDialogOpen = false;
+    });
+  }
+
+  void _showPaymentFailedDialog() {
+    const accent = Color(0xFFEF4444); // red
+    _isAnyDialogOpen = true;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 24,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppTheme.cardColor,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: accent.withValues(alpha: 0.7),
+                  width: 1.5,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 46,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: accent.withValues(alpha: 0.18),
+                            border: Border.all(
+                              color: accent.withValues(alpha: 0.65),
+                              width: 1.2,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.close_rounded,
+                            color: accent,
+                            size: 26,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'PAYMENT FAILED',
+                                style: AppTheme.bebasNeue(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.2,
+                                  color: AppTheme.textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              const Text(
+                                'Payment failed. Please try again.',
+                                style: TextStyle(
+                                  color: AppTheme.textSecondaryColor,
+                                  fontSize: 14,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(dialogContext),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.20),
+                              ),
+                              foregroundColor: AppTheme.textColor,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: Text(
+                              'CLOSE',
+                              style: AppTheme.bebasNeue(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(dialogContext);
+                              _initializePayment();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: Text(
+                              'RETRY',
+                              style: AppTheme.bebasNeue(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    ).whenComplete(() {
+      if (mounted) _isAnyDialogOpen = false;
+    });
   }
 
   void _showPaymentStatusDialog(Map<String, dynamic> statusResponse) {
@@ -1481,7 +1784,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   ),
                                 ),
                                 child: Text(
-                                  'VIEW HISTORY',
+                                  'VIEW BOOKINGS',
                                   style: AppTheme.bebasNeue(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
@@ -1674,7 +1977,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   ),
                                 ),
                                 child: Text(
-                                  'VIEW HISTORY',
+                                  'VIEW BOOKINGS',
                                   style: AppTheme.bebasNeue(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
@@ -2193,18 +2496,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       ),
                     ],
                   ),
-                  if (kDebugMode) ...[
-                    const SizedBox(height: 10),
-                    Text(
-                      'DEBUG MODE',
-                      style: AppTheme.bebasNeue(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1.3,
-                        color: Colors.white38,
-                      ),
-                    ),
-                  ],
+                  // Intentionally no debug banner text in UI.
                 ],
               ),
             ),

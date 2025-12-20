@@ -54,11 +54,13 @@ class AppTheme {
 
   // Material Theme
   static ThemeData get materialTheme {
-    final bebasNeueTextTheme = GoogleFonts.bebasNeueTextTheme();
+    // Use a font with proper lowercase support for general text + form inputs.
+    // Headings that must remain Bebas Neue already use AppTheme.bebasNeue(...) explicitly.
+    final baseTextTheme = GoogleFonts.interTextTheme();
 
     return ThemeData(
       useMaterial3: true,
-      textTheme: bebasNeueTextTheme.apply(
+      textTheme: baseTextTheme.apply(
         bodyColor: textColor,
         displayColor: textColor,
       ),
@@ -83,6 +85,11 @@ class AppTheme {
           fontWeight: FontWeight.w400,
           color: textColor,
         ),
+      ),
+      // Ensure TextField hint/label styles are also lowercase-capable.
+      inputDecorationTheme: InputDecorationTheme(
+        hintStyle: GoogleFonts.inter(color: textSecondaryColor),
+        labelStyle: GoogleFonts.inter(color: textSecondaryColor),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -114,31 +121,32 @@ class AppTheme {
       scaffoldBackgroundColor: backgroundColor,
       textTheme: CupertinoTextThemeData(
         primaryColor: textColor,
-        textStyle: bebasNeue(color: textColor),
-        actionTextStyle: bebasNeue(
+        // iOS text + CupertinoTextField default style
+        textStyle: GoogleFonts.inter(color: textColor),
+        actionTextStyle: GoogleFonts.inter(
           color: primaryColor,
           fontWeight: FontWeight.w400,
         ),
-        tabLabelTextStyle: bebasNeue(
+        tabLabelTextStyle: GoogleFonts.inter(
           color: textColor,
           fontWeight: FontWeight.w400,
         ),
-        navTitleTextStyle: bebasNeue(
+        navTitleTextStyle: GoogleFonts.inter(
           color: textColor,
           fontWeight: FontWeight.w400,
           fontSize: 20,
         ),
-        navLargeTitleTextStyle: bebasNeue(
+        navLargeTitleTextStyle: GoogleFonts.inter(
           color: textColor,
           fontWeight: FontWeight.w400,
           fontSize: 28,
         ),
-        navActionTextStyle: bebasNeue(
+        navActionTextStyle: GoogleFonts.inter(
           color: primaryColor,
           fontWeight: FontWeight.w400,
         ),
-        pickerTextStyle: bebasNeue(color: textColor),
-        dateTimePickerTextStyle: bebasNeue(color: textColor),
+        pickerTextStyle: GoogleFonts.inter(color: textColor),
+        dateTimePickerTextStyle: GoogleFonts.inter(color: textColor),
       ),
     );
   }

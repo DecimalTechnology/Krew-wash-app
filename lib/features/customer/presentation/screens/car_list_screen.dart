@@ -138,9 +138,9 @@ class _CarListViewState extends State<_CarListView> {
                 ],
                 Expanded(
                   child: isLoading && vehicles.isEmpty
-                      ? const _LoadingState()
+                      ? _buildLoadingStateWithRefresh(context, isIOS, provider)
                       : vehicles.isEmpty
-                      ? const _EmptyState()
+                      ? _buildEmptyStateWithRefresh(isIOS, provider, context)
                       : RefreshIndicator(
                           onRefresh: () async => _refreshVehicles(provider),
                           color: const Color(0xFF04CDFE),
@@ -229,6 +229,9 @@ class _CarListViewState extends State<_CarListView> {
   }
 
   Widget _buildHeader(BuildContext context, bool isIOS, double screenWidth) {
+    final provider = context.watch<VehicleProvider>();
+    final isLoading = provider.isLoadingVehicles;
+
     return Padding(
       padding: EdgeInsets.all(screenWidth > 400 ? 24.0 : 20.0),
       child: Row(
@@ -262,7 +265,65 @@ class _CarListViewState extends State<_CarListView> {
               ),
             ),
           ),
-          SizedBox(width: 40), // Balance the back button width
+          // Refresh button
+          if (isIOS)
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              minSize: 0,
+              onPressed: isLoading
+                  ? null
+                  : () {
+                      provider.loadVehicles();
+                    },
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF04CDFE),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: isLoading
+                    ? const CupertinoActivityIndicator(
+                        color: Colors.white,
+                        radius: 10,
+                      )
+                    : const Icon(
+                        CupertinoIcons.arrow_clockwise,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+              ),
+            )
+          else
+            IconButton(
+              onPressed: isLoading
+                  ? null
+                  : () {
+                      provider.loadVehicles();
+                    },
+              icon: isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF04CDFE),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.refresh,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+            ),
         ],
       ),
     );
@@ -362,6 +423,99 @@ class _CarListViewState extends State<_CarListView> {
         ],
       ),
     );
+  }
+
+  Widget _buildLoadingStateWithRefresh(
+    BuildContext context,
+    bool isIOS,
+    VehicleProvider provider,
+  ) {
+    if (isIOS) {
+      return CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          CupertinoSliverRefreshControl(
+            onRefresh: () => provider.loadVehicles(),
+          ),
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 120.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CupertinoActivityIndicator(color: Color(0xFF04CDFE)),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Loading vehicles...',
+                      style: AppTheme.bebasNeue(color: Colors.white70),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    } else {
+      return RefreshIndicator(
+        color: const Color(0xFF04CDFE),
+        onRefresh: () => provider.loadVehicles(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height - 200,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 120.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(color: Color(0xFF04CDFE)),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Loading vehicles...',
+                      style: AppTheme.bebasNeue(color: Colors.white70),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildEmptyStateWithRefresh(
+    bool isIOS,
+    VehicleProvider provider,
+    BuildContext context,
+  ) {
+    if (isIOS) {
+      return CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          CupertinoSliverRefreshControl(
+            onRefresh: () => provider.loadVehicles(),
+          ),
+          SliverFillRemaining(hasScrollBody: false, child: const _EmptyState()),
+        ],
+      );
+    } else {
+      return RefreshIndicator(
+        color: const Color(0xFF04CDFE),
+        onRefresh: () => provider.loadVehicles(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height - 200,
+            child: const _EmptyState(),
+          ),
+        ),
+      );
+    }
   }
 
   Future<bool?> _showDeleteConfirmation(BuildContext context) {
@@ -514,7 +668,7 @@ class _VehicleCard extends StatelessWidget {
           SizedBox(height: screenWidth > 400 ? 20 : 16),
           _buildInfoRow('VEHICLE NUMBER', vehicleNumber, screenWidth),
           SizedBox(height: screenWidth > 400 ? 16 : 12),
-          _buildInfoRow('COMPANY', company, screenWidth),
+          _buildInfoRow('TYPE', company, screenWidth),
           SizedBox(height: screenWidth > 400 ? 16 : 12),
           _buildInfoRow('MODEL', model, screenWidth),
           if (color != null && color.isNotEmpty) ...[
@@ -576,30 +730,6 @@ class _VehicleCard extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _LoadingState extends StatelessWidget {
-  const _LoadingState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.only(top: 120.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(color: Color(0xFF04CDFE)),
-            SizedBox(height: 16),
-            Text(
-              'Loading vehicles...',
-              style: AppTheme.bebasNeue(color: Colors.white70),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

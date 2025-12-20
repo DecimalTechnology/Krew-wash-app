@@ -299,4 +299,78 @@ class ProfileRepository {
       };
     }
   }
+
+  // Delete account/profile - DELETE /profile
+  Future<Map<String, dynamic>> deleteAccount() async {
+    try {
+      final token = await SecureStorageService.getAccessToken();
+      _logToken('ProfileRepository.deleteAccount', token);
+      final uri = Uri.parse('$baseurl/profile');
+
+      final res = await http.delete(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null && token.isNotEmpty)
+            'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        try {
+          return jsonDecode(res.body) as Map<String, dynamic>;
+        } catch (_) {
+          return {'success': true};
+        }
+      }
+
+      try {
+        final err = jsonDecode(res.body) as Map<String, dynamic>;
+        return {
+          'success': false,
+          'message': err['message'] ?? 'Failed to delete account',
+        };
+      } catch (_) {
+        return {
+          'success': false,
+          'message': 'Failed to delete account: ${res.statusCode}',
+        };
+      }
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Network error deleting account: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
+    } on TimeoutException catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Timeout error deleting account: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Request timeout. Please try again',
+        'isNetworkError': true,
+      };
+    } on http.ClientException catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Client error deleting account: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Network error: Please check your internet connection',
+        'isNetworkError': true,
+      };
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error deleting account: $e');
+      }
+      return {
+        'success': false,
+        'message': 'Failed to delete account: ${e.toString()}',
+      };
+    }
+  }
 }

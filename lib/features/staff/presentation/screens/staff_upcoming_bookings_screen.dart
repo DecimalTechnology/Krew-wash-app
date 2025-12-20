@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../providers/cleaner_booking_provider.dart';
@@ -128,7 +129,6 @@ class _StaffUpcomingBookingsScreenState
                             fontSize: isSmallScreen ? 16 : 18,
                             fontWeight: FontWeight.w400,
                             letterSpacing: 1.2,
-                            
                           ),
                         ),
                       ),
@@ -159,9 +159,10 @@ class _StaffUpcomingBookingsScreenState
   Widget _buildSearchBar(bool isIOS, bool isSmallScreen) {
     void handleSearch() {
       final query = _searchController.text.trim();
+      // Pass empty string if query is empty, so it clears the search
       context.read<CleanerBookingProvider>().fetchAssignedBookings(
         force: true,
-        search: query,
+        search: query.isEmpty ? '' : query,
       );
     }
 
@@ -278,16 +279,51 @@ class _StaffUpcomingBookingsScreenState
       );
     }
 
+    // Filter bookings to only show assigned with pending or in progress status
+    final filteredBookings = bookingProvider.assignedBookings.where((booking) {
+      final status = booking.status.toLowerCase();
+      return status == 'assigned' ||
+          status == 'pending' ||
+          status.contains('progress') ||
+          status == 'in progress';
+    }).toList();
+
+    if (filteredBookings.isEmpty) {
+      return SliverList(
+        delegate: SliverChildListDelegate([_buildEmptyState(isIOS)]),
+      );
+    }
+
     return SliverList(
       delegate: SliverChildBuilderDelegate((context, index) {
-        final booking = bookingProvider.assignedBookings[index];
+        final booking = filteredBookings[index];
         final packageName =
             booking.package?.packageId?.name ?? 'Assigned Package';
         final customer = booking.user?.name ?? 'Customer';
-        final location =
-            booking.buildingInfo?.name ??
-            booking.user?.apartmentNumber ??
-            'N/A';
+        // Try multiple sources for location
+        String location;
+        if (booking.buildingInfo?.name != null &&
+            booking.buildingInfo!.name.isNotEmpty) {
+          location = booking.buildingInfo!.name;
+        } else if (booking.vehicleInfo?.vehicleNumber != null &&
+            booking.vehicleInfo!.vehicleNumber!.isNotEmpty) {
+          location = booking.vehicleInfo!.vehicleNumber!;
+        } else if (booking.user?.apartmentNumber != null &&
+            booking.user!.apartmentNumber!.isNotEmpty) {
+          location = 'Apt ${booking.user!.apartmentNumber!}';
+        } else {
+          location = 'Location not available';
+        }
+
+        // Debug: Print location info
+        if (kDebugMode && index == 0) {
+          print('🔵 LOCATION DEBUG for Booking ${booking.bookingId}:');
+          print('Building Info: ${booking.buildingInfo?.name}');
+          print('Building ID: ${booking.buildingId}');
+          print('Vehicle Info: ${booking.vehicleInfo?.vehicleNumber}');
+          print('User Apartment: ${booking.user?.apartmentNumber}');
+          print('Final Location: $location');
+        }
         final schedule = _formatDate(booking.startDate);
 
         return Padding(
@@ -306,7 +342,7 @@ class _StaffUpcomingBookingsScreenState
             isTablet: isTablet,
           ),
         );
-      }, childCount: bookingProvider.assignedBookings.length),
+      }, childCount: filteredBookings.length),
     );
   }
 
@@ -354,7 +390,6 @@ class _StaffUpcomingBookingsScreenState
                         fontSize: isSmallScreen ? 14 : 16,
                         fontWeight: FontWeight.w400,
                         letterSpacing: 0.5,
-                        
                       ),
                     ),
                     SizedBox(height: 4),
@@ -363,7 +398,6 @@ class _StaffUpcomingBookingsScreenState
                       style: AppTheme.bebasNeue(
                         color: Colors.white,
                         fontSize: isSmallScreen ? 12 : 14,
-                        
                       ),
                     ),
                     SizedBox(height: 4),
@@ -375,7 +409,6 @@ class _StaffUpcomingBookingsScreenState
                             style: AppTheme.bebasNeue(
                               color: const Color(0xFF04CDFE),
                               fontSize: isSmallScreen ? 12 : 14,
-                              
                             ),
                           ),
                           TextSpan(
@@ -383,7 +416,6 @@ class _StaffUpcomingBookingsScreenState
                             style: AppTheme.bebasNeue(
                               color: Colors.white,
                               fontSize: isSmallScreen ? 12 : 14,
-                              
                             ),
                           ),
                         ],
@@ -410,7 +442,6 @@ class _StaffUpcomingBookingsScreenState
                     fontSize: isSmallScreen ? 10 : 12,
                     fontWeight: FontWeight.w400,
                     letterSpacing: 0.5,
-                    
                   ),
                 ),
               ),
@@ -430,6 +461,20 @@ class _StaffUpcomingBookingsScreenState
             isIOS,
             isSmallScreen,
             isHighlighted: true,
+          ),
+          SizedBox(height: 12),
+          _buildDetailRow(
+            'START DATE',
+            _formatDateOnly(booking.startDate),
+            isIOS,
+            isSmallScreen,
+          ),
+          SizedBox(height: 12),
+          _buildDetailRow(
+            'END DATE',
+            _formatDateOnly(booking.endDate),
+            isIOS,
+            isSmallScreen,
           ),
           SizedBox(height: 20),
           // View Details Button
@@ -511,7 +556,6 @@ class _StaffUpcomingBookingsScreenState
             style: AppTheme.bebasNeue(
               color: Colors.white70,
               fontSize: isSmallScreen ? 12 : 14,
-              
             ),
           ),
         ),
@@ -522,7 +566,7 @@ class _StaffUpcomingBookingsScreenState
               color: isHighlighted ? const Color(0xFF04CDFE) : Colors.white,
               fontSize: isSmallScreen ? 12 : 14,
               fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.normal,
-              
+
               height: 1.4,
             ),
             textAlign: TextAlign.right,
@@ -553,17 +597,12 @@ class _StaffUpcomingBookingsScreenState
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.w400,
-              
             ),
           ),
           SizedBox(height: 8),
           Text(
             message,
-            style: AppTheme.bebasNeue(
-              color: Colors.white70,
-              fontSize: 14,
-              
-            ),
+            style: AppTheme.bebasNeue(color: Colors.white70, fontSize: 14),
           ),
           SizedBox(height: 16),
           Align(
@@ -592,17 +631,12 @@ class _StaffUpcomingBookingsScreenState
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.w400,
-              
             ),
           ),
           SizedBox(height: 8),
           Text(
             'Assigned bookings will appear here. Try refreshing to check for new tasks.',
-            style: AppTheme.bebasNeue(
-              color: Colors.white70,
-              fontSize: 14,
-              
-            ),
+            style: AppTheme.bebasNeue(color: Colors.white70, fontSize: 14),
           ),
         ],
       ),
@@ -613,9 +647,20 @@ class _StaffUpcomingBookingsScreenState
     if (date == null) return 'Schedule pending';
     final d = date.toLocal();
     final month = _monthShort(d.month);
-    final time =
-        '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+    final hour = d.hour > 12 ? d.hour - 12 : (d.hour == 0 ? 12 : d.hour);
+    final minute = d.minute.toString().padLeft(2, '0');
+    final amPm = d.hour >= 12 ? 'PM' : 'AM';
+    final time = '$hour:$minute ${amPm.toLowerCase()}';
     return '${month.toUpperCase()} ${d.day}, $time';
+  }
+
+  String _formatDateOnly(DateTime? date) {
+    if (date == null) return 'N/A';
+    final d = date.toLocal();
+    final day = d.day.toString().padLeft(2, '0');
+    final month = d.month.toString().padLeft(2, '0');
+    final year = d.year.toString();
+    return '$day/$month/$year';
   }
 
   String _monthShort(int month) {

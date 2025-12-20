@@ -26,6 +26,15 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
   VoidCallback? _authListener;
   AuthProvider? _authProvider;
 
+  Future<void> _handlePullToRefresh() async {
+    final packageProvider = context.read<PackageProvider>();
+    await packageProvider.loadVehicleTypes();
+    final vehicleId = packageProvider.selectedVehicleTypeId;
+    if (vehicleId != null && vehicleId.isNotEmpty) {
+      await packageProvider.fetchPackagesForSelection(vehicleId: vehicleId);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -258,51 +267,45 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
             stops: [0.0, 0.5, 1.0],
           ),
         ),
-        child: Stack(
-          children: [
-            // Scrollable Content
-            CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                // Sliver App Bar
-                SliverAppBar(
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  floating: true,
-                  snap: true,
-                  pinned: false,
-                  expandedHeight: 0,
-                  toolbarHeight: 80,
-                  automaticallyImplyLeading: false,
-                  flexibleSpace: _buildSliverHeader(true),
-                ),
-
-                // Content
-                SliverToBoxAdapter(
+        child: SafeArea(
+          bottom: false,
                   child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Car Type Selection
+              // Fixed header (same style as car listing)
+              _buildSliverHeader(true),
+
+              // Fixed building/address + vehicle type selector
                       _buildSearchAndAddressFields(
                         true,
                         adjustedHorizontalPadding,
                         adjustedVerticalSpacing,
                         adjustedFontSize,
                       ),
-                      // Car Type Selection
                       _buildCarTypeSelection(
                         true,
                         adjustedHorizontalPadding,
                         adjustedFontSize,
                       ),
 
-                      // Section Title
+              // Only the content BELOW vehicle type selector should scroll
+              Expanded(
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: RefreshIndicator(
+                    onRefresh: _handlePullToRefresh,
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      physics: const BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
+                      ),
+                      child: Column(
+                        children: [
                       _buildSectionTitle(
                         true,
                         adjustedHorizontalPadding,
                         adjustedFontSize,
                       ),
-
-                      // Package Options
                       _buildPackageOptions(
                         true,
                         adjustedHorizontalPadding,
@@ -310,32 +313,27 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                         packageCardPadding,
                         adjustedFontSize,
                       ),
-
                       SizedBox(height: adjustedVerticalSpacing),
-
                       _buildAddOnsSection(
                         isIOS: true,
                         horizontalPadding: adjustedHorizontalPadding,
                         fontSize: adjustedFontSize,
                       ),
-
                       SizedBox(height: adjustedVerticalSpacing),
-
                       _buildNextButton(
                         isIOS: true,
                         horizontalPadding: adjustedHorizontalPadding,
                         fontSize: adjustedFontSize,
                       ),
-
                       SizedBox(height: bottomScrollPadding),
-
-                      // Proceed Button (scrollable) - positioned above bottom nav bar
                     ],
                   ),
                 ),
-              ],
+                  ),
+                ),
             ),
           ],
+          ),
         ),
       ),
     );
@@ -437,51 +435,43 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
             stops: [0.0, 0.5, 1.0],
           ),
         ),
-        child: Stack(
-          children: [
-            // Scrollable Content
-            CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                // Sliver App Bar
-                SliverAppBar(
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  floating: true,
-                  snap: true,
-                  pinned: false,
-                  expandedHeight: 0,
-                  toolbarHeight: 80,
-                  automaticallyImplyLeading: false,
-                  flexibleSpace: _buildSliverHeader(false),
-                ),
-
-                // Content
-                SliverToBoxAdapter(
+        child: SafeArea(
+          bottom: false,
                   child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Car Type Selection
+              // Fixed header (same style as car listing)
+              _buildSliverHeader(false),
+
+              // Fixed building/address + vehicle type selector
                       _buildSearchAndAddressFields(
                         false,
                         adjustedHorizontalPadding,
                         adjustedVerticalSpacing,
                         adjustedFontSize,
                       ),
-                      // Car Type Selection
                       _buildCarTypeSelection(
                         false,
                         adjustedHorizontalPadding,
                         adjustedFontSize,
                       ),
 
-                      // Section Title
+              // Only the content BELOW vehicle type selector should scroll
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _handlePullToRefresh,
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(
+                      parent: ClampingScrollPhysics(),
+                    ),
+                    child: Column(
+                      children: [
                       _buildSectionTitle(
                         false,
                         adjustedHorizontalPadding,
                         adjustedFontSize,
                       ),
-
-                      // Package Options
                       _buildPackageOptions(
                         false,
                         adjustedHorizontalPadding,
@@ -489,32 +479,26 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                         packageCardPadding,
                         adjustedFontSize,
                       ),
-
                       SizedBox(height: adjustedVerticalSpacing),
-
                       _buildAddOnsSection(
                         isIOS: false,
                         horizontalPadding: adjustedHorizontalPadding,
                         fontSize: adjustedFontSize,
                       ),
-
                       SizedBox(height: adjustedVerticalSpacing),
-
                       _buildNextButton(
                         isIOS: false,
                         horizontalPadding: adjustedHorizontalPadding,
                         fontSize: adjustedFontSize,
                       ),
-
                       SizedBox(height: bottomScrollPadding),
-
-                      // Proceed Button (scrollable) - positioned above bottom nav bar
                     ],
                   ),
                 ),
-              ],
+                ),
             ),
           ],
+          ),
         ),
       ),
     );
@@ -628,13 +612,6 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
     final provider = context.watch<PackageProvider>();
     final addOns = provider.addOns;
     final isLoading = provider.isFetchingPackages;
-
-    final titleStyle = TextStyle(
-      color: Colors.white,
-      fontSize: fontSize * 1.1,
-      fontWeight: FontWeight.w400,
-      letterSpacing: 1.0,
-    );
 
     final cardPadding = EdgeInsets.symmetric(
       vertical: fontSize * 0.6,
@@ -797,7 +774,14 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('SELECT ADD-ONS', style: titleStyle),
+          Text(
+            'SELECT ADD-ONS',
+            style: AppTheme.bebasNeue(
+              fontSize: 20,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 1.5,
+            ),
+          ),
           SizedBox(height: fontSize * 0.8),
           if (isLoading && addOns.isEmpty)
             buildPlaceholder()
@@ -842,6 +826,20 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
               }
             },
           ),
+          Expanded(
+            child: Text(
+              'PACKAGE SELECTION',
+              textAlign: TextAlign.center,
+              style: AppTheme.bebasNeue(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.w400,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          // Balance the back button width so title stays centered
+          const SizedBox(width: 40),
         ],
       ),
     );

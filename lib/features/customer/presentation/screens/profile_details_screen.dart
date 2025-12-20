@@ -345,7 +345,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
       ),
       child: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Builder(
             builder: (builderContext) =>
                 _buildForm(builderContext, isIOS: true),
@@ -378,7 +378,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Builder(
             builder: (builderContext) =>
                 _buildForm(builderContext, isIOS: false),
@@ -391,132 +391,132 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
   Widget _buildForm(BuildContext context, {required bool isIOS}) {
     final editProfileProvider = context.watch<EditProfileProvider>();
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildLabel('NAME *'),
-          SizedBox(height: 10),
-          _buildTextField(
-            controller: _nameController,
-            hintText: 'Enter your name',
-            isIOS: isIOS,
-          ),
-          SizedBox(height: 32),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel('NAME *'),
+        SizedBox(height: 10),
+        _buildTextField(
+          controller: _nameController,
+          hintText: 'Enter your name',
+          isIOS: isIOS,
+        ),
+        SizedBox(height: 32),
 
-          _buildLabel('BUILDING NAME *'),
-          SizedBox(height: 10),
-          CompositedTransformTarget(
-            link: _buildingFieldLink,
-            child: isIOS
-                ? CupertinoTextField(
-                    controller: _buildingController,
-                    placeholder: 'Select your building',
-                    style: const TextStyle(color: Colors.white),
-                    placeholderStyle: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
+        _buildLabel('BUILDING NAME *'),
+        SizedBox(height: 10),
+        CompositedTransformTarget(
+          link: _buildingFieldLink,
+          child: isIOS
+              ? CupertinoTextField(
+                  controller: _buildingController,
+                  placeholder: 'Select your building',
+                  style: const TextStyle(color: Colors.white),
+                  placeholderStyle: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0x8001031C),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 1,
                     ),
-                    decoration: BoxDecoration(
-                      color: const Color(0x8001031C),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    suffix: const Icon(
+                  ),
+                  padding: const EdgeInsets.only(
+                    left: 16,
+                    right: 40,
+                    top: 14,
+                    bottom: 14,
+                  ),
+                  suffix: Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: Icon(
                       CupertinoIcons.chevron_down,
                       color: Colors.white,
                       size: 20,
                     ),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedBuildingId = null;
-                        _selectedBuildingName = null;
-                      });
-                      _searchDebounce?.cancel();
-                      _searchDebounce = Timer(
-                        const Duration(milliseconds: 300),
-                        () async {
-                          await context.read<PackageProvider>().searchBuildings(
-                            value,
-                          );
-                          _showBuildingSuggestions();
-                        },
-                      );
-                    },
-                    onTap: () {
-                      _showBuildingSuggestions();
-                    },
-                  )
-                : TextField(
-                    controller: _buildingController,
-                    style: const TextStyle(color: Colors.white),
-                    cursorColor: const Color(0xFF00D4AA),
-                    decoration: _inputDecoration(
-                      hintText: 'Select your building',
-                      suffixIcon: const Icon(
-                        Icons.arrow_drop_down,
-                        color: Colors.white,
-                      ),
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedBuildingId = null;
-                        _selectedBuildingName = null;
-                      });
-                      _searchDebounce?.cancel();
-                      _searchDebounce = Timer(
-                        const Duration(milliseconds: 300),
-                        () async {
-                          await context.read<PackageProvider>().searchBuildings(
-                            value,
-                          );
-                          _showBuildingSuggestions();
-                        },
-                      );
-                    },
-                    onTap: () {
-                      _showBuildingSuggestions();
-                    },
                   ),
-          ),
-          SizedBox(height: 32),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedBuildingId = null;
+                      _selectedBuildingName = null;
+                    });
+                    _searchDebounce?.cancel();
+                    _searchDebounce = Timer(
+                      const Duration(milliseconds: 300),
+                      () async {
+                        await context.read<PackageProvider>().searchBuildings(
+                          value,
+                        );
+                        _showBuildingSuggestions();
+                      },
+                    );
+                  },
+                  onTap: () {
+                    _showBuildingSuggestions();
+                  },
+                )
+              : TextField(
+                  controller: _buildingController,
+                  style: const TextStyle(color: Colors.white),
+                  cursorColor: const Color(0xFF00D4AA),
+                  decoration: _inputDecoration(
+                    hintText: 'Select your building',
+                    suffixIcon: const Icon(
+                      Icons.arrow_drop_down,
+                      color: Colors.white,
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedBuildingId = null;
+                      _selectedBuildingName = null;
+                    });
+                    _searchDebounce?.cancel();
+                    _searchDebounce = Timer(
+                      const Duration(milliseconds: 300),
+                      () async {
+                        await context.read<PackageProvider>().searchBuildings(
+                          value,
+                        );
+                        _showBuildingSuggestions();
+                      },
+                    );
+                  },
+                  onTap: () {
+                    _showBuildingSuggestions();
+                  },
+                ),
+        ),
+        SizedBox(height: 32),
 
-          _buildLabel('PHONE NUMBER *'),
-          SizedBox(height: 10),
+        _buildLabel('PHONE NUMBER *'),
+        SizedBox(height: 10),
 
-          _buildTextField(
-            controller: _phoneController,
-            hintText: '+971',
-            keyboardType: TextInputType.phone,
-            isIOS: isIOS,
-          ),
-          SizedBox(height: 32),
+        _buildReadOnlyField(
+          controller: _phoneController,
+          hintText: '+971',
+          isIOS: isIOS,
+        ),
+        SizedBox(height: 32),
 
-          _buildLabel('EMAIL *'),
-          SizedBox(height: 10),
+        _buildLabel('EMAIL *'),
+        SizedBox(height: 10),
 
-          _buildTextField(
-            controller: _emailController,
-            hintText: 'Enter email',
-            keyboardType: TextInputType.emailAddress,
-            isIOS: isIOS,
-          ),
-          SizedBox(height: 40),
+        _buildReadOnlyField(
+          controller: _emailController,
+          hintText: 'Enter email',
+          isIOS: isIOS,
+        ),
+        SizedBox(height: 40),
 
-          _buildSaveButton(
-            context: context,
-            editProfileProvider: editProfileProvider,
-            isIOS: isIOS,
-          ),
-        ],
-      ),
+        _buildSaveButton(
+          context: context,
+          editProfileProvider: editProfileProvider,
+          isIOS: isIOS,
+        ),
+      ],
     );
   }
 
@@ -562,6 +562,40 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
         keyboardType: keyboardType,
         cursorColor: const Color(0xFF00D4AA),
         decoration: _inputDecoration(hintText: hintText),
+      );
+    }
+  }
+
+  Widget _buildReadOnlyField({
+    required TextEditingController controller,
+    required String hintText,
+    required bool isIOS,
+  }) {
+    if (isIOS) {
+      return CupertinoTextField(
+        controller: controller,
+        placeholder: hintText,
+        readOnly: true,
+        style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+        placeholderStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+        decoration: BoxDecoration(
+          color: const Color(0x4001031C),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.2),
+            width: 1,
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      );
+    } else {
+      return TextField(
+        controller: controller,
+        readOnly: true,
+        style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+        decoration: _inputDecoration(
+          hintText: hintText,
+        ).copyWith(fillColor: const Color(0x4001031C), filled: true),
       );
     }
   }

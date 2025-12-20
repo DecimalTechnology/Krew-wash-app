@@ -72,56 +72,74 @@ class StaffHomeScreen extends StatelessWidget {
           bottom: false,
           child: LayoutBuilder(
             builder: (context, constraints) {
-              return SingleChildScrollView(
-                physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics(),
-                ),
-                padding: EdgeInsets.only(bottom: bottomPadding),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 20),
-                      // Welcome Header
-                      _buildWelcomeHeader(
-                        context,
-                        isIOS,
-                        isSmallScreen,
-                        isTablet,
-                        horizontalPadding,
-                      ),
-                      SizedBox(height: 24),
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: horizontalPadding,
+              final refresher = RefreshIndicator(
+                onRefresh: () async {
+                  final bookingProvider = context
+                      .read<CleanerBookingProvider>();
+                  await Future.wait([
+                    bookingProvider.fetchAssignedBookings(force: true),
+                    bookingProvider.fetchCompletedBookings(force: true),
+                  ]);
+                },
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  padding: EdgeInsets.only(bottom: bottomPadding),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 20),
+                        // Welcome Header
+                        _buildWelcomeHeader(
+                          context,
+                          isIOS,
+                          isSmallScreen,
+                          isTablet,
+                          horizontalPadding,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Summary Cards
-                            _buildSummaryCards(
-                              context,
-                              isIOS,
-                              isSmallScreen,
-                              isTablet,
-                            ),
-                            SizedBox(height: 32),
-                            // Today's Schedule Section
-                            _buildTodaysScheduleSection(
-                              context,
-                              isIOS,
-                              isSmallScreen,
-                              isTablet,
-                            ),
-                            SizedBox(height: 24),
-                          ],
+                        SizedBox(height: 24),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: horizontalPadding,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Summary Cards
+                              _buildSummaryCards(
+                                context,
+                                isIOS,
+                                isSmallScreen,
+                                isTablet,
+                              ),
+                              SizedBox(height: 32),
+                              // Today's Schedule Section
+                              _buildTodaysScheduleSection(
+                                context,
+                                isIOS,
+                                isSmallScreen,
+                                isTablet,
+                              ),
+                              SizedBox(height: 24),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );
+
+              // On iOS we render inside CupertinoPageScaffold; RefreshIndicator
+              // needs a Material ancestor to work/paint correctly.
+              return isIOS
+                  ? Material(type: MaterialType.transparency, child: refresher)
+                  : refresher;
             },
           ),
         );
@@ -280,7 +298,10 @@ class StaffHomeScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.2),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.15),
+          width: 1.2,
+        ),
       ),
       child: Center(
         child: Column(
@@ -354,7 +375,10 @@ class StaffHomeScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(isIOS ? 26 : 22),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.2),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1.2,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

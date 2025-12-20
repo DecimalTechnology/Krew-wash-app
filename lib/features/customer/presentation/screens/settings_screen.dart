@@ -5,6 +5,7 @@ import '../../../../core/constants/route_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/standard_back_button.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../data/repositories/profile_repository.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -56,21 +57,13 @@ class SettingsScreen extends StatelessWidget {
                       SizedBox(height: isLargeScreen ? 12 : 8),
                       _buildSettingsItem(
                         context,
-                        'CHANGE PASSWORD',
-                        CupertinoIcons.lock,
-                        () {
-                          // TODO: Navigate to change password screen
-                        },
-                        isLargeScreen,
-                        isIOS: true,
-                      ),
-                      SizedBox(height: isLargeScreen ? 12 : 8),
-                      _buildSettingsItem(
-                        context,
                         'PRIVACY POLICY',
                         CupertinoIcons.shield,
                         () {
-                          // TODO: Navigate to privacy policy screen
+                          Navigator.of(
+                            context,
+                            rootNavigator: true,
+                          ).pushNamed(Routes.customerPrivacyPolicy);
                         },
                         isLargeScreen,
                         isIOS: true,
@@ -81,7 +74,10 @@ class SettingsScreen extends StatelessWidget {
                         'TERMS OF SERVICE',
                         CupertinoIcons.doc_text,
                         () {
-                          // TODO: Navigate to terms of service screen
+                          Navigator.of(
+                            context,
+                            rootNavigator: true,
+                          ).pushNamed(Routes.customerTermsOfService);
                         },
                         isLargeScreen,
                         isIOS: true,
@@ -91,19 +87,21 @@ class SettingsScreen extends StatelessWidget {
                       SizedBox(height: isLargeScreen ? 16 : 12),
                       _buildSettingsItem(
                         context,
+                        'DELETE ACCOUNT',
+                        CupertinoIcons.trash,
+                        () async {
+                          await _confirmAndDeleteAccount(context);
+                        },
+                        isLargeScreen,
+                        isIOS: true,
+                        isLogout: true,
+                      ),
+                      SizedBox(height: isLargeScreen ? 12 : 8),
+                      _buildSettingsItem(
+                        context,
                         'LOGOUT',
                         CupertinoIcons.arrow_right_square,
-                        () async {
-                          final rootNav = Navigator.of(
-                            context,
-                            rootNavigator: true,
-                          );
-                          await context.read<AuthProvider>().signOut();
-                          rootNav.pushNamedAndRemoveUntil(
-                            Routes.authWrapper,
-                            (route) => false,
-                          );
-                        },
+                        () => _showLogoutDialog(context, true),
                         isLargeScreen,
                         isIOS: true,
                         isLogout: true,
@@ -154,21 +152,13 @@ class SettingsScreen extends StatelessWidget {
                       SizedBox(height: isLargeScreen ? 12 : 8),
                       _buildSettingsItem(
                         context,
-                        'CHANGE PASSWORD',
-                        Icons.lock,
-                        () {
-                          // TODO: Navigate to change password screen
-                        },
-                        isLargeScreen,
-                        isIOS: false,
-                      ),
-                      SizedBox(height: isLargeScreen ? 12 : 8),
-                      _buildSettingsItem(
-                        context,
                         'PRIVACY POLICY',
                         Icons.shield,
                         () {
-                          // TODO: Navigate to privacy policy screen
+                          Navigator.of(
+                            context,
+                            rootNavigator: true,
+                          ).pushNamed(Routes.customerPrivacyPolicy);
                         },
                         isLargeScreen,
                         isIOS: false,
@@ -179,7 +169,10 @@ class SettingsScreen extends StatelessWidget {
                         'TERMS OF SERVICE',
                         Icons.description,
                         () {
-                          // TODO: Navigate to terms of service screen
+                          Navigator.of(
+                            context,
+                            rootNavigator: true,
+                          ).pushNamed(Routes.customerTermsOfService);
                         },
                         isLargeScreen,
                         isIOS: false,
@@ -189,19 +182,21 @@ class SettingsScreen extends StatelessWidget {
                       SizedBox(height: isLargeScreen ? 16 : 12),
                       _buildSettingsItem(
                         context,
+                        'DELETE ACCOUNT',
+                        Icons.delete_forever,
+                        () async {
+                          await _confirmAndDeleteAccount(context);
+                        },
+                        isLargeScreen,
+                        isIOS: false,
+                        isLogout: true,
+                      ),
+                      SizedBox(height: isLargeScreen ? 12 : 8),
+                      _buildSettingsItem(
+                        context,
                         'LOGOUT',
                         Icons.logout,
-                        () async {
-                          final rootNav = Navigator.of(
-                            context,
-                            rootNavigator: true,
-                          );
-                          await context.read<AuthProvider>().signOut();
-                          rootNav.pushNamedAndRemoveUntil(
-                            Routes.authWrapper,
-                            (route) => false,
-                          );
-                        },
+                        () => _showLogoutDialog(context, false),
                         isLargeScreen,
                         isIOS: false,
                         isLogout: true,
@@ -347,6 +342,220 @@ class SettingsScreen extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmAndDeleteAccount(BuildContext context) async {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+
+    Future<void> runDelete() async {
+      // show blocking loader
+      if (isIOS) {
+        showCupertinoDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const CupertinoAlertDialog(
+            title: Text('Deleting...'),
+            content: Padding(
+              padding: EdgeInsets.only(top: 12),
+              child: CupertinoActivityIndicator(),
+            ),
+          ),
+        );
+      } else {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const AlertDialog(
+            title: Text('Deleting...'),
+            content: SizedBox(
+              height: 40,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ),
+        );
+      }
+
+      final repo = const ProfileRepository();
+      final res = await repo.deleteAccount();
+
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop(); // close loader
+      }
+
+      final ok = res['success'] == true;
+      if (!context.mounted) return;
+
+      if (ok) {
+        await context.read<AuthProvider>().signOut();
+        if (context.mounted) {
+          Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pushNamedAndRemoveUntil(Routes.authWrapper, (route) => false);
+        }
+      } else {
+        final msg = res['message']?.toString() ?? 'Failed to delete account';
+        if (isIOS) {
+          showCupertinoDialog(
+            context: context,
+            builder: (_) => CupertinoAlertDialog(
+              title: const Text('Delete Failed'),
+              content: Text(msg),
+              actions: [
+                CupertinoDialogAction(
+                  child: const Text('OK'),
+                  onPressed: () =>
+                      Navigator.of(context, rootNavigator: true).pop(),
+                ),
+              ],
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
+          );
+        }
+      }
+    }
+
+    if (isIOS) {
+      showCupertinoDialog(
+        context: context,
+        builder: (_) => CupertinoAlertDialog(
+          title: const Text('Delete Account?'),
+          content: const Text(
+            'This will permanently delete your account. This action cannot be undone.',
+          ),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              child: const Text('Delete'),
+              onPressed: () async {
+                Navigator.of(context, rootNavigator: true).pop();
+                await runDelete();
+              },
+            ),
+          ],
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: AppTheme.cardColor,
+          title: Text(
+            'Delete Account?',
+            style: AppTheme.bebasNeue(color: Colors.white),
+          ),
+          content: Text(
+            'This will permanently delete your account. This action cannot be undone.',
+            style: AppTheme.bebasNeue(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+              child: Text(
+                'Cancel',
+                style: AppTheme.bebasNeue(color: Colors.white),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context, rootNavigator: true).pop();
+                await runDelete();
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+              child: Text(
+                'Delete',
+                style: AppTheme.bebasNeue(color: Colors.redAccent),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  void _showLogoutDialog(BuildContext context, bool isIOS) {
+    if (isIOS) {
+      showCupertinoDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (dialogContext) => CupertinoAlertDialog(
+          title: const Text('Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.of(dialogContext, rootNavigator: true).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () async {
+                Navigator.of(dialogContext, rootNavigator: true).pop();
+                final rootNav = Navigator.of(context, rootNavigator: true);
+                await context.read<AuthProvider>().signOut();
+                if (context.mounted) {
+                  rootNav.pushNamedAndRemoveUntil(
+                    Routes.authWrapper,
+                    (route) => false,
+                  );
+                }
+              },
+              child: const Text('Logout'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (dialogContext) => AlertDialog(
+          backgroundColor: AppTheme.cardColor,
+          title: Text('Logout', style: AppTheme.bebasNeue(color: Colors.white)),
+          content: Text(
+            'Are you sure you want to logout?',
+            style: AppTheme.bebasNeue(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext, rootNavigator: true).pop();
+              },
+              child: Text(
+                'Cancel',
+                style: AppTheme.bebasNeue(color: Colors.white),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(dialogContext, rootNavigator: true).pop();
+                final rootNav = Navigator.of(context, rootNavigator: true);
+                await context.read<AuthProvider>().signOut();
+                if (context.mounted) {
+                  rootNav.pushNamedAndRemoveUntil(
+                    Routes.authWrapper,
+                    (route) => false,
+                  );
+                }
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+              child: Text(
+                'Logout',
+                style: AppTheme.bebasNeue(color: Colors.redAccent),
+              ),
+            ),
+          ],
         ),
       );
     }

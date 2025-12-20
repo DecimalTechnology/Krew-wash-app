@@ -15,6 +15,8 @@ import 'package:carwash_app/features/customer/presentation/screens/my_package_sc
 import 'package:carwash_app/features/customer/presentation/screens/package_details_screen.dart';
 import 'package:carwash_app/features/customer/presentation/screens/booking_summary_screen.dart';
 import 'package:carwash_app/features/customer/presentation/screens/payment_screen.dart';
+import 'package:carwash_app/features/customer/presentation/screens/privacy_policy_screen.dart';
+import 'package:carwash_app/features/customer/presentation/screens/terms_of_service_screen.dart';
 import 'package:carwash_app/features/auth/presentation/screens/auth_screen.dart';
 import 'package:carwash_app/features/auth/presentation/screens/otp_verification_screen.dart';
 import 'package:carwash_app/features/staff/presentation/screens/cleaner_login_screen.dart';
@@ -53,6 +55,8 @@ class Routes {
   static const String customerBookingSummary = '/customer/booking-summary';
   static const String customerSettings = '/customer/settings';
   static const String customerNotifications = '/customer/notifications';
+  static const String customerPrivacyPolicy = '/customer/privacy-policy';
+  static const String customerTermsOfService = '/customer/terms-of-service';
 
   // Staff routes
   static const String cleanerLogin = '/staff/cleaner-login';
@@ -75,7 +79,10 @@ class AppRoutes {
       phoneNumber: '+1 262 585 5556',
       otpMethod: 'phone',
     ),
-    Routes.customerHome: (context) => const MainNavigationScreen(),
+    Routes.customerHome: (context) {
+      final initialTab = ModalRoute.of(context)?.settings.arguments as int?;
+      return MainNavigationScreen(initialTab: initialTab);
+    },
     Routes.customerMapFullScreen: (context) => const FullScreenMapPage(),
     Routes.customerBooking: (context) => const CustomerBookingScreen(),
     Routes.customerPackageSelection: (context) =>
@@ -108,6 +115,8 @@ class AppRoutes {
     },
     Routes.customerSettings: (context) => const SettingsScreen(),
     Routes.customerNotifications: (context) => const NotificationsScreen(),
+    Routes.customerPrivacyPolicy: (context) => const PrivacyPolicyScreen(),
+    Routes.customerTermsOfService: (context) => const TermsOfServiceScreen(),
     Routes.cleanerLogin: (context) => const CleanerLoginScreen(),
     Routes.staffHome: (context) => const StaffMainNavigationScreen(),
     // Other routes will be added when screens are implemented
@@ -118,11 +127,12 @@ class AppRoutes {
     // Since we're using Navigator.push with MaterialPageRoute for OTP screen,
     // this shouldn't be called during normal navigation
 
-    // If route name is null or empty, it's likely a MaterialPageRoute being pushed
-    // In this case, we shouldn't be here, but if we are, return to auth screen
+    // If route name is null or empty, it's likely an internal/plugin navigation.
+    // If we route to AuthWrapper/AuthScreen here, it can "jump" the user away from
+    // their current screen (e.g. Edit Profile) during reCAPTCHA/OTP flows.
     if (settings.name == null || settings.name!.isEmpty) {
       return MaterialPageRoute(
-        builder: (_) => const AuthScreen(),
+        builder: (_) => _RouteRecoveryScreen(routeName: settings.name),
         settings: settings,
       );
     }
@@ -132,14 +142,14 @@ class AppRoutes {
     // This prevents the "Page Not Found" flash
     final routeName = settings.name!;
 
-    // If it's a route that looks like it should exist, redirect to auth
-    // This handles cases where onGenerateRoute is called unexpectedly
+    // If it's a route that looks auth/otp related, treat it as unexpected internal
+    // navigation and recover back to the previous screen.
     if (routeName.contains('/otp') ||
         routeName.contains('/auth') ||
         routeName.contains('/login') ||
         routeName.contains('/verification')) {
       return MaterialPageRoute(
-        builder: (_) => const AuthScreen(),
+        builder: (_) => _RouteRecoveryScreen(routeName: routeName),
         settings: settings,
       );
     }
@@ -154,6 +164,42 @@ class AppRoutes {
           settings: settings,
         );
     }
+  }
+}
+
+/// A small recovery screen that immediately pops itself (when possible).
+///
+/// This prevents unexpected internal navigation from yanking the user away from
+/// their current UI (e.g. Edit Profile) during reCAPTCHA/OTP flows.
+class _RouteRecoveryScreen extends StatefulWidget {
+  final String? routeName;
+  const _RouteRecoveryScreen({this.routeName});
+
+  @override
+  State<_RouteRecoveryScreen> createState() => _RouteRecoveryScreenState();
+}
+
+class _RouteRecoveryScreenState extends State<_RouteRecoveryScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final nav = Navigator.of(context);
+      if (nav.canPop()) {
+        nav.pop();
+      } else {
+        // If there's nowhere to pop, fall back to AuthWrapper as a safe root.
+        nav.pushReplacement(
+          MaterialPageRoute(builder: (_) => const AuthWrapper()),
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
 

@@ -8,6 +8,7 @@ import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/customer/presentation/providers/location_provider.dart';
 import 'features/customer/presentation/providers/package_provider.dart';
 import 'features/customer/presentation/providers/payment_provider.dart';
+import 'features/customer/presentation/providers/customer_booking_provider.dart';
 import 'features/staff/presentation/providers/staff_provider.dart';
 import 'features/staff/presentation/providers/cleaner_booking_provider.dart';
 import 'features/shared/presentation/screens/splash_screen.dart';
@@ -27,6 +28,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => StaffProvider()),
         ChangeNotifierProvider(create: (_) => CleanerBookingProvider()),
+        ChangeNotifierProvider(create: (_) => CustomerBookingProvider()),
         ChangeNotifierProvider(create: (_) => LocationProvider()),
         ChangeNotifierProvider(create: (_) => PackageProvider()),
         ChangeNotifierProvider(create: (_) => PaymentProvider()),

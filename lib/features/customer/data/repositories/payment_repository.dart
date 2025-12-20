@@ -8,7 +8,7 @@ import 'package:http/http.dart' as http;
 class PaymentRepository {
   // Create booking before payment (pre-booking)
   Future<Map<String, dynamic>> createBookingBeforePayment({
-    required String packageId,
+    String? packageId,
     required String vehicleId,
     required String vehicleTypeId,
     required List<Map<String, dynamic>> addons,
@@ -85,11 +85,15 @@ class PaymentRepository {
 
       // Create request body - include both vehicleId and vehicleTypeId
       final requestBody = <String, dynamic>{
-        'packageId': packageId.toString().trim(),
         'vehicleId': vehicleIdString, // Vehicle ID (_id field)
         'vehicleTypeId': vehicleTypeIdString, // Vehicle Type ID
         'addons': addons,
       };
+      
+      // Only include packageId if it's not null
+      if (packageId != null && packageId.isNotEmpty) {
+        requestBody['packageId'] = packageId.toString().trim();
+      }
 
       print('═══════════════════════════════════════════════════════════');
       print('📦 [PaymentRepository] REQUEST BODY CREATED');

@@ -1,6 +1,7 @@
 import 'package:carwash_app/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/widgets/standard_back_button.dart';
 import '../../domain/models/booking_model.dart';
@@ -427,13 +428,28 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
     bool isSmallScreen,
     bool isTablet,
   ) {
-    // TODO: Get vehicle details from booking.vehicleId or booking.vehicle when available
-    // For now, using placeholder data - replace with actual vehicle data when available
+    // Get vehicle details from booking.vehicleInfo
+    // Debug: Print vehicle info
+    if (kDebugMode) {
+      print('🔵 VEHICLE INFO DEBUG:');
+      print('VehicleInfo object: ${booking.vehicleInfo}');
+      print('VehicleModel: ${booking.vehicleInfo?.vehicleModel}');
+      print('VehicleNumber: ${booking.vehicleInfo?.vehicleNumber}');
+      print('VehicleColor: ${booking.vehicleInfo?.color}');
+      print('VehicleId (string): ${booking.vehicleId}');
+    }
+
     final vehicleModel =
-        'CHEVROLET AVEO U-VA'; // Replace with booking.vehicle?.vehicleModel
+        (booking.vehicleInfo?.vehicleModel?.trim().isNotEmpty == true)
+        ? booking.vehicleInfo!.vehicleModel!.toUpperCase()
+        : 'VEHICLE MODEL NOT AVAILABLE';
     final vehiclePlate =
-        'JFM 624 J 12'; // Replace with booking.vehicle?.vehicleNumber
-    final vehicleColor = 'BLACK'; // Replace with booking.vehicle?.color
+        (booking.vehicleInfo?.vehicleNumber?.trim().isNotEmpty == true)
+        ? booking.vehicleInfo!.vehicleNumber!
+        : 'PLATE NOT AVAILABLE';
+    final vehicleColor = (booking.vehicleInfo?.color?.trim().isNotEmpty == true)
+        ? booking.vehicleInfo!.color!.toUpperCase()
+        : 'COLOR NOT AVAILABLE';
     final location =
         booking.buildingInfo?.name ?? booking.user?.apartmentNumber ?? 'N/A';
 
@@ -453,14 +469,43 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            vehicleModel.toUpperCase(),
-            style: AppTheme.bebasNeue(
-              color: const Color(0xFF04CDFE),
-              fontSize: isSmallScreen ? 16 : 18,
-              fontWeight: FontWeight.w400,
-              letterSpacing: 0.5,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  vehicleModel.toUpperCase(),
+                  style: AppTheme.bebasNeue(
+                    color: const Color(0xFF04CDFE),
+                    fontSize: isSmallScreen ? 16 : 18,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'START: ${_formatBookingDate(booking.startDate)}',
+                    style: AppTheme.bebasNeue(
+                      color: Colors.white,
+                      fontSize: isSmallScreen ? 12 : 14,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'END: ${_formatBookingDate(booking.endDate)}',
+                    style: AppTheme.bebasNeue(
+                      color: Colors.white,
+                      fontSize: isSmallScreen ? 12 : 14,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
           SizedBox(height: 8),
           Text(
@@ -476,9 +521,24 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
           _buildInfoRow('COLOUR', vehicleColor, isIOS, isSmallScreen),
           SizedBox(height: 12),
           _buildInfoRow('LOCATION', location, isIOS, isSmallScreen),
+          SizedBox(height: 12),
+          _buildInfoRow(
+            'BOOKING CREATED',
+            _formatBookingDate(booking.createdAt),
+            isIOS,
+            isSmallScreen,
+          ),
         ],
       ),
     );
+  }
+
+  String _formatBookingDate(DateTime? date) {
+    if (date == null) return 'N/A';
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year.toString();
+    return '$day/$month/$year';
   }
 
   Widget _buildInfoRow(
@@ -556,6 +616,10 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
           // Refresh booking details when returning from report issue screen
           if (context.mounted && result != null) {
             await _fetchBookingDetails();
+            // Force refresh to update UI
+            if (mounted) {
+              setState(() {});
+            }
           }
         },
       );
@@ -658,11 +722,11 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
     bool isSmallScreen, {
     VoidCallback? onPressed,
   }) {
-    // Dark grey background with white text and icon
+    // Red background with white text and icon
     return Container(
       height: isSmallScreen ? 44 : 48,
       decoration: BoxDecoration(
-        color: const Color(0xFF2A2A2A), // Dark grey background
+        color: Colors.red, // Red background
         borderRadius: BorderRadius.circular(isIOS ? 12 : 10),
       ),
       child: isIOS
@@ -860,7 +924,7 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
           // Convert AddonSession to PackageSession for compatibility
           final packageSessions = addon.sessions.map((addonSession) {
             return PackageSession(
-              id: addonSession.id,
+              id: '', // Session id not needed
               isCompleted: addonSession.isCompleted,
               date: addonSession.date,
               completedBy: addonSession.completedBy,

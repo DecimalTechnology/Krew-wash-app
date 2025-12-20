@@ -93,14 +93,15 @@ class StaffProfileScreen extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.white, width: 1),
         shape: BoxShape.circle,
-        color: Colors.white,
+        color: Colors.black,
       ),
       child: ClipOval(
         child: Container(
-          color: Colors.white,
-          child: const Icon(Icons.person, size: 60, color: Colors.grey),
+          color: Colors.black,
+          child: const Icon(Icons.person, size: 60, color: Colors.white),
         ),
       ),
     );

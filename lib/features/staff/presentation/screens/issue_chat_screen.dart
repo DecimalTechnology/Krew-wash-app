@@ -76,15 +76,21 @@ class ChatMessage {
     DateTime timestamp;
     if (map['createdAt'] != null) {
       try {
-        timestamp = DateTime.parse(map['createdAt'].toString());
+        final parsed = DateTime.parse(map['createdAt'].toString());
+        // Convert to local time if it's UTC
+        timestamp = parsed.isUtc ? parsed.toLocal() : parsed;
       } catch (e) {
         timestamp = DateTime.now();
       }
     } else if (map['timestamp'] != null) {
       try {
-        timestamp = map['timestamp'] is DateTime
-            ? map['timestamp'] as DateTime
-            : DateTime.parse(map['timestamp'].toString());
+        if (map['timestamp'] is DateTime) {
+          final dt = map['timestamp'] as DateTime;
+          timestamp = dt.isUtc ? dt.toLocal() : dt;
+        } else {
+          final parsed = DateTime.parse(map['timestamp'].toString());
+          timestamp = parsed.isUtc ? parsed.toLocal() : parsed;
+        }
       } catch (e) {
         timestamp = DateTime.now();
       }
@@ -136,6 +142,17 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
     super.initState();
     _loadChatMessages();
     _initializeChat();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh messages when screen becomes visible again (e.g., after returning from report issue)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadChatMessages();
+      }
+    });
   }
 
   void _initializeChat() {
@@ -349,7 +366,16 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
             senderName: isAdmin ? 'Admin' : 'You',
             isAdmin: isAdmin,
             timestamp: messageMap['createdAt'] != null
-                ? DateTime.parse(messageMap['createdAt'].toString())
+                ? () {
+                    try {
+                      final parsed = DateTime.parse(
+                        messageMap['createdAt'].toString(),
+                      );
+                      return parsed.isUtc ? parsed.toLocal() : parsed;
+                    } catch (e) {
+                      return DateTime.now();
+                    }
+                  }()
                 : DateTime.now(),
           );
         }).toList();
@@ -603,32 +629,47 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
     final isSmallScreen = screenWidth < 400;
     final horizontalPadding = isSmallScreen ? 16.0 : 20.0;
 
-    return SafeArea(
-      child: Column(
-        children: [
-          // Header
-          _buildHeader(context, isIOS, isSmallScreen, horizontalPadding),
-          // Status indicator
-          _buildStatusIndicator(isIOS, isSmallScreen, horizontalPadding),
-          // Refresh button (shown when connection fails)
-          if (_showRefreshButton)
-            _buildRefreshButton(
-              context,
-              isIOS,
-              isSmallScreen,
-              horizontalPadding,
-            ),
-          // Messages
-          Expanded(child: _buildMessagesList(isIOS, isSmallScreen)),
-          // Message input (only show if issue is not resolved)
-          if (!_isIssueResolved)
-            _buildMessageInput(
-              context,
-              isIOS,
-              isSmallScreen,
-              horizontalPadding,
-            ),
-        ],
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.black,
+            Colors.black.withValues(alpha: 0.92),
+            Colors.black,
+          ],
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            _buildHeader(context, isIOS, isSmallScreen, horizontalPadding),
+            // Status indicator
+            _buildStatusIndicator(isIOS, isSmallScreen, horizontalPadding),
+            // Issue summary card (like screenshot)
+            _buildIssueReportedCard(isSmallScreen, horizontalPadding),
+            // Refresh button (shown when connection fails)
+            if (_showRefreshButton)
+              _buildRefreshButton(
+                context,
+                isIOS,
+                isSmallScreen,
+                horizontalPadding,
+              ),
+            // Messages
+            Expanded(child: _buildMessagesList(isIOS, isSmallScreen)),
+            // Message input (only show if issue is not resolved)
+            if (!_isIssueResolved)
+              _buildMessageInput(
+                context,
+                isIOS,
+                isSmallScreen,
+                horizontalPadding,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -649,12 +690,12 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
           const Spacer(),
           // Centered heading
           Text(
-            widget.issueType,
+            widget.issueType.toUpperCase(),
             style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: isSmallScreen ? 18 : 22,
               fontWeight: FontWeight.w400,
-              letterSpacing: 1.0,
+              letterSpacing: 1.2,
             ),
           ),
           const Spacer(),
@@ -679,7 +720,7 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
             width: 8,
             height: 8,
             decoration: BoxDecoration(
-              color: isResolved ? Colors.grey : const Color(0xFF4CAF50),
+              color: isResolved ? Colors.grey : const Color(0xFF04CDFE),
               shape: BoxShape.circle,
             ),
           ),
@@ -687,7 +728,9 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
           Text(
             isResolved ? 'RESOLVED' : 'OPEN TICKET',
             style: AppTheme.bebasNeue(
-              color: Colors.white,
+              color: isResolved
+                  ? Colors.white.withValues(alpha: 0.7)
+                  : const Color(0xFF04CDFE),
               fontSize: isSmallScreen ? 12 : 14,
               fontWeight: FontWeight.w400,
               letterSpacing: 0.5,
@@ -751,6 +794,56 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
     );
   }
 
+  Widget _buildIssueReportedCard(bool isSmallScreen, double horizontalPadding) {
+    final issueText = widget.description.trim().isNotEmpty
+        ? widget.description.trim().toUpperCase()
+        : widget.issueType.toUpperCase();
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(horizontalPadding, 10, horizontalPadding, 6),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(
+          horizontal: isSmallScreen ? 18 : 22,
+          vertical: isSmallScreen ? 18 : 20,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.14),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              'ISSUE REPORTED',
+              textAlign: TextAlign.center,
+              style: AppTheme.bebasNeue(
+                color: Colors.white,
+                fontSize: isSmallScreen ? 16 : 18,
+                fontWeight: FontWeight.w400,
+                letterSpacing: 1.1,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              issueText,
+              textAlign: TextAlign.center,
+              style: AppTheme.bebasNeue(
+                color: const Color(0xFF04CDFE),
+                fontSize: isSmallScreen ? 18 : 22,
+                fontWeight: FontWeight.w400,
+                letterSpacing: 0.9,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMessagesList(bool isIOS, bool isSmallScreen) {
     if (_isLoadingMessages) {
       return Center(
@@ -788,9 +881,11 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
 
     return ListView.builder(
       controller: _scrollController,
-      padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 16 : 20,
-        vertical: 16,
+      padding: EdgeInsets.fromLTRB(
+        isSmallScreen ? 16 : 20,
+        14,
+        isSmallScreen ? 16 : 20,
+        110 + MediaQuery.of(context).padding.bottom,
       ),
       itemCount: _messages.length,
       itemBuilder: (context, index) {
@@ -805,8 +900,15 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
     bool isSmallScreen,
   ) {
     final isUser = !message.isAdmin;
-    final timeString =
-        '${message.timestamp.hour.toString().padLeft(2, '0')}:${message.timestamp.minute.toString().padLeft(2, '0')}';
+    // Ensure timestamp is in local time
+    final localTimestamp = message.timestamp.isUtc
+        ? message.timestamp.toLocal()
+        : message.timestamp;
+    final hour = localTimestamp.hour;
+    final minute = localTimestamp.minute;
+    final hour12 = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+    final amPm = hour >= 12 ? 'pm' : 'am';
+    final timeString = '$hour12:${minute.toString().padLeft(2, '0')} $amPm';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -821,21 +923,24 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
             vertical: isSmallScreen ? 10 : 12,
           ),
           decoration: BoxDecoration(
-            color: isUser
-                ? const Color(0xFF04CDFE)
-                : Colors.white.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(isIOS ? 18 : 16),
+            color: isUser ? const Color(0xFF0B2A33) : const Color(0xFF0A1E26),
+            borderRadius: BorderRadius.circular(isIOS ? 22 : 20),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.12),
+              width: 1,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (message.isAdmin)
                 Text(
-                  'ADMIN: ',
+                  'ADMIN',
                   style: AppTheme.bebasNeue(
-                    color: Colors.white,
+                    color: const Color(0xFF04CDFE),
                     fontSize: isSmallScreen ? 11 : 12,
                     fontWeight: FontWeight.w400,
+                    letterSpacing: 0.8,
                   ),
                 ),
               Text(
@@ -846,11 +951,16 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
                 ),
               ),
               SizedBox(height: 4),
-              Text(
-                timeString,
-                style: AppTheme.bebasNeue(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontSize: isSmallScreen ? 10 : 11,
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  timeString,
+                  style: AppTheme.bebasNeue(
+                    color: isUser
+                        ? const Color(0xFF04CDFE)
+                        : Colors.white.withValues(alpha: 0.7),
+                    fontSize: isSmallScreen ? 10 : 11,
+                  ),
                 ),
               ),
             ],
@@ -874,7 +984,7 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
         12 + MediaQuery.of(context).padding.bottom,
       ),
       decoration: BoxDecoration(
-        color: Colors.black,
+        color: const Color(0xFF071B22),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
@@ -888,10 +998,10 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(isIOS ? 20 : 18),
+                color: Colors.black.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(isIOS ? 28 : 26),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: Colors.white.withValues(alpha: 0.22),
                   width: 1,
                 ),
               ),
@@ -949,7 +1059,11 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
                     ),
                   )
                 : IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white, size: 20),
+                    icon: const Icon(
+                      Icons.arrow_upward_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     onPressed: _isConnected ? _sendMessage : null,
                     padding: EdgeInsets.zero,
                   ),

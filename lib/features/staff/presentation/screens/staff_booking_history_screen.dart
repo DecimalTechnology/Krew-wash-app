@@ -528,8 +528,10 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
     final local = dateTime.toLocal();
     final day =
         '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}/${local.year}';
-    final time =
-        '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    final hour = local.hour > 12 ? local.hour - 12 : (local.hour == 0 ? 12 : local.hour);
+    final minute = local.minute.toString().padLeft(2, '0');
+    final amPm = local.hour >= 12 ? 'PM' : 'AM';
+    final time = '$hour:$minute $amPm';
     return '$day • $time';
   }
 }

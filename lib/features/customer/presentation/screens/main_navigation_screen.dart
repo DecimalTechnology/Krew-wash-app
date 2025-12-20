@@ -2,21 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'customer_home_screen.dart';
 import 'package_selection_screen.dart';
-import 'my_package_screen.dart';
+import 'my_bookings_screen.dart';
 import 'customer_profile_screen.dart';
 import 'car_list_screen.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/route_constants.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  const MainNavigationScreen({super.key, this.initialTab});
+
+  /// Optional initial tab index (0=Home, 1=Packages, 2=Cars, 3=Bookings, 4=Profile)
+  final int? initialTab;
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _currentIndex = 0;
+  late int _currentIndex;
 
   // Create separate navigation keys for each tab to maintain independent navigation stacks
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
@@ -27,14 +30,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     GlobalKey<NavigatorState>(),
   ];
 
+  void _goToTab(int index) {
+    if (!mounted) return;
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
   // Store screens to keep them alive
-  final List<Widget> _screens = [
-    const CustomerHomeScreen(),
-    const PackageSelectionScreen(),
-    const CarListScreen(),
-    const MyPackageScreen(),
-    const CustomerProfileScreen(),
-  ];
+  late final List<Widget> _screens;
 
   Widget _buildNavigatorWrapper(int index) {
     return _NavigatorWrapper(
@@ -50,6 +54,23 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   void initState() {
     super.initState();
+    // Set initial tab from widget parameter, default to 0 (Home)
+    _currentIndex =
+        widget.initialTab != null &&
+            widget.initialTab! >= 0 &&
+            widget.initialTab! < 5
+        ? widget.initialTab!
+        : 0;
+    _screens = [
+      CustomerHomeScreen(onNavigateToPackages: () => _goToTab(1)),
+      const PackageSelectionScreen(),
+      const CarListScreen(),
+      MyBookingsScreen(
+        // Back from bookings should go to Car Listing tab
+        onBack: () => _goToTab(2),
+      ),
+      const CustomerProfileScreen(),
+    ];
     _navigatorScreens = List<Widget>.generate(
       _screens.length,
       (index) => _buildNavigatorWrapper(index),
@@ -201,15 +222,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     children: [
                       _buildIOSNavItem(
                         0,
-                        CupertinoIcons.home,
+                        CupertinoIcons.house,
                         CupertinoIcons.house_fill,
                         iconSize,
                         navItemSize,
                       ),
                       _buildIOSNavItem(
                         1,
-                        CupertinoIcons.grid,
-                        CupertinoIcons.grid,
+                        CupertinoIcons.square_grid_2x2,
+                        CupertinoIcons.square_grid_2x2_fill,
                         iconSize,
                         navItemSize,
                       ),
@@ -222,8 +243,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       ),
                       _buildIOSNavItem(
                         3,
-                        CupertinoIcons.money_dollar_circle,
-                        CupertinoIcons.money_dollar_circle_fill,
+                        CupertinoIcons.calendar,
+                        CupertinoIcons.calendar_today,
                         iconSize,
                         navItemSize,
                       ),
@@ -287,7 +308,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               child: Container(
                 height: navBarHeight,
                 decoration: BoxDecoration(
-                  color: AppTheme.cardColor,
+                  color: const Color(0xFF0B0E1F),
                   borderRadius: BorderRadius.circular(navBarRadius),
                   boxShadow: [
                     BoxShadow(
@@ -328,8 +349,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       ),
                       _buildAndroidNavItem(
                         3,
-                        Icons.wallet_outlined,
-                        Icons.wallet,
+                        Icons.calendar_today_outlined,
+                        Icons.calendar_today,
                         iconSize,
                         navItemSize,
                       ),

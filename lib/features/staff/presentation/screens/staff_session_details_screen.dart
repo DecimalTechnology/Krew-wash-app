@@ -41,7 +41,7 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
   String? _error;
   final ImagePicker _imagePicker = ImagePicker();
   bool _isUploadingImage = false;
-  String? _selectedImagePath; // Store selected image path before upload
+  List<String> _selectedImagePaths = []; // Store selected image paths before upload
 
   @override
   void initState() {
@@ -127,21 +127,32 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
     if (source == null) return;
 
     try {
-      final XFile? pickedFile = await _imagePicker.pickImage(source: source);
-      if (pickedFile != null && mounted) {
+      // Pick multiple images
+      final List<XFile> pickedFiles = await _imagePicker.pickMultiImage();
+      if (pickedFiles.isNotEmpty && mounted) {
         setState(() {
-          _selectedImagePath = pickedFile.path;
+          _selectedImagePaths.addAll(pickedFiles.map((file) => file.path));
         });
       }
     } catch (e) {
-      if (mounted) {
-        _showMessage('Error picking image: ${e.toString()}', isError: true);
+      // If multi-image fails, try single image as fallback
+      try {
+        final XFile? pickedFile = await _imagePicker.pickImage(source: source);
+        if (pickedFile != null && mounted) {
+          setState(() {
+            _selectedImagePaths.add(pickedFile.path);
+          });
+        }
+      } catch (e2) {
+        if (mounted) {
+          _showMessage('Error picking image: ${e2.toString()}', isError: true);
+        }
       }
     }
   }
 
   Future<void> _uploadImage() async {
-    if (_selectedImagePath == null) return;
+    if (_selectedImagePaths.isEmpty) return;
 
     setState(() {
       _isUploadingImage = true;
@@ -149,42 +160,19 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
 
     try {
       final bookingProvider = context.read<CleanerBookingProvider>();
-      final result = await bookingProvider.uploadSessionImage(
-        bookingId: widget.booking.id,
-        sessionId: widget.session.id,
-        sessionType: widget.sessionType,
-        imagePath: _selectedImagePath!,
-        addonId: widget.addonId,
-      );
+      // Upload all selected images
+      bool allSuccess = true;
+      for (final imagePath in _selectedImagePaths) {
+        final result = await bookingProvider.uploadSessionImage(
+          bookingId: widget.booking.id,
+          sessionId: widget.session.id,
+          sessionType: widget.sessionType,
+          imagePath: imagePath,
+          addonId: widget.addonId,
+        );
 
-      if (mounted) {
-        setState(() {
-          _isUploadingImage = false;
-        });
-
-        if (result['success'] == true) {
-          // Update session data directly from upload API response body
-          if (result['data'] != null) {
-            setState(() {
-              _sessionData = result['data'] as Map<String, dynamic>;
-              _selectedImagePath = null; // Clear selected image after upload
-            });
-          } else {
-            // Fallback: fetch session details if response doesn't have data
-            await _fetchSessionDetails();
-            if (mounted) {
-              setState(() {
-                _selectedImagePath = null;
-              });
-            }
-          }
-
-          // Show success message
-          if (mounted) {
-            _showMessage('Image uploaded successfully', isError: false);
-          }
-        } else {
-          // Show error message
+        if (result['success'] != true) {
+          allSuccess = false;
           if (mounted) {
             _showMessage(
               result['message'] ?? 'Failed to upload image',
@@ -193,12 +181,26 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
           }
         }
       }
+
+      // Clear selected images after all uploads
+      if (mounted) {
+        setState(() {
+          _selectedImagePaths.clear();
+          _isUploadingImage = false;
+        });
+        // Fetch updated session details
+        await _fetchSessionDetails();
+        // Show success message
+        if (allSuccess) {
+          _showMessage('Images uploaded successfully', isError: false);
+        }
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isUploadingImage = false;
         });
-        _showMessage('Error: ${e.toString()}', isError: true);
+        _showMessage('Error uploading images: ${e.toString()}', isError: true);
       }
     }
   }
@@ -533,8 +535,6 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
           SizedBox(height: 16),
           Divider(color: Colors.white.withValues(alpha: 0.1), thickness: 1),
           SizedBox(height: 16),
-          // Session ID
-          _buildDetailRow('SESSION ID', sessionId, isIOS, isSmallScreen),
           SizedBox(height: 12),
           // Completion Status
           _buildDetailRow(
@@ -688,10 +688,10 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
         ),
         SizedBox(height: 16),
         _buildPhotoPlaceholder(isIOS, isSmallScreen, isTablet, images: images),
-        // Show selected image preview and upload button
-        if (_selectedImagePath != null) ...[
+        // Show selected images preview and upload button
+        if (_selectedImagePaths.isNotEmpty) ...[
           SizedBox(height: 16),
-          _buildSelectedImagePreview(isIOS, isSmallScreen),
+          _buildSelectedImagesPreview(isIOS, isSmallScreen),
           SizedBox(height: 16),
           _buildUploadButton(isIOS, isSmallScreen),
         ],
@@ -699,30 +699,69 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
     );
   }
 
-  Widget _buildSelectedImagePreview(bool isIOS, bool isSmallScreen) {
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(isIOS ? 26 : 22),
-        border: Border.all(color: const Color(0xFF04CDFE), width: 1.2),
+  Widget _buildSelectedImagesPreview(bool isIOS, bool isSmallScreen) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(isIOS ? 26 : 22),
-        child: Image.file(
-          File(_selectedImagePath!),
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: Colors.grey[900],
-              child: const Icon(
-                Icons.broken_image,
-                color: Colors.grey,
-                size: 40,
+      itemCount: _selectedImagePaths.length,
+      itemBuilder: (context, index) {
+        return Stack(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(isIOS ? 12 : 10),
+                border: Border.all(color: const Color(0xFF04CDFE), width: 1.2),
               ),
-            );
-          },
-        ),
-      ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(isIOS ? 12 : 10),
+                child: Image.file(
+                  File(_selectedImagePaths[index]),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey[900],
+                      child: const Icon(
+                        Icons.broken_image,
+                        color: Colors.grey,
+                        size: 40,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            Positioned(
+              top: 4,
+              right: 4,
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedImagePaths.removeAt(index);
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

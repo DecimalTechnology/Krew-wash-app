@@ -24,6 +24,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isInitializing => _isInitializing;
   String? get errorMessage => _errorMessage;
+  bool get isVerifyingAuth => _isVerifyingAuth;
 
   AuthProvider() {
     _initializeAuth();
@@ -135,6 +136,32 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       _setError('An unexpected error occurred');
       _setLoading(false);
+      _isVerifyingAuth = false;
+      return PhoneAuthResult.failure(
+        errorMessage: 'An unexpected error occurred',
+      );
+    }
+  }
+
+  /// Phone OTP for **profile update flows** (edit profile etc).
+  ///
+  /// Important: this does **not** call `_setLoading`, `_setError`, or
+  /// `notifyListeners()` to avoid triggering `AuthWrapper` rebuilds that can
+  /// momentarily show the Auth/Signup screen.
+  Future<PhoneAuthResult> sendPhoneVerificationCodeForProfile({
+    required String phoneNumber,
+  }) async {
+    try {
+      // Keep the verification flag for internal safety, but don't notify.
+      _isVerifyingAuth = true;
+      final result = await _authService.sendPhoneVerificationCode(
+        phoneNumber: phoneNumber,
+      );
+      if (!result.isSuccess) {
+        _isVerifyingAuth = false;
+      }
+      return result;
+    } catch (_) {
       _isVerifyingAuth = false;
       return PhoneAuthResult.failure(
         errorMessage: 'An unexpected error occurred',

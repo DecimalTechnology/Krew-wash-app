@@ -66,12 +66,18 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
         ? screenWidth * 0.12
         : screenWidth * 0.08;
 
-    final topPadding = mediaQuery.padding.top + (isSmallScreen ? 16 : 32);
-    final topSpacing = isSmallScreen
-        ? screenHeight * 0.25
-        : isTallScreen
-        ? screenHeight * 0.35
-        : screenHeight * 0.3;
+    final topPadding = mediaQuery.padding.top + (isSmallScreen ? 16 : 24);
+    // Move the form higher on large/tall screens.
+    // Old values could push it too far down (up to 35% of screen height).
+    final topSpacing = (screenHeight *
+            (isSmallScreen
+                ? 0.22
+                : isTablet
+                ? 0.22
+                : isTallScreen
+                ? 0.25
+                : 0.22))
+        .clamp(110.0, 200.0);
 
     final titleSpacing = isSmallScreen
         ? 24.0

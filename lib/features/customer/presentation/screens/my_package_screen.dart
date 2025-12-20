@@ -160,7 +160,7 @@ class MyPackageScreen extends StatelessWidget {
                     : screenWidth * 0.2,
                 decoration: const BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage('assets/CustomerHome/car_silhouette.png'),
+                    image: AssetImage('assets/loginScreen/car.png'),
                     fit: BoxFit.contain,
                   ),
                 ),
