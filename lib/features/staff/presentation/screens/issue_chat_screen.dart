@@ -73,13 +73,30 @@ class ChatMessage {
     final senderId = map['senderId']?.toString() ?? '';
 
     // Handle timestamp from createdAt or timestamp field
+    // Backend typically returns UTC timestamps, so we need to convert to local
     DateTime timestamp;
     if (map['createdAt'] != null) {
       try {
-        final parsed = DateTime.parse(map['createdAt'].toString());
-        // Convert to local time if it's UTC
+        final timestampStr = map['createdAt'].toString().trim();
+
+        // Check if string has timezone info (ends with Z, +HH:MM, or -HH:MM)
+        final hasTimezone =
+            timestampStr.endsWith('Z') ||
+            RegExp(r'[+-]\d{2}:?\d{2}$').hasMatch(timestampStr);
+
+        DateTime parsed;
+        if (hasTimezone) {
+          // Has timezone info, parse normally
+          parsed = DateTime.parse(timestampStr);
+        } else {
+          // No timezone info - assume UTC (backend standard) and append Z
+          parsed = DateTime.parse(timestampStr + 'Z');
+        }
+
+        // Convert UTC to local time for display
         timestamp = parsed.isUtc ? parsed.toLocal() : parsed;
       } catch (e) {
+        debugPrint('⚠️ Error parsing createdAt timestamp: $e');
         timestamp = DateTime.now();
       }
     } else if (map['timestamp'] != null) {
@@ -88,10 +105,25 @@ class ChatMessage {
           final dt = map['timestamp'] as DateTime;
           timestamp = dt.isUtc ? dt.toLocal() : dt;
         } else {
-          final parsed = DateTime.parse(map['timestamp'].toString());
+          final timestampStr = map['timestamp'].toString().trim();
+
+          // Check if string has timezone info (ends with Z, +HH:MM, or -HH:MM)
+          final hasTimezone =
+              timestampStr.endsWith('Z') ||
+              RegExp(r'[+-]\d{2}:?\d{2}$').hasMatch(timestampStr);
+
+          DateTime parsed;
+          if (hasTimezone) {
+            parsed = DateTime.parse(timestampStr);
+          } else {
+            // No timezone info - assume UTC and append Z
+            parsed = DateTime.parse(timestampStr + 'Z');
+          }
+
           timestamp = parsed.isUtc ? parsed.toLocal() : parsed;
         }
       } catch (e) {
+        debugPrint('⚠️ Error parsing timestamp: $e');
         timestamp = DateTime.now();
       }
     } else {
@@ -120,6 +152,13 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
   bool _isInitializing = false; // Flag to prevent duplicate initialization
   String _roomId = '';
   bool _isLoadingMessages = false; // Flag to track message loading state
+  bool _hasLoadedInitialMessages =
+      false; // Flag to track if initial messages have been loaded
+
+  // Cache stable MediaQuery values to prevent rebuilds when keyboard appears
+  double? _cachedScreenWidth;
+  double? _cachedBottomPadding;
+  bool? _cachedIsSmallScreen;
 
   // Check if issue is resolved
   bool get _isIssueResolved {
@@ -140,6 +179,15 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
   @override
   void initState() {
     super.initState();
+    // Cache stable MediaQuery values once
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final mediaQuery = MediaQuery.of(context);
+        _cachedScreenWidth = mediaQuery.size.width;
+        _cachedBottomPadding = mediaQuery.viewPadding.bottom;
+        _cachedIsSmallScreen = _cachedScreenWidth! < 400;
+      }
+    });
     _loadChatMessages();
     _initializeChat();
   }
@@ -147,12 +195,15 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Refresh messages when screen becomes visible again (e.g., after returning from report issue)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _loadChatMessages();
-      }
-    });
+    // Only refresh messages if we haven't loaded initial messages yet
+    // This prevents reloading when keyboard appears/disappears (which triggers didChangeDependencies)
+    if (!_hasLoadedInitialMessages) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_hasLoadedInitialMessages) {
+          _loadChatMessages();
+        }
+      });
+    }
   }
 
   void _initializeChat() {
@@ -339,6 +390,12 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
       return;
     }
 
+    // Prevent multiple simultaneous loads
+    if (_isLoadingMessages) {
+      debugPrint('⚠️ Already loading messages, skipping duplicate call');
+      return;
+    }
+
     setState(() {
       _isLoadingMessages = true;
     });
@@ -359,24 +416,45 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
           final senderType = messageMap['senderType']?.toString() ?? '';
           final isAdmin = senderType.toLowerCase() == 'admin';
 
+          // Parse timestamp - backend typically returns UTC timestamps
+          DateTime timestamp;
+          if (messageMap['createdAt'] != null) {
+            try {
+              final timestampStr = messageMap['createdAt'].toString().trim();
+
+              // Check if string has timezone info (ends with Z, +HH:MM, or -HH:MM)
+              final hasTimezone =
+                  timestampStr.endsWith('Z') ||
+                  RegExp(r'[+-]\d{2}:?\d{2}$').hasMatch(timestampStr);
+
+              DateTime parsed;
+              if (hasTimezone) {
+                // Has timezone info, parse normally
+                parsed = DateTime.parse(timestampStr);
+              } else {
+                // No timezone info - assume UTC (backend standard) and append Z
+                parsed = DateTime.parse(timestampStr + 'Z');
+              }
+
+              // Convert UTC to local time for display
+              timestamp = parsed.isUtc ? parsed.toLocal() : parsed;
+            } catch (e) {
+              debugPrint(
+                '⚠️ Error parsing timestamp when loading messages: $e',
+              );
+              timestamp = DateTime.now();
+            }
+          } else {
+            timestamp = DateTime.now();
+          }
+
           return ChatMessage(
             id: messageMap['_id']?.toString() ?? '',
             text: messageMap['content']?.toString() ?? '',
             senderId: messageMap['senderId']?.toString() ?? '',
             senderName: isAdmin ? 'Admin' : 'You',
             isAdmin: isAdmin,
-            timestamp: messageMap['createdAt'] != null
-                ? () {
-                    try {
-                      final parsed = DateTime.parse(
-                        messageMap['createdAt'].toString(),
-                      );
-                      return parsed.isUtc ? parsed.toLocal() : parsed;
-                    } catch (e) {
-                      return DateTime.now();
-                    }
-                  }()
-                : DateTime.now(),
+            timestamp: timestamp,
           );
         }).toList();
 
@@ -384,6 +462,7 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
           _messages.clear();
           _messages.addAll(loadedMessages);
           _isLoadingMessages = false;
+          _hasLoadedInitialMessages = true; // Mark as loaded
         });
 
         // Scroll to bottom after loading messages
@@ -392,6 +471,7 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
         debugPrint('❌ Failed to load messages: ${result['message']}');
         setState(() {
           _isLoadingMessages = false;
+          _hasLoadedInitialMessages = true; // Mark as attempted even if failed
         });
         // Still add initial message if loading failed
         _addInitialMessages();
@@ -401,6 +481,7 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
       if (mounted) {
         setState(() {
           _isLoadingMessages = false;
+          _hasLoadedInitialMessages = true; // Mark as attempted even if failed
         });
         // Still add initial message if loading failed
         _addInitialMessages();
@@ -524,19 +605,22 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
     }
 
     final now = DateTime.now();
+    final nowUtc = now.toUtc();
     final chatId = _roomId;
 
     // Format message according to backend API structure
+    // Send UTC time to backend (standard practice)
     final messageData = {
       'senderType': 'Cleaner',
       'content': text,
-      'createdAt': now.toIso8601String(),
-      'updatedAt': now.toIso8601String(),
+      'createdAt': nowUtc.toIso8601String(),
+      'updatedAt': nowUtc.toIso8601String(),
       'chatId': chatId,
       'senderId': cleanerId,
     };
 
     // Add to local messages immediately (for UI display)
+    // Use local time for display
     setState(() {
       _messages.add(
         ChatMessage(
@@ -545,7 +629,7 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
           senderId: cleanerId,
           senderName: 'You',
           isAdmin: false,
-          timestamp: now,
+          timestamp: now, // Local time for display
         ),
       );
     });
@@ -620,57 +704,91 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
   Widget _buildAndroidScreen() {
     return Scaffold(
       backgroundColor: Colors.black,
+      resizeToAvoidBottomInset:
+          true, // Allow resizing so text field is visible above keyboard
       body: _buildContent(isIOS: false),
     );
   }
 
   Widget _buildContent({required bool isIOS}) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isSmallScreen = screenWidth < 400;
-    final horizontalPadding = isSmallScreen ? 16.0 : 20.0;
+    return Builder(
+      builder: (context) {
+        final mediaQuery = MediaQuery.of(context);
+        // Use cached screen width to prevent unnecessary rebuilds
+        final screenWidth = _cachedScreenWidth ?? mediaQuery.size.width;
+        final isSmallScreen = _cachedIsSmallScreen ?? (screenWidth < 400);
+        final horizontalPadding = isSmallScreen ? 16.0 : 20.0;
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.black,
-            Colors.black.withValues(alpha: 0.92),
-            Colors.black,
-          ],
-        ),
-      ),
-      child: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            _buildHeader(context, isIOS, isSmallScreen, horizontalPadding),
-            // Status indicator
-            _buildStatusIndicator(isIOS, isSmallScreen, horizontalPadding),
-            // Issue summary card (like screenshot)
-            _buildIssueReportedCard(isSmallScreen, horizontalPadding),
-            // Refresh button (shown when connection fails)
-            if (_showRefreshButton)
-              _buildRefreshButton(
-                context,
-                isIOS,
-                isSmallScreen,
-                horizontalPadding,
-              ),
-            // Messages
-            Expanded(child: _buildMessagesList(isIOS, isSmallScreen)),
-            // Message input (only show if issue is not resolved)
-            if (!_isIssueResolved)
-              _buildMessageInput(
-                context,
-                isIOS,
-                isSmallScreen,
-                horizontalPadding,
-              ),
-          ],
-        ),
-      ),
+        // Initialize cache if not set
+        if (_cachedScreenWidth == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _cachedScreenWidth = screenWidth;
+                _cachedBottomPadding = mediaQuery.viewPadding.bottom;
+                _cachedIsSmallScreen = isSmallScreen;
+              });
+            }
+          });
+        }
+
+        // Initialize cache if not set
+        if (_cachedScreenWidth == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _cachedScreenWidth = screenWidth;
+                _cachedBottomPadding = mediaQuery.viewPadding.bottom;
+                _cachedIsSmallScreen = isSmallScreen;
+              });
+            }
+          });
+        }
+
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black,
+                Colors.black.withValues(alpha: 0.92),
+                Colors.black,
+              ],
+            ),
+          ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                // Header
+                _buildHeader(context, isIOS, isSmallScreen, horizontalPadding),
+                // Status indicator
+                _buildStatusIndicator(isIOS, isSmallScreen, horizontalPadding),
+                // Issue summary card (like screenshot)
+                _buildIssueReportedCard(isSmallScreen, horizontalPadding),
+                // Refresh button (shown when connection fails)
+                if (_showRefreshButton)
+                  _buildRefreshButton(
+                    context,
+                    isIOS,
+                    isSmallScreen,
+                    horizontalPadding,
+                  ),
+                // Messages
+                Expanded(child: _buildMessagesList(isIOS, isSmallScreen)),
+                // Message input (only show if issue is not resolved)
+                if (!_isIssueResolved)
+                  _buildMessageInput(
+                    context,
+                    isIOS,
+                    isSmallScreen,
+                    horizontalPadding,
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -879,13 +997,17 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
       );
     }
 
+    // Use cached bottom padding to avoid keyboard-triggered rebuilds
+    final stableBottomPadding =
+        _cachedBottomPadding ?? MediaQuery.of(context).viewPadding.bottom;
+
     return ListView.builder(
       controller: _scrollController,
       padding: EdgeInsets.fromLTRB(
         isSmallScreen ? 16 : 20,
         14,
         isSmallScreen ? 16 : 20,
-        110 + MediaQuery.of(context).padding.bottom,
+        110 + stableBottomPadding,
       ),
       itemCount: _messages.length,
       itemBuilder: (context, index) {
@@ -976,12 +1098,16 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
     bool isSmallScreen,
     double horizontalPadding,
   ) {
+    // Get system padding for proper positioning
+    final mediaQuery = MediaQuery.of(context);
+    final systemBottomPadding = mediaQuery.viewPadding.bottom;
+
     return Container(
       padding: EdgeInsets.fromLTRB(
         horizontalPadding,
         12,
         horizontalPadding,
-        12 + MediaQuery.of(context).padding.bottom,
+        12 + systemBottomPadding,
       ),
       decoration: BoxDecoration(
         color: const Color(0xFF071B22),

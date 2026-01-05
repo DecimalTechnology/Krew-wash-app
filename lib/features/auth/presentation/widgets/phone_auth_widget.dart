@@ -48,12 +48,12 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
                           Icons.phone,
-                          color: Color(0xFF10B981),
+                          color: AppTheme.primaryColor,
                           size: 20,
                         ),
                       ),
@@ -104,7 +104,7 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
                           ? null
                           : _sendVerificationCode,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981),
+                        backgroundColor: AppTheme.primaryColor,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -161,7 +161,7 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
                     ElevatedButton(
                       onPressed: authProvider.isLoading ? null : _verifyCode,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981),
+                        backgroundColor: AppTheme.primaryColor,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -196,7 +196,7 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
                       child: Text(
                         'Resend Code',
                         style: AppTheme.bebasNeue(
-                          color: Color(0xFF10B981),
+                          color: AppTheme.primaryColor,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

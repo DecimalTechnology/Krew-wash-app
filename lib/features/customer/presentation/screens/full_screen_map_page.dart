@@ -383,7 +383,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                       SizedBox(width: 12),
                       const Icon(
                         Icons.location_on,
-                        color: Color(0xFF00AAD4),
+                        color: AppTheme.primaryColor,
                         size: 18,
                       ),
                       SizedBox(width: 4),
@@ -400,7 +400,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w400,
-                          color: Color(0xFF00AAD4),
+                          color: AppTheme.primaryColor,
                         ),
                       ),
                     ],
@@ -448,13 +448,13 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('Booking ${station.name}...'),
-                                  backgroundColor: const Color(0xFF00AAD4),
+                                  backgroundColor: AppTheme.primaryColor,
                                 ),
                               );
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF00AAD4),
+                        backgroundColor: AppTheme.primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -483,21 +483,21 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF00AAD4).withValues(alpha: 0.1),
+        color: AppTheme.primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF00AAD4).withValues(alpha: 0.3),
+          color: AppTheme.primaryColor.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.check_circle, color: Color(0xFF00AAD4), size: 16),
+          const Icon(Icons.check_circle, color: AppTheme.primaryColor, size: 16),
           SizedBox(width: 6),
           Text(
             service,
             style: const TextStyle(
-              color: Color(0xFF00AAD4),
+              color: AppTheme.primaryColor,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -532,7 +532,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                   child: Center(
                     child: CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        Color(0xFF00AAD4),
+                        AppTheme.primaryColor,
                       ),
                     ),
                   ),
@@ -573,7 +573,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                         ElevatedButton(
                           onPressed: _initializeMap,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF00AAD4),
+                            backgroundColor: AppTheme.primaryColor,
                           ),
                           child: Text('Retry'),
                         ),
@@ -645,7 +645,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                       IconButton(
                         icon: Icon(
                           _isSearching ? Icons.close : Icons.search,
-                          color: const Color(0xFF00AAD4),
+                          color: AppTheme.primaryColor,
                         ),
                         onPressed: () {
                           if (_isSearching) {
@@ -689,18 +689,18 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                 FloatingActionButton(
                   heroTag: 'location',
                   mini: true,
-                  backgroundColor: Colors.white,
+                  backgroundColor: AppTheme.primaryColor,
                   onPressed: _goToCurrentLocation,
                   child: const Icon(
                     Icons.my_location,
-                    color: Color(0xFF00AAD4),
+                    color: Colors.white,
                   ),
                 ),
                 SizedBox(height: 12),
                 FloatingActionButton(
                   heroTag: 'list',
                   mini: true,
-                  backgroundColor: const Color(0xFF00AAD4),
+                  backgroundColor: AppTheme.primaryColor,
                   onPressed: () {
                     _showStationsList();
                   },
@@ -732,7 +732,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                 children: [
                   const Icon(
                     Icons.local_car_wash,
-                    color: Color(0xFF00AAD4),
+                    color: AppTheme.primaryColor,
                     size: 20,
                   ),
                   SizedBox(width: 8),
@@ -761,7 +761,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
         selected: isSelected,
         onSelected: (selected) => _filterByType(label),
         backgroundColor: Colors.white,
-        selectedColor: const Color(0xFF00AAD4),
+        selectedColor: AppTheme.primaryColor,
         labelStyle: TextStyle(
           color: isSelected ? Colors.white : Colors.black87,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -872,7 +872,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                               SizedBox(width: 12),
                               const Icon(
                                 Icons.location_on,
-                                color: Color(0xFF00AAD4),
+                                color: AppTheme.primaryColor,
                                 size: 14,
                               ),
                               SizedBox(width: 4),
@@ -890,7 +890,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w400,
-                              color: Color(0xFF00AAD4),
+                              color: AppTheme.primaryColor,
                             ),
                           ),
                           Container(

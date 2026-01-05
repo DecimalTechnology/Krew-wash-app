@@ -97,7 +97,12 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
 
   void _showBuildingSuggestions() {
     if (!mounted) return;
-    _buildingOverlay?.remove();
+    // If overlay already exists, just mark it for rebuild
+    if (_buildingOverlay != null) {
+      _buildingOverlay!.markNeedsBuild();
+      return;
+    }
+
     final overlay = Overlay.of(context);
 
     final screenWidth = MediaQuery.of(context).size.width;
@@ -105,100 +110,108 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
 
     _buildingOverlay = OverlayEntry(
       builder: (ctx) {
-        final provider = Provider.of<PackageProvider>(ctx);
-        final results = provider.buildingResults;
-        final isSearching = provider.isSearching;
+        return Consumer<PackageProvider>(
+          builder: (ctx, provider, _) {
+            final results = provider.buildingResults;
+            final isSearching = provider.isSearching;
 
-        if (!isSearching && results.isEmpty && provider.lastQuery.isEmpty) {
-          return const SizedBox.shrink();
-        }
+            if (!isSearching && results.isEmpty && provider.lastQuery.isEmpty) {
+              return const SizedBox.shrink();
+            }
 
-        return Positioned.fill(
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: GestureDetector(onTap: _hideBuildingSuggestions),
-              ),
-              CompositedTransformFollower(
-                link: _buildingFieldLink,
-                showWhenUnlinked: false,
-                offset: const Offset(0, 56),
-                child: Material(
-                  color: Colors.transparent,
-                  child: Container(
-                    width: maxWidth,
-                    constraints: const BoxConstraints(maxHeight: 220),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0B0E1F),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.2),
+            return Positioned.fill(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: GestureDetector(onTap: _hideBuildingSuggestions),
+                  ),
+                  CompositedTransformFollower(
+                    link: _buildingFieldLink,
+                    showWhenUnlinked: false,
+                    offset: const Offset(0, 56),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Container(
+                        width: maxWidth,
+                        constraints: const BoxConstraints(maxHeight: 220),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0B0E1F),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: isSearching && results.isEmpty
+                            ? Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Center(
+                                  child: SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : (!isSearching && results.isEmpty)
+                            ? Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Text(
+                                  'No buildings found',
+                                  style: AppTheme.bebasNeue(
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              )
+                            : ListView.separated(
+                                padding: EdgeInsets.zero,
+                                itemCount: results.length,
+                                separatorBuilder: (_, __) => Divider(
+                                  height: 1,
+                                  color: Colors.white.withValues(alpha: 0.08),
+                                ),
+                                itemBuilder: (context, index) {
+                                  final b = results[index];
+                                  return ListTile(
+                                    dense: true,
+                                    visualDensity: const VisualDensity(
+                                      vertical: -2,
+                                    ),
+                                    title: Text(
+                                      b.buildingName,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    onTap: () {
+                                      context
+                                          .read<PackageProvider>()
+                                          .selectBuilding(
+                                            id: b.id,
+                                            name: b.buildingName,
+                                          );
+                                      context
+                                          .read<AuthProvider>()
+                                          .updateBuildingId(b.id);
+                                      setState(() {
+                                        _selectedBuildingId = b.id;
+                                        _selectedBuildingName = b.buildingName;
+                                        _buildingController.text =
+                                            b.buildingName;
+                                      });
+                                      _hideBuildingSuggestions();
+                                    },
+                                  );
+                                },
+                              ),
                       ),
                     ),
-                    child: isSearching && results.isEmpty
-                        ? Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Center(
-                              child: SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            ),
-                          )
-                        : (!isSearching && results.isEmpty)
-                        ? Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Text(
-                              'No buildings found',
-                              style: AppTheme.bebasNeue(color: Colors.white70),
-                            ),
-                          )
-                        : ListView.separated(
-                            padding: EdgeInsets.zero,
-                            itemCount: results.length,
-                            separatorBuilder: (_, __) => Divider(
-                              height: 1,
-                              color: Colors.white.withValues(alpha: 0.08),
-                            ),
-                            itemBuilder: (context, index) {
-                              final b = results[index];
-                              return ListTile(
-                                dense: true,
-                                visualDensity: const VisualDensity(
-                                  vertical: -2,
-                                ),
-                                title: Text(
-                                  b.buildingName,
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                                onTap: () {
-                                  context
-                                      .read<PackageProvider>()
-                                      .selectBuilding(
-                                        id: b.id,
-                                        name: b.buildingName,
-                                      );
-                                  context.read<AuthProvider>().updateBuildingId(
-                                    b.id,
-                                  );
-                                  setState(() {
-                                    _selectedBuildingId = b.id;
-                                    _selectedBuildingName = b.buildingName;
-                                    _buildingController.text = b.buildingName;
-                                  });
-                                  _hideBuildingSuggestions();
-                                },
-                              );
-                            },
-                          ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -274,7 +287,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Profile updated successfully'),
-            backgroundColor: Color(0xFF00D4AA),
+            backgroundColor: AppTheme.primaryColor,
           ),
         );
         Navigator.pushNamedAndRemoveUntil(
@@ -410,7 +423,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
           child: isIOS
               ? CupertinoTextField(
                   controller: _buildingController,
-                  placeholder: 'Select your building',
+                  placeholder: 'Search the building',
                   style: const TextStyle(color: Colors.white),
                   placeholderStyle: TextStyle(
                     color: Colors.white.withValues(alpha: 0.5),
@@ -449,20 +462,32 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                         await context.read<PackageProvider>().searchBuildings(
                           value,
                         );
-                        _showBuildingSuggestions();
+                        if (mounted) {
+                          // Update existing overlay instead of recreating
+                          _buildingOverlay?.markNeedsBuild();
+                        }
                       },
                     );
                   },
-                  onTap: () {
+                  onTap: () async {
+                    // Trigger initial search with empty query to show all buildings
+                    if (_buildingController.text.isEmpty) {
+                      await context.read<PackageProvider>().searchBuildings('');
+                    }
+                    // Show suggestions - will create overlay if it doesn't exist
                     _showBuildingSuggestions();
+                    // Ensure overlay is updated after search
+                    if (_buildingOverlay != null) {
+                      _buildingOverlay!.markNeedsBuild();
+                    }
                   },
                 )
               : TextField(
                   controller: _buildingController,
                   style: const TextStyle(color: Colors.white),
-                  cursorColor: const Color(0xFF00D4AA),
+                  cursorColor: AppTheme.primaryColor,
                   decoration: _inputDecoration(
-                    hintText: 'Select your building',
+                    hintText: 'Search the building',
                     suffixIcon: const Icon(
                       Icons.arrow_drop_down,
                       color: Colors.white,
@@ -480,12 +505,24 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                         await context.read<PackageProvider>().searchBuildings(
                           value,
                         );
-                        _showBuildingSuggestions();
+                        if (mounted) {
+                          // Update existing overlay instead of recreating
+                          _buildingOverlay?.markNeedsBuild();
+                        }
                       },
                     );
                   },
-                  onTap: () {
+                  onTap: () async {
+                    // Trigger initial search with empty query to show all buildings
+                    if (_buildingController.text.isEmpty) {
+                      await context.read<PackageProvider>().searchBuildings('');
+                    }
+                    // Show suggestions - will create overlay if it doesn't exist
                     _showBuildingSuggestions();
+                    // Ensure overlay is updated after search
+                    if (_buildingOverlay != null) {
+                      _buildingOverlay!.markNeedsBuild();
+                    }
                   },
                 ),
         ),
@@ -521,6 +558,27 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
   }
 
   Widget _buildLabel(String text) {
+    if (text.contains('*')) {
+      final parts = text.split('*');
+      return RichText(
+        text: TextSpan(
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.0,
+          ),
+          children: [
+            TextSpan(text: parts[0]),
+            const TextSpan(
+              text: '*',
+              style: TextStyle(color: Color(0xFF04CDFE)),
+            ),
+            if (parts.length > 1) TextSpan(text: parts[1]),
+          ],
+        ),
+      );
+    }
     return Text(
       text,
       style: const TextStyle(
@@ -560,7 +618,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
         controller: controller,
         style: const TextStyle(color: Colors.white),
         keyboardType: keyboardType,
-        cursorColor: const Color(0xFF00D4AA),
+        cursorColor: AppTheme.primaryColor,
         decoration: _inputDecoration(hintText: hintText),
       );
     }
@@ -692,7 +750,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(20),
-        borderSide: const BorderSide(color: Color(0xFF00D4AA), width: 1.5),
+        borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5),
       ),
       suffixIcon: suffixIcon,
     );

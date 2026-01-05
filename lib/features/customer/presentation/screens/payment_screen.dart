@@ -45,16 +45,16 @@ class PaymentScreen extends StatefulWidget {
   State<PaymentScreen> createState() => _PaymentScreenState();
 }
 
-class _PaymentScreenState extends State<PaymentScreen> {
+class _PaymentScreenState extends State<PaymentScreen>
+    with WidgetsBindingObserver {
   bool _isProcessing = false;
   String _statusMessage = 'Initializing payment...';
   bool _initInProgress = false;
-  bool _isAnyDialogOpen = false;
-  bool _hasNavigatedToHistory = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     try {
       // Delay accessing Provider until after the widget tree is built
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -64,6 +64,99 @@ class _PaymentScreenState extends State<PaymentScreen> {
       });
     } catch (e) {
       // Error handling - initialization failed
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    // If payment is still processing when screen is disposed, cancel it
+    if (_isProcessing) {
+      _handleAppCloseDuringPayment();
+    }
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // If app goes to background or is closed while payment is processing, cancel it
+    if ((state == AppLifecycleState.paused ||
+            state == AppLifecycleState.detached) &&
+        _isProcessing) {
+      _handleAppCloseDuringPayment();
+    }
+  }
+
+  Future<void> _handleAppCloseDuringPayment() async {
+    if (!_isProcessing) return; // Already handled or not processing
+
+    try {
+      // Use a try-catch to safely access context/provider
+      PaymentProvider? paymentProvider;
+      String? reference;
+
+      if (mounted) {
+        try {
+          paymentProvider = Provider.of<PaymentProvider>(
+            context,
+            listen: false,
+          );
+          reference = paymentProvider.reference;
+        } catch (e) {
+          if (kDebugMode) {
+            print('⚠️ [PaymentScreen] Could not access PaymentProvider: $e');
+          }
+        }
+      }
+
+      // If we have a reference, call cancel API
+      if (reference != null &&
+          reference.isNotEmpty &&
+          paymentProvider != null) {
+        try {
+          if (kDebugMode) {
+            print(
+              '🔄 [PaymentScreen] App closed during payment - calling cancelPayment API',
+            );
+            print('   reference: $reference');
+          }
+
+          // Call cancel API with CANCELLED status
+          await paymentProvider.cancelPayment(
+            orderRef: reference,
+            status: 'CANCELLED',
+          );
+
+          if (kDebugMode) {
+            print(
+              '✅ [PaymentScreen] cancelPayment API called successfully (app closed)',
+            );
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('⚠️ [PaymentScreen] Error calling cancelPayment API: $e');
+          }
+        }
+      }
+
+      // Clear pending booking from local storage (always try this)
+      try {
+        await SecureStorageService.clearPendingBooking();
+        if (kDebugMode) {
+          print(
+            '✅ [PaymentScreen] Cleared pending booking from local storage (app closed)',
+          );
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('⚠️ [PaymentScreen] Error clearing pending booking: $e');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ [PaymentScreen] Error handling app close during payment: $e');
+      }
     }
   }
 
@@ -121,7 +214,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       // Step 1: Create booking first
       final packageId = widget.arguments!.package != null
           ? (widget.arguments!.package!['_id']?.toString() ??
-              widget.arguments!.package!['id']?.toString())
+                widget.arguments!.package!['id']?.toString())
           : null;
       // Extract vehicle ID - prioritize _id field (MongoDB standard)
       String? vehicleId;
@@ -333,7 +426,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
       // Allow packageId to be null if add-ons are present
       final hasAddOns = widget.arguments!.selectedAddOns.isNotEmpty;
-      if ((packageId == null && !hasAddOns) || vehicleId.isEmpty || vehicleTypeId.isEmpty) {
+      if ((packageId == null && !hasAddOns) ||
+          vehicleId.isEmpty ||
+          vehicleTypeId.isEmpty) {
         setState(() {
           _isProcessing = false;
           _statusMessage = 'Error: Missing booking information';
@@ -640,6 +735,21 @@ class _PaymentScreenState extends State<PaymentScreen> {
         final errorMessage = result.message.isNotEmpty
             ? result.message
             : 'Payment was cancelled or failed. Please try again.';
+
+        // Clear pending booking from local storage
+        try {
+          await SecureStorageService.clearPendingBooking();
+          if (kDebugMode) {
+            print(
+              '✅ [PaymentScreen] Cleared pending booking from local storage (payment cancelled/failed)',
+            );
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('⚠️ [PaymentScreen] Error clearing pending booking: $e');
+          }
+        }
+
         if (_isCancelMessage(errorMessage)) {
           _showPaymentCancelledDialog();
         } else {
@@ -781,9 +891,51 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
 
     // Check payment status
-    final statusResponse = await paymentProvider.checkPaymentStatus(
-      reference: reference,
-    );
+    Map<String, dynamic> statusResponse = await paymentProvider
+        .checkPaymentStatus(reference: reference);
+
+    bool _isPendingPaymentResponse(Map<String, dynamic> resp) {
+      final message = (resp['message'] ?? '').toString().toLowerCase();
+      final statusCode = resp['statusCode'];
+      // Backend commonly returns 400 + "Payment not completed" while gateway is still processing.
+      return message.contains('payment not completed') ||
+          message.contains('not completed') ||
+          statusCode == 400;
+    }
+
+    Future<Map<String, dynamic>> _checkWithRetries({
+      required String reference,
+      int maxAttempts = 6,
+      Duration delay = const Duration(seconds: 2),
+    }) async {
+      Map<String, dynamic> last = statusResponse;
+
+      for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+        last = await paymentProvider.checkPaymentStatus(reference: reference);
+
+        if (last['success'] == true) return last;
+        if (last['isNetworkError'] == true) return last;
+
+        // If it's not "pending", stop retrying and use the response.
+        if (!_isPendingPaymentResponse(last)) return last;
+
+        if (kDebugMode) {
+          print(
+            '⏳ [PaymentScreen] Payment pending. Retrying status check ($attempt/$maxAttempts) in ${delay.inSeconds}s...',
+          );
+        }
+
+        if (mounted) {
+          setState(() {
+            _statusMessage = 'Verifying payment status...';
+          });
+        }
+
+        await Future.delayed(delay);
+      }
+
+      return last;
+    }
 
     if (kDebugMode) {
       print('═══════════════════════════════════════════════════════════');
@@ -796,6 +948,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
       print('   statusResponse type: ${statusResponse.runtimeType}');
       print('   mounted: $mounted');
       print('═══════════════════════════════════════════════════════════');
+    }
+
+    // If backend says "payment not completed" we should NOT auto-cancel.
+    // Retry briefly first so Android matches iOS flow (gateway often finalizes after a delay).
+    if (statusResponse['success'] != true &&
+        statusResponse['isNetworkError'] != true &&
+        _isPendingPaymentResponse(statusResponse)) {
+      statusResponse = await _checkWithRetries(reference: reference);
     }
 
     // Process success API call even if widget is unmounted (backend confirmation)
@@ -828,13 +988,44 @@ class _PaymentScreenState extends State<PaymentScreen> {
       }
 
       // Extract orderRef and transactionRef for success API call
-      final orderRef = paymentData?['ref']?.toString() ?? '';
+      // API response structure: { "data": { "orderRef": "...", "transactionRef": "..." } }
+      if (kDebugMode) {
+        print('🔍 [PaymentScreen] Extracting refs...');
+        print('   paymentData: $paymentData');
+        print('   paymentData?[\'orderRef\']: ${paymentData?['orderRef']}');
+        print(
+          '   paymentData?[\'transactionRef\']: ${paymentData?['transactionRef']}',
+        );
+        print('   paymentData?[\'ref\']: ${paymentData?['ref']}');
+        print(
+          '   paymentData?[\'transaction\']: ${paymentData?['transaction']}',
+        );
+        print('   reference: $reference');
+      }
+
+      // Extract orderRef: check orderRef first, then ref, then use reference as fallback
+      final orderRefValue = paymentData?['orderRef'];
+      final refValue = paymentData?['ref'];
+      final orderRef =
+          (orderRefValue != null && orderRefValue.toString().trim().isNotEmpty)
+          ? orderRefValue.toString().trim()
+          : (refValue != null && refValue.toString().trim().isNotEmpty
+                ? refValue.toString().trim()
+                : reference);
+
+      // Extract transactionRef: check transactionRef in data, then transaction.ref, then use orderRef/reference as fallback
       final transactionData =
           paymentData?['transaction'] as Map<String, dynamic>?;
-      final transactionRef = transactionData?['ref']?.toString() ?? '';
+      final transactionRefValue =
+          paymentData?['transactionRef'] ?? transactionData?['ref'];
+      final transactionRef =
+          (transactionRefValue != null &&
+              transactionRefValue.toString().trim().isNotEmpty)
+          ? transactionRefValue.toString().trim()
+          : (orderRef.isNotEmpty ? orderRef : reference);
 
       // Determine if payment is actually verified/paid
-      final isVerified =
+      bool isVerified =
           statusText.toLowerCase() == 'paid' ||
           bookingStatus.toUpperCase() == 'CONFIRMED';
 
@@ -853,36 +1044,24 @@ class _PaymentScreenState extends State<PaymentScreen> {
         print('═══════════════════════════════════════════════════════════');
       }
 
-      // If status API succeeded but payment is NOT verified/paid, call payments/cancel
-      if (!isVerified) {
-        final orderRefToCancel = orderRef.trim().isNotEmpty
-            ? orderRef
-            : reference;
+      // If status API succeeded but payment is NOT verified/paid,
+      // retry briefly (do NOT auto-cancel; let user decide).
+      if (!isVerified && _isPendingPaymentResponse(statusResponse)) {
+        statusResponse = await _checkWithRetries(reference: reference);
 
-        if (orderRefToCancel.trim().isNotEmpty) {
-          try {
-            if (kDebugMode) {
-              print(
-                '🔄 [PaymentScreen] Payment not verified. Calling payments/cancel with orderRef: $orderRefToCancel',
-              );
-            }
-            await paymentProvider.cancelPayment(orderRef: orderRefToCancel);
-          } catch (e) {
-            if (kDebugMode) {
-              print('⚠️ [PaymentScreen] payments/cancel call failed: $e');
-            }
-          }
-        } else {
-          if (kDebugMode) {
-            print(
-              '⚠️ [PaymentScreen] Skipping payments/cancel (orderRef is empty)',
-            );
-          }
-        }
+        final bookingStatus2 =
+            statusResponse['bookingStatus']?.toString() ?? '';
+        final paymentData2 = statusResponse['data'] as Map<String, dynamic>?;
+        final paymentStatus2 = paymentData2?['status'] as Map<String, dynamic>?;
+        final statusText2 = paymentStatus2?['text']?.toString() ?? '';
+
+        isVerified =
+            statusText2.toLowerCase() == 'paid' ||
+            bookingStatus2.toUpperCase() == 'CONFIRMED';
       }
 
-      // Call payments/success API if we have both refs
-      if (orderRef.isNotEmpty && transactionRef.isNotEmpty) {
+      // Call payments/success API only if verified and we have both refs
+      if (isVerified && orderRef.isNotEmpty && transactionRef.isNotEmpty) {
         if (kDebugMode) {
           print('═══════════════════════════════════════════════════════════');
           print('🔄 [PaymentScreen] CALLING confirmPaymentSuccess API NOW...');
@@ -955,6 +1134,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
         }
       }
 
+      // Clear pending booking from local storage since payment is verified and successful
+      try {
+        await SecureStorageService.clearPendingBooking();
+        if (kDebugMode) {
+          print('✅ [PaymentScreen] Cleared pending booking from local storage');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('⚠️ [PaymentScreen] Error clearing pending booking: $e');
+        }
+      }
+
       // Only update UI if widget is still mounted
       if (!mounted) {
         if (kDebugMode) {
@@ -969,8 +1160,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
         _isProcessing = false;
       });
 
-      // Show payment status UI
-      _showPaymentStatusDialog(statusResponse);
+      // Show payment status UI (keep it open until user action)
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          _showPaymentStatusDialog(statusResponse);
+        }
+      });
 
       // Payment successful - don't auto-navigate, let user click button
       // Removed automatic navigation - user will click button in dialog
@@ -997,171 +1192,247 @@ class _PaymentScreenState extends State<PaymentScreen> {
         }
         NetworkErrorDialog.show(context);
       } else {
-        // Call payments/cancel when status API returns success:false
-        // Backend asked for orderRef; use response data.ref if present, otherwise fallback to the
-        // reference used for status check.
-        final paymentData = statusResponse['data'] as Map<String, dynamic>?;
-        final orderRefToCancel =
-            paymentData?['ref']?.toString().trim().isNotEmpty == true
-            ? paymentData!['ref']!.toString()
-            : reference;
-
-        if (orderRefToCancel.trim().isNotEmpty) {
-          try {
-            if (kDebugMode) {
-              print(
-                '🔄 [PaymentScreen] Calling payments/cancel with orderRef: $orderRefToCancel',
-              );
-            }
-            await paymentProvider.cancelPayment(orderRef: orderRefToCancel);
-          } catch (e) {
-            if (kDebugMode) {
-              print('⚠️ [PaymentScreen] payments/cancel call failed: $e');
-            }
-          }
-        } else {
-          if (kDebugMode) {
-            print(
-              '⚠️ [PaymentScreen] Skipping payments/cancel (orderRef is empty)',
-            );
-          }
-        }
-
         final rawErrorMessage =
             statusResponse['message']?.toString() ??
             'Failed to verify payment status. Please try again.';
         final errorMessage = _sanitizePaymentErrorMessage(rawErrorMessage);
 
+        // Get status from API response
+        final paymentStatus =
+            statusResponse['status']?.toString().toUpperCase() ?? '';
+        final bookingStatus =
+            statusResponse['bookingStatus']?.toString().toUpperCase() ?? '';
+
         if (kDebugMode) {
           print('⚠️ [PaymentScreen] Payment verification failed');
           print('   Error message: $errorMessage');
+          print('   Payment status: $paymentStatus');
+          print('   Booking status: $bookingStatus');
           print('   Showing payment error dialog');
         }
 
-        // If user cancelled/failed, never show raw backend errors (e.g., 404).
+        // If user cancelled, always call cancel API with CANCELLED status first
         if (initialCancelled) {
+          if (reference.isNotEmpty) {
+            try {
+              if (kDebugMode) {
+                print(
+                  '🔄 [PaymentScreen] Calling cancelPayment API for user cancelled payment',
+                );
+                print('   reference: $reference');
+              }
+              await paymentProvider.cancelPayment(
+                orderRef: reference,
+                status: 'CANCELLED',
+              );
+              if (kDebugMode) {
+                print(
+                  '✅ [PaymentScreen] cancelPayment API called successfully with CANCELLED status',
+                );
+              }
+            } catch (e) {
+              if (kDebugMode) {
+                print('⚠️ [PaymentScreen] Error calling cancelPayment API: $e');
+              }
+              // Continue to show dialog even if cancel API fails
+            }
+          }
+
+          // Clear pending booking from local storage since payment is cancelled
+          try {
+            await SecureStorageService.clearPendingBooking();
+            if (kDebugMode) {
+              print(
+                '✅ [PaymentScreen] Cleared pending booking from local storage (cancelled)',
+              );
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              print('⚠️ [PaymentScreen] Error clearing pending booking: $e');
+            }
+          }
+
           _showPaymentCancelledDialog();
-        } else if (initialFailed) {
-          _showPaymentFailedDialog();
-        } else {
-          _showPaymentErrorDialog(errorMessage);
+          return;
         }
+
+        // Call cancel API for failure statuses (CANCELLED, FAILED, DECLINED, REJECTED, EXPIRED)
+        // Skip PENDING status as it might still complete
+        // Only call if initialCancelled is false (already handled above)
+        final shouldCancelPayment =
+            paymentStatus.isNotEmpty &&
+            paymentStatus != 'PENDING' &&
+            paymentStatus != 'SUCCESS' &&
+            (paymentStatus == 'CANCELLED' ||
+                paymentStatus == 'FAILED' ||
+                paymentStatus == 'DECLINED' ||
+                paymentStatus == 'REJECTED' ||
+                paymentStatus == 'EXPIRED' ||
+                paymentStatus == 'UNKNOWN');
+
+        if (shouldCancelPayment && reference.isNotEmpty) {
+          // Map status to cancel API status (cancelPayment only accepts 'CANCELLED' or 'FAILED')
+          final cancelApiStatus = paymentStatus == 'CANCELLED'
+              ? 'CANCELLED'
+              : 'FAILED';
+
+          try {
+            if (kDebugMode) {
+              print(
+                '🔄 [PaymentScreen] Calling cancelPayment API for status: $paymentStatus',
+              );
+              print('   reference: $reference');
+              print('   cancelApiStatus: $cancelApiStatus');
+            }
+            await paymentProvider.cancelPayment(
+              orderRef: reference,
+              status: cancelApiStatus,
+            );
+            if (kDebugMode) {
+              print(
+                '✅ [PaymentScreen] cancelPayment API called successfully with status: $cancelApiStatus',
+              );
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              print('⚠️ [PaymentScreen] Error calling cancelPayment API: $e');
+            }
+            // Continue to show dialog even if cancel API fails
+          }
+
+          // Clear pending booking from local storage since payment is cancelled/failed
+          try {
+            await SecureStorageService.clearPendingBooking();
+            if (kDebugMode) {
+              print(
+                '✅ [PaymentScreen] Cleared pending booking from local storage (status: $paymentStatus)',
+              );
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              print('⚠️ [PaymentScreen] Error clearing pending booking: $e');
+            }
+          }
+        }
+        if (initialFailed) {
+          // Call cancel API if not already called (paymentStatus might not match)
+          if (!shouldCancelPayment && reference.isNotEmpty) {
+            try {
+              if (kDebugMode) {
+                print(
+                  '🔄 [PaymentScreen] Calling cancelPayment API for user failed payment',
+                );
+                print('   reference: $reference');
+              }
+              await paymentProvider.cancelPayment(
+                orderRef: reference,
+                status: 'FAILED',
+              );
+              if (kDebugMode) {
+                print(
+                  '✅ [PaymentScreen] cancelPayment API called successfully with FAILED status',
+                );
+              }
+            } catch (e) {
+              if (kDebugMode) {
+                print('⚠️ [PaymentScreen] Error calling cancelPayment API: $e');
+              }
+              // Continue to show dialog even if cancel API fails
+            }
+          }
+
+          // Clear pending booking from local storage since payment failed
+          try {
+            await SecureStorageService.clearPendingBooking();
+            if (kDebugMode) {
+              print(
+                '✅ [PaymentScreen] Cleared pending booking from local storage (failed)',
+              );
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              print('⚠️ [PaymentScreen] Error clearing pending booking: $e');
+            }
+          }
+
+          _showPaymentFailedDialog();
+          return;
+        }
+
+        // Otherwise, show the SAME status dialog UI (not verified) and wait for user action.
+        final synthetic = <String, dynamic>{
+          'bookingStatus': 'PENDING',
+          'data': <String, dynamic>{
+            'ref': reference,
+            'status': <String, dynamic>{'text': 'NOT VERIFIED'},
+            'transaction': <String, dynamic>{'message': errorMessage},
+          },
+        };
+
+        if (!mounted) return;
+        setState(() {
+          _isProcessing = false;
+        });
+
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) {
+            _showPaymentStatusDialog(synthetic);
+          }
+        });
       }
     }
-  }
-
-  void _goToHistory() {
-    if (!mounted || _hasNavigatedToHistory) return;
-    _hasNavigatedToHistory = true;
-
-    // Close dialog first if one is open
-    if (_isAnyDialogOpen) {
-      final rootNavigator = Navigator.of(context, rootNavigator: true);
-      if (rootNavigator.canPop()) {
-        rootNavigator.pop();
-      }
-    }
-
-    // Navigate to MainNavigationScreen with bookings tab (index 3) selected
-    final rootNavigator = Navigator.of(context, rootNavigator: true);
-    rootNavigator.pushNamedAndRemoveUntil(
-      Routes.customerHome,
-      (route) => false,
-      arguments: 3, // Pass bookings tab index (3) as argument
-    );
   }
 
   void _showError(String message) {
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-
-    if (isIOS) {
-      showCupertinoDialog(
-        context: context,
-        builder: (context) => CupertinoAlertDialog(
-          title: Text('Payment Error'),
-          content: Text(message),
-          actions: [
-            CupertinoDialogAction(
-              child: Text('OK'),
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pop(context); // Go back to summary
-              },
-            ),
-          ],
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.redAccent,
-          action: SnackBarAction(
-            label: 'OK',
-            textColor: Colors.white,
+    // Use iOS-style dialog on BOTH platforms (Android matches iOS).
+    showCupertinoDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => CupertinoAlertDialog(
+        title: const Text('Payment Error'),
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            child: const Text('OK'),
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
+              Navigator.of(context).maybePop(); // back to summary
             },
           ),
-        ),
-      );
-    }
+        ],
+      ),
+    );
   }
 
   void _showErrorWithRetry(String message) {
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-
-    if (isIOS) {
-      showCupertinoDialog(
-        context: context,
-        builder: (dialogContext) => CupertinoAlertDialog(
-          title: const Text('Payment Unavailable'),
-          content: Text(message),
-          actions: [
-            CupertinoDialogAction(
-              isDefaultAction: true,
-              child: const Text('Retry'),
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                _initializePayment();
-              },
-            ),
-            CupertinoDialogAction(
-              isDestructiveAction: true,
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.pop(dialogContext); // close dialog
-                Navigator.of(context).maybePop(); // go back to summary safely
-              },
-            ),
-          ],
-        ),
-      );
-    } else {
-      showDialog(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Payment Unavailable'),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                _initializePayment();
-              },
-              child: const Text('Retry'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext); // close dialog
-                Navigator.of(context).maybePop(); // go back to summary safely
-              },
-              child: const Text('Cancel'),
-            ),
-          ],
-        ),
-      );
-    }
+    // Use iOS-style dialog on BOTH platforms (Android matches iOS).
+    showCupertinoDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => CupertinoAlertDialog(
+        title: const Text('Payment Unavailable'),
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            child: const Text('Retry'),
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              _initializePayment();
+            },
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            child: const Text('Cancel'),
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              Navigator.of(context).maybePop(); // back to summary
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   bool _isCancelMessage(String? message) {
@@ -1183,7 +1454,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   void _showPaymentCancelledDialog() {
     const accent = Color(0xFF94A3B8); // slate
-    _isAnyDialogOpen = true;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1258,57 +1528,42 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(dialogContext),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.20),
-                              ),
-                              foregroundColor: AppTheme.textColor,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                            child: Text(
-                              'CLOSE',
-                              style: AppTheme.bebasNeue(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.pop(dialogContext);
+                          if (mounted) {
+                            // Navigate to home screen
+                            final rootNavigator = Navigator.of(
+                              context,
+                              rootNavigator: true,
+                            );
+                            rootNavigator.pushNamedAndRemoveUntil(
+                              Routes.customerHome,
+                              (route) => false,
+                            );
+                          }
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.20),
+                          ),
+                          foregroundColor: AppTheme.textColor,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(dialogContext);
-                              _goToHistory();
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryColor,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                            child: Text(
-                              'VIEW HISTORY',
-                              style: AppTheme.bebasNeue(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
+                        child: Text(
+                          'CLOSE',
+                          style: AppTheme.bebasNeue(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1.2,
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
@@ -1317,14 +1572,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ),
         );
       },
-    ).whenComplete(() {
-      if (mounted) _isAnyDialogOpen = false;
-    });
+    );
   }
 
   void _showPaymentFailedDialog() {
     const accent = Color(0xFFEF4444); // red
-    _isAnyDialogOpen = true;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1403,7 +1655,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: () => Navigator.pop(dialogContext),
+                            onPressed: () {
+                              Navigator.pop(dialogContext);
+                              if (mounted) {
+                                // Navigate to home screen
+                                final rootNavigator = Navigator.of(
+                                  context,
+                                  rootNavigator: true,
+                                );
+                                rootNavigator.pushNamedAndRemoveUntil(
+                                  Routes.customerHome,
+                                  (route) => false,
+                                );
+                              }
+                            },
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
                                 color: Colors.white.withValues(alpha: 0.20),
@@ -1458,9 +1723,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ),
         );
       },
-    ).whenComplete(() {
-      if (mounted) _isAnyDialogOpen = false;
-    });
+    );
   }
 
   void _showPaymentStatusDialog(Map<String, dynamic> statusResponse) {
@@ -1474,8 +1737,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final statusText = paymentStatus?['text']?.toString() ?? '';
     final gatewayAmountRaw = paymentData?['amount']?.toString() ?? '';
     final gatewayCurrency = paymentData?['currency']?.toString() ?? '';
-    final orderRef = paymentData?['ref']?.toString() ?? '';
-    final transactionRef = transaction?['ref']?.toString() ?? '';
+    final orderRef =
+        paymentData?['orderRef']?.toString() ??
+        paymentData?['ref']?.toString() ??
+        '';
+    final transactionRef =
+        transaction?['ref']?.toString() ??
+        paymentData?['transactionRef']?.toString() ??
+        orderRef;
     final transactionDate = transaction?['date']?.toString() ?? '';
     final transactionMessage = transaction?['message']?.toString() ?? '';
     final cardType = card?['type']?.toString() ?? '';
@@ -1500,321 +1769,358 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ? const Color(0xFF22C55E)
         : const Color(0xFFEF4444);
 
-    _isAnyDialogOpen = true;
     showDialog(
       context: context,
       barrierDismissible: false,
+      useRootNavigator: true,
       builder: (dialogContext) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 18,
-            vertical: 24,
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppTheme.cardColor,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: accent.withValues(alpha: 0.7),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.35),
-                    blurRadius: 18,
-                    offset: const Offset(0, 10),
+        return PopScope(
+          canPop:
+              false, // prevent Android back button from closing automatically
+          onPopInvoked: (didPop) {
+            if (!didPop && mounted) {
+              // Navigate to home screen when back button is pressed
+              Navigator.of(dialogContext).pop();
+              final rootNavigator = Navigator.of(context, rootNavigator: true);
+              rootNavigator.pushNamedAndRemoveUntil(
+                Routes.customerHome,
+                (route) => false,
+              );
+            }
+          },
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 18,
+              vertical: 24,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.cardColor,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: accent.withValues(alpha: 0.7),
+                    width: 1.5,
                   ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Header
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          accent.withValues(alpha: 0.28),
-                          AppTheme.cardColor,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      blurRadius: 18,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            accent.withValues(alpha: 0.28),
+                            AppTheme.cardColor,
+                          ],
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 46,
+                            height: 46,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: accent.withValues(alpha: 0.18),
+                              border: Border.all(
+                                color: accent.withValues(alpha: 0.65),
+                                width: 1.2,
+                              ),
+                            ),
+                            child: Icon(
+                              isSuccess
+                                  ? Icons.check_rounded
+                                  : Icons.close_rounded,
+                              color: accent,
+                              size: 26,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  isSuccess
+                                      ? 'PAYMENT VERIFIED'
+                                      : 'PAYMENT NOT VERIFIED',
+                                  style: AppTheme.bebasNeue(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1.2,
+                                    color: AppTheme.textColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  isSuccess
+                                      ? 'Your payment has been confirmed.'
+                                      : 'We could not confirm this payment.',
+                                  style: const TextStyle(
+                                    color: AppTheme.textSecondaryColor,
+                                    fontSize: 14,
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: accent.withValues(alpha: 0.18),
-                            border: Border.all(
-                              color: accent.withValues(alpha: 0.65),
-                              width: 1.2,
-                            ),
-                          ),
-                          child: Icon(
-                            isSuccess
-                                ? Icons.check_rounded
-                                : Icons.close_rounded,
-                            color: accent,
-                            size: 26,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isSuccess
-                                    ? 'PAYMENT VERIFIED'
-                                    : 'PAYMENT NOT VERIFIED',
-                                style: AppTheme.bebasNeue(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 1.2,
-                                  color: AppTheme.textColor,
+
+                    // Body
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ...[
+                            Row(
+                              children: [
+                                Text(
+                                  'AMOUNT',
+                                  style: AppTheme.bebasNeue(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 1.4,
+                                    color: AppTheme.textSecondaryColor,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                isSuccess
-                                    ? 'Your payment has been confirmed.'
-                                    : 'We could not confirm this payment.',
+                                const Spacer(),
+                                Text(
+                                  expectedAmountText,
+                                  style: AppTheme.bebasNeue(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1.0,
+                                    color: AppTheme.textColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                          if (showGatewayAmount) ...[
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Gateway Amount: $gatewayAmountText',
                                 style: const TextStyle(
                                   color: AppTheme.textSecondaryColor,
-                                  fontSize: 14,
+                                  fontSize: 12,
                                   height: 1.2,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Body
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ...[
-                          Row(
-                            children: [
-                              Text(
-                                'AMOUNT',
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: accent.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(
+                                  color: accent.withValues(alpha: 0.45),
+                                ),
+                              ),
+                              child: Text(
+                                statusText.isNotEmpty ? statusText : 'STATUS',
                                 style: AppTheme.bebasNeue(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  letterSpacing: 1.4,
-                                  color: AppTheme.textSecondaryColor,
+                                  letterSpacing: 1.2,
+                                  color: accent,
                                 ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                expectedAmountText,
-                                style: AppTheme.bebasNeue(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 1.0,
-                                  color: AppTheme.textColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                        ],
-                        if (showGatewayAmount) ...[
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              'Gateway Amount: $gatewayAmountText',
-                              style: const TextStyle(
-                                color: AppTheme.textSecondaryColor,
-                                fontSize: 12,
-                                height: 1.2,
                               ),
                             ),
                           ),
-                          const SizedBox(height: 10),
-                        ],
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
+                          const SizedBox(height: 14),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: accent.withValues(alpha: 0.14),
-                              borderRadius: BorderRadius.circular(999),
+                              color: Colors.black.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: accent.withValues(alpha: 0.45),
+                                color: Colors.white.withValues(alpha: 0.10),
                               ),
                             ),
-                            child: Text(
-                              statusText.isNotEmpty ? statusText : 'STATUS',
-                              style: AppTheme.bebasNeue(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 1.2,
-                                color: accent,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.10),
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              if (bookingStatus.isNotEmpty)
-                                _paymentInfoRow(
-                                  label: 'Booking',
-                                  value: bookingStatus,
-                                ),
-                              if (bookingStatus.isNotEmpty)
-                                const SizedBox(height: 10),
-                              if (paymethod.isNotEmpty)
-                                _paymentInfoRow(
-                                  label: 'Method',
-                                  value: paymethod,
-                                ),
-                              if (paymethod.isNotEmpty)
-                                const SizedBox(height: 10),
-                              if (cardType.isNotEmpty && cardLast4.isNotEmpty)
-                                _paymentInfoRow(
-                                  label: 'Card',
-                                  value: '$cardType •••• $cardLast4',
-                                ),
-                              if (cardType.isNotEmpty && cardLast4.isNotEmpty)
-                                const SizedBox(height: 10),
-                              if (orderRef.isNotEmpty)
-                                _paymentInfoRow(
-                                  label: 'Order Ref',
-                                  value: orderRef,
-                                  isMono: true,
-                                ),
-                              if (orderRef.isNotEmpty)
-                                const SizedBox(height: 10),
-                              if (transactionRef.isNotEmpty)
-                                _paymentInfoRow(
-                                  label: 'Txn Ref',
-                                  value: transactionRef,
-                                  isMono: true,
-                                ),
-                              if (transactionRef.isNotEmpty)
-                                const SizedBox(height: 10),
-                              if (transactionDate.isNotEmpty)
-                                _paymentInfoRow(
-                                  label: 'Date',
-                                  value: transactionDate,
-                                ),
-                              if (transactionMessage.isNotEmpty) ...[
-                                const SizedBox(height: 10),
-                                _paymentInfoRow(
-                                  label: 'Message',
-                                  value: transactionMessage,
-                                ),
+                            child: Column(
+                              children: [
+                                if (bookingStatus.isNotEmpty)
+                                  _paymentInfoRow(
+                                    label: 'Booking',
+                                    value: bookingStatus,
+                                  ),
+                                if (bookingStatus.isNotEmpty)
+                                  const SizedBox(height: 10),
+                                if (paymethod.isNotEmpty)
+                                  _paymentInfoRow(
+                                    label: 'Method',
+                                    value: paymethod,
+                                  ),
+                                if (paymethod.isNotEmpty)
+                                  const SizedBox(height: 10),
+                                if (cardType.isNotEmpty && cardLast4.isNotEmpty)
+                                  _paymentInfoRow(
+                                    label: 'Card',
+                                    value: '$cardType •••• $cardLast4',
+                                  ),
+                                if (cardType.isNotEmpty && cardLast4.isNotEmpty)
+                                  const SizedBox(height: 10),
+                                if (orderRef.isNotEmpty)
+                                  _paymentInfoRow(
+                                    label: 'Order Ref',
+                                    value: orderRef,
+                                    isMono: true,
+                                  ),
+                                if (orderRef.isNotEmpty)
+                                  const SizedBox(height: 10),
+                                if (transactionRef.isNotEmpty)
+                                  _paymentInfoRow(
+                                    label: 'Txn Ref',
+                                    value: transactionRef,
+                                    isMono: true,
+                                  ),
+                                if (transactionRef.isNotEmpty)
+                                  const SizedBox(height: 10),
+                                if (transactionDate.isNotEmpty)
+                                  _paymentInfoRow(
+                                    label: 'Date',
+                                    value: transactionDate,
+                                  ),
+                                if (transactionMessage.isNotEmpty) ...[
+                                  const SizedBox(height: 10),
+                                  _paymentInfoRow(
+                                    label: 'Message',
+                                    value: transactionMessage,
+                                  ),
+                                ],
                               ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () {
+                                    Navigator.pop(dialogContext);
+                                    if (mounted) {
+                                      // Navigate to home screen
+                                      final rootNavigator = Navigator.of(
+                                        context,
+                                        rootNavigator: true,
+                                      );
+                                      rootNavigator.pushNamedAndRemoveUntil(
+                                        Routes.customerHome,
+                                        (route) => false,
+                                      );
+                                    }
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.20,
+                                      ),
+                                    ),
+                                    foregroundColor: AppTheme.textColor,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'CLOSE',
+                                    style: AppTheme.bebasNeue(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pop(dialogContext);
+                                    if (mounted) {
+                                      // Navigate to my bookings page (tab index 3)
+                                      final rootNavigator = Navigator.of(
+                                        context,
+                                        rootNavigator: true,
+                                      );
+                                      rootNavigator.pushNamedAndRemoveUntil(
+                                        Routes.customerHome,
+                                        (route) => false,
+                                        arguments:
+                                            3, // Bookings tab index - shows MyBookingsScreen
+                                      );
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.primaryColor,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'VIEW BOOKINGS',
+                                    style: AppTheme.bebasNeue(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: () => Navigator.pop(dialogContext),
-                                style: OutlinedButton.styleFrom(
-                                  side: BorderSide(
-                                    color: Colors.white.withValues(alpha: 0.20),
-                                  ),
-                                  foregroundColor: AppTheme.textColor,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                                child: Text(
-                                  'CLOSE',
-                                  style: AppTheme.bebasNeue(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 1.2,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(dialogContext);
-                                  _goToHistory();
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.primaryColor,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                                child: Text(
-                                  'VIEW BOOKINGS',
-                                  style: AppTheme.bebasNeue(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 1.2,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         );
       },
-    ).whenComplete(() {
-      if (mounted) {
-        _isAnyDialogOpen = false;
-      }
-    });
+    );
   }
 
+  // ignore: unused_element
   void _showPaymentErrorDialog(String errorMessage) {
     const accent = Color(0xFFF59E0B); // amber
-
-    _isAnyDialogOpen = true;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1936,7 +2242,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           children: [
                             Expanded(
                               child: OutlinedButton(
-                                onPressed: () => Navigator.pop(dialogContext),
+                                onPressed: () {
+                                  Navigator.pop(dialogContext);
+                                  if (mounted) {
+                                    // Navigate to home screen
+                                    final rootNavigator = Navigator.of(
+                                      context,
+                                      rootNavigator: true,
+                                    );
+                                    rootNavigator.pushNamedAndRemoveUntil(
+                                      Routes.customerHome,
+                                      (route) => false,
+                                    );
+                                  }
+                                },
                                 style: OutlinedButton.styleFrom(
                                   side: BorderSide(
                                     color: Colors.white.withValues(alpha: 0.20),
@@ -1964,7 +2283,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               child: ElevatedButton(
                                 onPressed: () {
                                   Navigator.pop(dialogContext);
-                                  _goToHistory();
+                                  if (mounted) {
+                                    // Navigate to my bookings page (tab index 3)
+                                    final rootNavigator = Navigator.of(
+                                      context,
+                                      rootNavigator: true,
+                                    );
+                                    rootNavigator.pushNamedAndRemoveUntil(
+                                      Routes.customerHome,
+                                      (route) => false,
+                                      arguments:
+                                          3, // Bookings tab index - shows MyBookingsScreen
+                                    );
+                                  }
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppTheme.primaryColor,
@@ -1997,11 +2328,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ),
         );
       },
-    ).whenComplete(() {
-      if (mounted) {
-        _isAnyDialogOpen = false;
-      }
-    });
+    );
   }
 
   Widget _paymentInfoRow({
@@ -2551,6 +2878,23 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
   late final WebViewController _controller;
   bool _isLoading = true;
   bool _canGoBack = false;
+  bool _completionScheduled = false;
+  bool _hasCompleted = false;
+
+  void _completeOnce(bool success, String message) {
+    if (_hasCompleted) return;
+    _hasCompleted = true;
+
+    if (!mounted) return;
+
+    widget.onPaymentComplete(success, message);
+
+    // Close ONLY the WebView screen.
+    final nav = Navigator.of(context);
+    if (nav.canPop()) {
+      nav.pop();
+    }
+  }
 
   @override
   void initState() {
@@ -2631,6 +2975,8 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
   }
 
   void _checkPaymentStatus(String url) {
+    if (_hasCompleted || _completionScheduled) return;
+
     // Normalize URL for checking
     final lowerUrl = url.toLowerCase();
 
@@ -2667,124 +3013,115 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
     );
     bool isCancel = cancelPatterns.any((pattern) => lowerUrl.contains(pattern));
 
-    // Also check if URL is different from initial payment URL (might indicate redirect)
-    final isRedirected =
-        url != widget.paymentUrl &&
-        !url.contains('secure.telr.com/gateway/process.html');
+    // IMPORTANT:
+    // Do NOT close the WebView just because Telr navigated to another Telr page (e.g. details.html).
+    // Those pages can still lead to the "Accept / Cancel" (3DS) screen.
+    // Only close WebView when:
+    // - We detect explicit success/cancel patterns, OR
+    // - We leave Telr domains (merchant callback / deep link).
+    final uri = Uri.tryParse(url);
+    final host = (uri?.host ?? '').toLowerCase();
+    final isTelrHost = host.endsWith('telr.com');
+    final leftTelr = host.isNotEmpty && !isTelrHost;
 
     if (isSuccess) {
+      _completionScheduled = true;
       Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          widget.onPaymentComplete(true, 'Payment completed successfully');
-          Navigator.pop(context);
-        }
+        _completeOnce(true, 'Payment completed successfully');
       });
     } else if (isCancel) {
+      _completionScheduled = true;
       Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          widget.onPaymentComplete(false, 'Payment was cancelled or failed');
-          Navigator.pop(context);
-        }
+        _completeOnce(false, 'Payment was cancelled or failed');
       });
-    } else if (isRedirected) {
-      // If redirected to a different domain (likely backend callback URL)
-      // Wait a bit and check if it's a success page
-      Future.delayed(const Duration(seconds: 2), () async {
-        if (mounted) {
-          try {
-            // Try to evaluate JavaScript to check for success indicators
-            final script = '''
-              (function() {
-                var bodyText = document.body.innerText.toLowerCase();
-                var titleText = document.title.toLowerCase();
-                var hasSuccess = bodyText.includes('success') || 
-                                 bodyText.includes('completed') || 
-                                 bodyText.includes('approved') ||
-                                 titleText.includes('success');
-                var hasError = bodyText.includes('failed') || 
-                              bodyText.includes('cancelled') || 
-                              bodyText.includes('error') ||
-                              titleText.includes('failed') ||
-                              titleText.includes('error');
-                return hasSuccess ? 'success' : (hasError ? 'error' : 'unknown');
-              })();
-            ''';
-            final result = await _controller.runJavaScriptReturningResult(
-              script,
-            );
-
-            if (result.toString().contains('success')) {
-              widget.onPaymentComplete(true, 'Payment completed successfully');
-              Navigator.pop(context);
-            } else if (result.toString().contains('error')) {
-              widget.onPaymentComplete(false, 'Payment failed');
-              Navigator.pop(context);
-            }
-          } catch (e) {
-            // Don't auto-close if we can't determine status
-          }
-        }
+    } else if (leftTelr) {
+      // Returned to merchant callback (non-telr domain). Close WebView and verify in app.
+      _completionScheduled = true;
+      Future.delayed(const Duration(milliseconds: 300), () {
+        _completeOnce(true, 'Payment completed successfully');
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+        // Handle system back button (Android)
+        if (_canGoBack) {
+          await _controller.goBack();
+        } else {
+          // No history, close the WebView and cancel payment
+          if (mounted) {
+            Navigator.pop(context);
+            // Notify payment was cancelled
+            Future.delayed(const Duration(milliseconds: 100), () {
+              widget.onPaymentComplete(false, 'Payment cancelled by user');
+            });
+          }
+        }
+      },
+      child: Scaffold(
         backgroundColor: Colors.black,
-        leading: StandardBackButton(
-          onPressed: () async {
-            // Try to go back in WebView history first
-            if (_canGoBack) {
-              await _controller.goBack();
-            } else {
-              // No history, close the WebView
-              if (mounted) {
-                // Close the WebView screen first
-                Navigator.pop(context);
-                // Then notify payment was cancelled
-                Future.delayed(const Duration(milliseconds: 100), () {
-                  widget.onPaymentComplete(false, 'Payment cancelled by user');
-                });
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          leading: StandardBackButton(
+            onPressed: () async {
+              // Try to go back in WebView history first
+              if (_canGoBack) {
+                await _controller.goBack();
+              } else {
+                // No history, close the WebView
+                if (mounted) {
+                  // Close the WebView screen first
+                  Navigator.pop(context);
+                  // Then notify payment was cancelled
+                  Future.delayed(const Duration(milliseconds: 100), () {
+                    widget.onPaymentComplete(
+                      false,
+                      'Payment cancelled by user',
+                    );
+                  });
+                }
               }
-            }
-          },
+            },
+          ),
+          title: Text(
+            'Payment',
+            style: AppTheme.bebasNeue(color: Colors.white, fontSize: 18),
+          ),
         ),
-        title: Text(
-          'Payment',
-          style: AppTheme.bebasNeue(color: Colors.white, fontSize: 18),
-        ),
-      ),
-      body: Stack(
-        children: [
-          WebViewWidget(controller: _controller),
-          if (_isLoading)
-            Container(
-              color: Colors.black,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Color(0xFF04CDFE),
+        body: Stack(
+          children: [
+            WebViewWidget(controller: _controller),
+            if (_isLoading)
+              Container(
+                color: Colors.black,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFF04CDFE),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Loading payment gateway...',
-                      style: AppTheme.bebasNeue(
-                        color: Colors.white70,
-                        fontSize: 14,
+                      const SizedBox(height: 16),
+                      Text(
+                        'Loading payment gateway...',
+                        style: AppTheme.bebasNeue(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -2817,48 +3154,27 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
   }
 
   void _showBrowserPaymentMessage() {
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-
-    if (isIOS) {
-      showCupertinoDialog(
-        context: context,
-        builder: (context) => CupertinoAlertDialog(
-          title: const Text('Payment in Browser'),
-          content: const Text(
-            'Payment page opened in your browser. '
-            'Please complete the payment there and return to the app.',
-          ),
-          actions: [
-            CupertinoDialogAction(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pop(context); // Close WebView screen
-              },
-            ),
-          ],
+    // Use iOS-style dialog on BOTH platforms (Android matches iOS).
+    showCupertinoDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => CupertinoAlertDialog(
+        title: const Text('Payment in Browser'),
+        content: const Text(
+          'Payment page opened in your browser. '
+          'Please complete the payment there and return to the app.',
         ),
-      );
-    } else {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Payment in Browser'),
-          content: const Text(
-            'Payment page opened in your browser. '
-            'Please complete the payment there and return to the app.',
+        actions: [
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            child: const Text('OK'),
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              Navigator.of(context).maybePop(); // Close WebView screen
+            },
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pop(context); // Close WebView screen
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-    }
+        ],
+      ),
+    );
   }
 }

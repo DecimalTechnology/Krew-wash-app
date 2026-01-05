@@ -9,6 +9,7 @@ import 'features/customer/presentation/providers/location_provider.dart';
 import 'features/customer/presentation/providers/package_provider.dart';
 import 'features/customer/presentation/providers/payment_provider.dart';
 import 'features/customer/presentation/providers/customer_booking_provider.dart';
+import 'features/customer/presentation/providers/customer_dashboard_provider.dart';
 import 'features/staff/presentation/providers/staff_provider.dart';
 import 'features/staff/presentation/providers/cleaner_booking_provider.dart';
 import 'features/shared/presentation/screens/splash_screen.dart';
@@ -32,6 +33,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => LocationProvider()),
         ChangeNotifierProvider(create: (_) => PackageProvider()),
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
+        ChangeNotifierProvider(create: (_) => CustomerDashboardProvider()),
       ],
       child: CupertinoTheme(
         data: AppTheme.cupertinoTheme,
@@ -43,10 +45,29 @@ class MyApp extends StatelessWidget {
           routes: AppRoutes.routes,
           onGenerateRoute: AppRoutes.generateRoute,
           // Fix yellow underlines on iOS by setting default text decoration
+          // Apply responsive text scaling for large screens
           builder: (context, child) {
-            return DefaultTextStyle(
-              style: const TextStyle(decoration: TextDecoration.none),
-              child: child ?? const SizedBox.shrink(),
+            final mediaQuery = MediaQuery.of(context);
+            final screenWidth = mediaQuery.size.width;
+
+            // Calculate text scale factor - reduces on large screens
+            double textScaleFactor = 1.0;
+            if (screenWidth >= 800) {
+              textScaleFactor = 0.75; // 25% reduction on extra large screens
+            } else if (screenWidth >= 600) {
+              textScaleFactor = 0.85; // 15% reduction on large screens
+            } else if (screenWidth >= 400) {
+              textScaleFactor = 0.95; // 5% reduction on medium screens
+            }
+
+            return MediaQuery(
+              data: mediaQuery.copyWith(
+                textScaler: TextScaler.linear(textScaleFactor),
+              ),
+              child: DefaultTextStyle(
+                style: const TextStyle(decoration: TextDecoration.none),
+                child: child ?? const SizedBox.shrink(),
+              ),
             );
           },
         ),

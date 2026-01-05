@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -75,11 +76,19 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
 
   List<DateTime> _selectedDates = [];
   String? _selectedVehicleId;
+  List<Map<String, dynamic>> _currentAddOns = [];
 
   Map<String, dynamic>? get _package => widget.arguments?.package;
-  List<Map<String, dynamic>> get _selectedAddOns =>
-      widget.arguments?.selectedAddOns ?? [];
-  bool get _requiresDates => _selectedAddOns.isNotEmpty;
+  List<Map<String, dynamic>> get _selectedAddOns => _currentAddOns;
+  bool get _requiresDates => _currentAddOns.isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentAddOns = List<Map<String, dynamic>>.from(
+      widget.arguments?.selectedAddOns ?? [],
+    );
+  }
 
   Future<void> _pickDates() async {
     final tempSelection = _selectedDates.map(_normalize).toSet();
@@ -225,6 +234,91 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
     return '$weekday, $month ${date.day}';
   }
 
+  String _formatDateForButton(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = _monthNames[(date.month - 1).clamp(0, 11).toInt()]
+        .toUpperCase();
+    final year = date.year.toString();
+    return '$day $month $year';
+  }
+
+  Future<void> _showCancelAddOnDialog(Map<String, dynamic> addOn) async {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final addOnName = (addOn['name'] ?? 'ADD-ON').toString().toUpperCase();
+
+    if (isIOS) {
+      final result = await showCupertinoDialog<bool>(
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: const Text('Cancel Add-On'),
+          content: Text('Are you sure you want to cancel "$addOnName"?'),
+          actions: [
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              child: const Text('Cancel Add-On'),
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+            CupertinoDialogAction(
+              child: const Text('Keep'),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+          ],
+        ),
+      );
+
+      if (result == true && mounted) {
+        // Remove this addon from the current list
+        final addOnId = addOn['_id']?.toString() ?? addOn['id']?.toString();
+        setState(() {
+          _currentAddOns = _currentAddOns
+              .where(
+                (a) => (a['_id']?.toString() ?? a['id']?.toString()) != addOnId,
+              )
+              .toList();
+          // Clear dates if no addons remain
+          if (_currentAddOns.isEmpty) {
+            _selectedDates = [];
+          }
+        });
+      }
+    } else {
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Cancel Add-On'),
+          content: Text('Are you sure you want to cancel "$addOnName"?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Keep'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Cancel Add-On'),
+            ),
+          ],
+        ),
+      );
+
+      if (result == true && mounted) {
+        // Remove this addon from the current list
+        final addOnId = addOn['_id']?.toString() ?? addOn['id']?.toString();
+        setState(() {
+          _currentAddOns = _currentAddOns
+              .where(
+                (a) => (a['_id']?.toString() ?? a['id']?.toString()) != addOnId,
+              )
+              .toList();
+          // Clear dates if no addons remain
+          if (_currentAddOns.isEmpty) {
+            _selectedDates = [];
+          }
+        });
+      }
+    }
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -253,10 +347,6 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                 if (_selectedAddOns.isNotEmpty) ...[
                   SizedBox(height: 20),
                   ..._selectedAddOns.map(_buildAddOnCard),
-                ],
-                if (_requiresDates) ...[
-                  SizedBox(height: 24),
-                  _buildDateSelector(),
                 ],
                 SizedBox(height: 24),
                 _buildVehicleSection(),
@@ -321,18 +411,9 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
+        color: Colors.black,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF04CDFE).withValues(alpha: 0.3),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF04CDFE).withValues(alpha: 0.15),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: const Color(0xFF04CDFE), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -346,19 +427,21 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                   children: [
                     Text(
                       (package['name'] ?? 'PACKAGE').toString().toUpperCase(),
-                      style: const TextStyle(
-                        color: Color(0xFF04CDFE),
+                      style: AppTheme.bebasNeue(
+                        color: const Color(0xFF04CDFE),
                         fontSize: 18,
                         fontWeight: FontWeight.w400,
-                        letterSpacing: 1,
+                        letterSpacing: 1.0,
                       ),
                     ),
                     SizedBox(height: 8),
                     Text(
                       package['description']?.toString() ??
                           'Premium car wash package',
-                      style: const TextStyle(
-                        color: Colors.white70,
+                      style: AppTheme.bebasNeue(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
                         height: 1.4,
                       ),
                     ),
@@ -369,19 +452,22 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    frequency,
-                    style: const TextStyle(
+                    frequency.toUpperCase(),
+                    style: AppTheme.bebasNeue(
                       color: Colors.white,
+                      fontSize: 12,
                       fontWeight: FontWeight.w400,
+                      letterSpacing: 0.5,
                     ),
                   ),
                   SizedBox(height: 4),
                   Text(
                     price,
-                    style: const TextStyle(
-                      color: Color(0xFF04CDFE),
+                    style: AppTheme.bebasNeue(
+                      color: const Color(0xFF04CDFE),
                       fontSize: 18,
                       fontWeight: FontWeight.w400,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ],
@@ -392,9 +478,10 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
           Text(
             'FEATURES',
             style: AppTheme.bebasNeue(
-              color: Colors.white70,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.8,
+              color: const Color(0xFF04CDFE),
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 1.2,
             ),
           ),
           SizedBox(height: 8),
@@ -402,20 +489,26 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
             (feature) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 4.0),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
                     width: 6,
                     height: 6,
+                    margin: const EdgeInsets.only(right: 8, top: 6),
                     decoration: const BoxDecoration(
                       color: Color(0xFF04CDFE),
                       shape: BoxShape.circle,
                     ),
                   ),
-                  SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      feature,
-                      style: const TextStyle(color: Colors.white70),
+                      feature.toUpperCase(),
+                      style: AppTheme.bebasNeue(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 0.8,
+                      ),
                     ),
                   ),
                 ],
@@ -448,202 +541,264 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
   Widget _buildAddOnCard(Map<String, dynamic> addOn) {
     final features = _extractFeatures(addOn);
     final singlePriceLabel = addOn['price']?.toString() ?? '0 AED';
-    final rawPrice =
-        (addOn['rawPrice'] as num?)?.toDouble() ??
-        double.tryParse(addOn['price']?.toString() ?? '') ??
-        0;
-    final multiplier = _selectedDates.isEmpty ? 1 : _selectedDates.length;
-    final totalPrice = rawPrice * multiplier;
+    final description = addOn['description']?.toString() ?? '';
 
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF01061C),
+        color: Colors.black,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF04CDFE).withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: const Color(0xFF04CDFE), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Top row: ADD-ONS label and EACH CLEANING with price
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    (addOn['name'] ?? 'ADD-ON').toString().toUpperCase(),
-                    style: const TextStyle(
-                      color: Color(0xFF04CDFE),
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    addOn['frequency']?.toString() ?? '',
-                    style: const TextStyle(color: Colors.white54),
-                  ),
-                ],
-              ),
               Text(
-                singlePriceLabel,
-                style: const TextStyle(
-                  color: Color(0xFF04CDFE),
-                  fontSize: 16,
+                'ADD-ONS',
+                style: AppTheme.bebasNeue(
+                  color: Colors.white,
+                  fontSize: 12,
                   fontWeight: FontWeight.w400,
+                  letterSpacing: 1.2,
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          ...features.map(
-            (feature) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4.0),
-              child: Row(
-                children: [
-                  Container(
-                    width: 5,
-                    height: 5,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF04CDFE),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      feature,
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'EACH SERVICE',
-                    style: AppTheme.bebasNeue(
-                      color: Colors.white54,
-                      fontSize: 12,
-                    ),
-                  ),
-                  Text(
-                    singlePriceLabel,
-                    style: const TextStyle(
-                      color: Color(0xFF04CDFE),
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'SELECTED DAYS: $multiplier',
-                    style: const TextStyle(color: Colors.white54, fontSize: 12),
-                  ),
-                  Text(
-                    '${totalPrice.toStringAsFixed(2)} AED',
-                    style: const TextStyle(
-                      color: Color(0xFF04CDFE),
+                    'EACH CLEANING',
+                    style: AppTheme.bebasNeue(
+                      color: Colors.white,
+                      fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      fontSize: 16,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    singlePriceLabel,
+                    style: AppTheme.bebasNeue(
+                      color: const Color(0xFF04CDFE),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ],
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDateSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: 'SELECT DATES ',
-                style: AppTheme.bebasNeue(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              TextSpan(
-                text: '(it may vary based on staff availability)',
-                style: AppTheme.bebasNeue(
-                  color: Colors.white70,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: 12),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF04CDFE),
-            foregroundColor: Colors.white,
-            minimumSize: const Size(double.infinity, 48),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+          SizedBox(height: 16),
+          // Service name
+          Text(
+            (addOn['name'] ?? 'ADD-ON').toString().toUpperCase(),
+            style: AppTheme.bebasNeue(
+              color: const Color(0xFF04CDFE),
+              fontSize: 18,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 1.2,
             ),
           ),
-          onPressed: _pickDates,
-          child: Text('SELECT DATES '),
-        ),
-        SizedBox(height: 12),
-        if (_selectedDates.isEmpty)
+          SizedBox(height: 8),
+          // Description
+          if (description.isNotEmpty)
+            Text(
+              description,
+              style: AppTheme.bebasNeue(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                height: 1.4,
+              ),
+            ),
+          SizedBox(height: 16),
+          // FEATURES section
           Text(
-            'No dates selected yet.',
-            style: AppTheme.bebasNeue(color: Colors.white54),
-          )
-        else
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _selectedDates
-                .map(
-                  (date) => Chip(
-                    label: Text(
-                      _formatDate(date),
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    backgroundColor: const Color(0x3304CDFE),
-                    deleteIconColor: Colors.white,
-                    onDeleted: () {
-                      setState(() {
-                        _selectedDates = _selectedDates
-                            .where((d) => d != date)
-                            .toList();
-                      });
-                    },
-                  ),
-                )
-                .toList(),
+            'FEATURES',
+            style: AppTheme.bebasNeue(
+              color: const Color(0xFF04CDFE),
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 1.2,
+            ),
           ),
-      ],
+          SizedBox(height: 12),
+          ...features.map(
+            (feature) => Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    margin: const EdgeInsets.only(right: 8, top: 6),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF04CDFE),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      feature.toUpperCase(),
+                      style: AppTheme.bebasNeue(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 16),
+          // Selected dates display (if dates are selected)
+          if (_selectedDates.isNotEmpty) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'SELECTED DATES',
+                  style: AppTheme.bebasNeue(
+                    color: const Color(0xFF04CDFE),
+                    fontSize: 17,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '(The dates may vary based on the\navailability of the staff)',
+                    style: AppTheme.bebasNeue(
+                      color: const Color(0xFF04CDFE),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _selectedDates
+                  .map(
+                    (date) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _formatDateForButton(date),
+                        style: AppTheme.bebasNeue(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+            SizedBox(height: 16),
+            // Action buttons row
+            Row(
+              children: [
+                // EDIT DATES button
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _pickDates,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF04CDFE),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(0, 48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'EDIT DATES',
+                      textAlign: TextAlign.center,
+                      style: AppTheme.bebasNeue(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                // CANCEL ADD-ONS button
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => _showCancelAddOnDialog(addOn),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.white),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(0, 48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'CANCEL ADD-ONS',
+                      textAlign: TextAlign.center,
+                      style: AppTheme.bebasNeue(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            // BOOK OUR DATE button (when no dates selected)
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: _pickDates,
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF04CDFE)),
+                  foregroundColor: const Color(0xFF04CDFE),
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'BOOK OUR DATE',
+                  style: AppTheme.bebasNeue(
+                    color: const Color(0xFF04CDFE),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -666,7 +821,7 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                 letterSpacing: 1.1,
               ),
             ),
-            TextButton.icon(
+            ElevatedButton.icon(
               onPressed: () async {
                 final result = await Navigator.pushNamed(
                   context,
@@ -678,10 +833,23 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                   setState(() {});
                 }
               },
-              icon: const Icon(Icons.add, color: Color(0xFF04CDFE)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF04CDFE),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
+              ),
+              icon: const Icon(Icons.add, color: Colors.white, size: 16),
               label: Text(
                 'ADD',
-                style: AppTheme.bebasNeue(color: Color(0xFF04CDFE)),
+                style: AppTheme.bebasNeue(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 0.8,
+                ),
               ),
             ),
           ],
@@ -755,13 +923,13 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF050A1F),
+                      color: Colors.black,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
                             ? const Color(0xFF04CDFE)
-                            : Colors.white12,
-                        width: isSelected ? 2 : 1,
+                            : const Color(0xFF04CDFE).withValues(alpha: 0.3),
+                        width: 1,
                       ),
                     ),
                     child: Column(

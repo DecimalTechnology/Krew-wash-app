@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/theme/text_styles.dart';
 import '../../../../core/widgets/standard_back_button.dart';
 
 class MyPackageScreen extends StatelessWidget {
@@ -103,7 +102,7 @@ class MyPackageScreen extends StatelessWidget {
             child: Text(
               'MY PACKAGE',
               textAlign: TextAlign.center,
-              style: AppTextStyles.bebasNeue(
+              style: AppTheme.bebasNeue(
                 fontSize: isVeryLargeScreen
                     ? 24
                     : isLargeScreen
@@ -222,7 +221,7 @@ class MyPackageScreen extends StatelessWidget {
           // Package Text - Better spacing
           Text(
             'SCHEDULED PACKAGE',
-            style: AppTextStyles.bebasNeue(
+            style: AppTheme.bebasNeue(
               fontSize: isVeryLargeScreen
                   ? 18
                   : isLargeScreen
@@ -243,7 +242,7 @@ class MyPackageScreen extends StatelessWidget {
 
           Text(
             'PREMIUM PACKAGE',
-            style: AppTextStyles.bebasNeue(
+            style: AppTheme.bebasNeue(
               fontSize: isVeryLargeScreen
                   ? 32
                   : isLargeScreen
@@ -305,7 +304,7 @@ class MyPackageScreen extends StatelessWidget {
           // CAR WASH text
           Text(
             'CAR WASH',
-            style: AppTextStyles.bebasNeue(
+            style: AppTheme.bebasNeue(
               fontSize: isVeryLargeScreen
                   ? 22
                   : isLargeScreen
@@ -327,7 +326,7 @@ class MyPackageScreen extends StatelessWidget {
           // Monthly 5 Wash text
           Text(
             '[ MONTHLY 5 WASH ]',
-            style: AppTextStyles.bebasNeue(
+            style: AppTheme.bebasNeue(
               fontSize: isVeryLargeScreen
                   ? 20
                   : isLargeScreen
@@ -360,7 +359,7 @@ class MyPackageScreen extends StatelessWidget {
           // Completed text
           Text(
             'COMPLETED',
-            style: AppTextStyles.bebasNeue(
+            style: AppTheme.bebasNeue(
               fontSize: isVeryLargeScreen
                   ? 18
                   : isLargeScreen
@@ -417,7 +416,7 @@ class MyPackageScreen extends StatelessWidget {
             ),
             child: Text(
               '2/5',
-              style: AppTextStyles.bebasNeue(
+              style: AppTheme.bebasNeue(
                 fontSize: isVeryLargeScreen
                     ? 32
                     : isLargeScreen
@@ -496,7 +495,7 @@ class MyPackageScreen extends StatelessWidget {
           Flexible(
             child: Text(
               'NEXT CAR WASH: 11/11/2025',
-              style: AppTextStyles.bebasNeue(
+              style: AppTheme.bebasNeue(
                 fontSize: isVeryLargeScreen
                     ? 20
                     : isLargeScreen
@@ -539,9 +538,16 @@ class MyPackageScreen extends StatelessWidget {
               padding: EdgeInsets.zero,
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Add On feature coming soon!'),
-                    backgroundColor: Color(0xFF04CDFE),
+                  SnackBar(
+                    content: Text(
+                      'Add On feature coming soon!',
+                      style: AppTheme.bebasNeue(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    backgroundColor: const Color(0xFF04CDFE),
                   ),
                 );
               },
@@ -571,7 +577,7 @@ class MyPackageScreen extends StatelessWidget {
                 child: Center(
                   child: Text(
                     '+ ADD ON',
-                    style: AppTextStyles.bebasNeue(
+                    style: AppTheme.bebasNeue(
                       fontSize: isVeryLargeScreen
                           ? 20
                           : isLargeScreen
@@ -588,9 +594,16 @@ class MyPackageScreen extends StatelessWidget {
           : ElevatedButton(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Add On feature coming soon!'),
-                    backgroundColor: Color(0xFF04CDFE),
+                  SnackBar(
+                    content: Text(
+                      'Add On feature coming soon!',
+                      style: AppTheme.bebasNeue(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    backgroundColor: const Color(0xFF04CDFE),
                   ),
                 );
               },
@@ -622,7 +635,7 @@ class MyPackageScreen extends StatelessWidget {
               ),
               child: Text(
                 '+ ADD ON',
-                style: AppTextStyles.bebasNeue(
+                style: AppTheme.bebasNeue(
                   fontSize: isVeryLargeScreen
                       ? 20
                       : isLargeScreen

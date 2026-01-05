@@ -6,9 +6,7 @@ class AppTheme {
   // Color constants
   static const Color primaryColor = Color(0xFF04CDFE);
   static const Color backgroundColor = Color(0xFF01031C);
-  static const Color cardColor = Color(
-    0xFF0A0D2C,
-  ); // Slightly lighter for cards
+  static const Color cardColor = Colors.black;
   static const Color cardColorWithOpacity = Color(0xE60A0D2C); // 90% opacity
   static const Color textColor = Colors.white;
   static const Color textSecondaryColor = Colors.white70;
@@ -30,8 +28,37 @@ class AppTheme {
   // Font family - Bebas Neue
   static const String fontFamily = 'BebasNeue';
 
-  // Font size multiplier - increase all text sizes by this factor
-  static const double fontSizeMultiplier = 1.3;
+  // Base font size multiplier
+  static const double baseFontSizeMultiplier = 1.3;
+
+  // Get responsive font size multiplier based on screen width
+  // Reduces font size on large screens
+  static double getFontSizeMultiplier(BuildContext? context) {
+    if (context == null) return baseFontSizeMultiplier;
+
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Define breakpoints for screen sizes
+    const double smallScreenBreakpoint = 350;
+    const double mediumScreenBreakpoint = 400;
+    const double largeScreenBreakpoint = 600;
+    const double extraLargeScreenBreakpoint = 800;
+
+    // Reduce multiplier on larger screens
+    if (screenWidth >= extraLargeScreenBreakpoint) {
+      return baseFontSizeMultiplier *
+          0.75; // 25% reduction on extra large screens
+    } else if (screenWidth >= largeScreenBreakpoint) {
+      return baseFontSizeMultiplier * 0.85; // 15% reduction on large screens
+    } else if (screenWidth >= mediumScreenBreakpoint) {
+      return baseFontSizeMultiplier * 0.95; // 5% reduction on medium screens
+    } else if (screenWidth >= smallScreenBreakpoint) {
+      return baseFontSizeMultiplier; // Normal size on small-medium screens
+    } else {
+      return baseFontSizeMultiplier *
+          0.9; // Slightly smaller on very small screens
+    }
+  }
 
   // Get Bebas Neue text style
   static TextStyle bebasNeue({
@@ -41,9 +68,14 @@ class AppTheme {
     double? letterSpacing,
     double? height,
     List<Shadow>? shadows,
+    BuildContext? context, // Optional context for responsive sizing
   }) {
+    final multiplier = context != null
+        ? getFontSizeMultiplier(context)
+        : baseFontSizeMultiplier;
+
     return GoogleFonts.bebasNeue(
-      fontSize: fontSize != null ? fontSize * fontSizeMultiplier : null,
+      fontSize: fontSize != null ? fontSize * multiplier : null,
       fontWeight: fontWeight ?? FontWeight.w400,
       color: color ?? textColor,
       letterSpacing: letterSpacing,
@@ -54,16 +86,19 @@ class AppTheme {
 
   // Material Theme
   static ThemeData get materialTheme {
-    // Use a font with proper lowercase support for general text + form inputs.
-    // Headings that must remain Bebas Neue already use AppTheme.bebasNeue(...) explicitly.
-    final baseTextTheme = GoogleFonts.interTextTheme();
+    // Use BebasNeue for ALL text (including body text)
+    final baseTextTheme = GoogleFonts.bebasNeueTextTheme();
 
     return ThemeData(
       useMaterial3: true,
-      textTheme: baseTextTheme.apply(
-        bodyColor: textColor,
-        displayColor: textColor,
-      ),
+      // Override bodyLarge to Inter so TextFields automatically use Inter
+      // Note: This also affects regular body Text widgets. Use AppTheme.bebasNeue()
+      // for body text that should use BebasNeue font.
+      textTheme: baseTextTheme
+          .copyWith(
+            bodyLarge: GoogleFonts.inter(color: textColor, fontSize: 16),
+          )
+          .apply(bodyColor: textColor, displayColor: textColor),
       primaryColor: primaryColor,
       scaffoldBackgroundColor: backgroundColor,
       colorScheme: const ColorScheme.dark(
@@ -86,10 +121,15 @@ class AppTheme {
           color: textColor,
         ),
       ),
-      // Ensure TextField hint/label styles are also lowercase-capable.
+      // Text fields use Inter font (not BebasNeue) for better readability
+      // Hint and label styles use Inter
       inputDecorationTheme: InputDecorationTheme(
         hintStyle: GoogleFonts.inter(color: textSecondaryColor),
         labelStyle: GoogleFonts.inter(color: textSecondaryColor),
+      ),
+      // Set default text style for TextField to use Inter
+      textSelectionTheme: const TextSelectionThemeData(
+        cursorColor: primaryColor,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -121,33 +161,47 @@ class AppTheme {
       scaffoldBackgroundColor: backgroundColor,
       textTheme: CupertinoTextThemeData(
         primaryColor: textColor,
-        // iOS text + CupertinoTextField default style
-        textStyle: GoogleFonts.inter(color: textColor),
-        actionTextStyle: GoogleFonts.inter(
+        // Use BebasNeue for all iOS text except CupertinoTextField
+        textStyle: bebasNeue(color: textColor),
+        actionTextStyle: bebasNeue(
           color: primaryColor,
           fontWeight: FontWeight.w400,
         ),
-        tabLabelTextStyle: GoogleFonts.inter(
+        tabLabelTextStyle: bebasNeue(
           color: textColor,
           fontWeight: FontWeight.w400,
         ),
-        navTitleTextStyle: GoogleFonts.inter(
+        navTitleTextStyle: bebasNeue(
           color: textColor,
           fontWeight: FontWeight.w400,
           fontSize: 20,
         ),
-        navLargeTitleTextStyle: GoogleFonts.inter(
+        navLargeTitleTextStyle: bebasNeue(
           color: textColor,
           fontWeight: FontWeight.w400,
           fontSize: 28,
         ),
-        navActionTextStyle: GoogleFonts.inter(
+        navActionTextStyle: bebasNeue(
           color: primaryColor,
           fontWeight: FontWeight.w400,
         ),
-        pickerTextStyle: GoogleFonts.inter(color: textColor),
-        dateTimePickerTextStyle: GoogleFonts.inter(color: textColor),
+        pickerTextStyle: bebasNeue(color: textColor),
+        dateTimePickerTextStyle: bebasNeue(color: textColor),
       ),
+    );
+  }
+
+  // Helper method to get Inter font style for text fields
+  // Use this for TextField and CupertinoTextField widgets
+  static TextStyle textFieldStyle({
+    double? fontSize,
+    FontWeight? fontWeight,
+    Color? color,
+  }) {
+    return GoogleFonts.inter(
+      fontSize: fontSize ?? 16,
+      fontWeight: fontWeight ?? FontWeight.normal,
+      color: color ?? textColor,
     );
   }
 

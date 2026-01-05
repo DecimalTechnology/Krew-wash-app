@@ -347,26 +347,14 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
           // Spacer to push heading to center
           const Spacer(),
           // Centered heading
-          Column(
-            children: [
-              Text(
-                'Booking Details',
-                style: AppTheme.bebasNeue(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontSize: isSmallScreen ? 12 : 14,
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'BOOKING DETAILS',
-                style: AppTheme.bebasNeue(
-                  color: Colors.white,
-                  fontSize: isSmallScreen ? 20 : 24,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ],
+          Text(
+            'BOOKING DETAILS',
+            style: AppTheme.bebasNeue(
+              color: Colors.white,
+              fontSize: isSmallScreen ? 20 : 24,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 1.2,
+            ),
           ),
           // Spacer to balance the back button on the left
           const Spacer(),
@@ -450,8 +438,27 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
     final vehicleColor = (booking.vehicleInfo?.color?.trim().isNotEmpty == true)
         ? booking.vehicleInfo!.color!.toUpperCase()
         : 'COLOR NOT AVAILABLE';
-    final location =
-        booking.buildingInfo?.name ?? booking.user?.apartmentNumber ?? 'N/A';
+    // Location logic: building name OR apartment number (formatted consistently)
+    // Match the logic used in upcoming bookings list
+    String location;
+    if (booking.buildingInfo?.name != null &&
+        booking.buildingInfo!.name.trim().isNotEmpty) {
+      location = booking.buildingInfo!.name.trim();
+    } else if (booking.user?.apartmentNumber != null &&
+        booking.user!.apartmentNumber!.trim().isNotEmpty) {
+      location = booking.user!.apartmentNumber!.trim();
+    } else {
+      location = 'N/A';
+    }
+
+    // Debug: Print location info for comparison
+    if (kDebugMode) {
+      print('🔵 [DETAILS] Location DEBUG for Booking ${booking.bookingId}:');
+      print('Building Info: ${booking.buildingInfo?.name}');
+      print('Building ID: ${booking.buildingId}');
+      print('User Apartment: ${booking.user?.apartmentNumber}');
+      print('Final Location: $location');
+    }
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -535,9 +542,12 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
 
   String _formatBookingDate(DateTime? date) {
     if (date == null) return 'N/A';
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    final year = date.year.toString();
+    // Convert UTC time to local time
+    // If date is marked as UTC, convert it; otherwise assume it's already local or convert anyway for safety
+    final localDate = date.isUtc ? date.toLocal() : date;
+    final day = localDate.day.toString().padLeft(2, '0');
+    final month = localDate.month.toString().padLeft(2, '0');
+    final year = localDate.year.toString();
     return '$day/$month/$year';
   }
 
@@ -633,28 +643,14 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
     required bool isActive,
     VoidCallback? onPressed,
   }) {
-    // When activeIssue is true, use different styling
-    if (isActive) {
-      return _buildActionButton(
-        context,
-        'VIEW ACTIVE ISSUE',
-        const Color(0xFF4CAF50), // Green color for active issue
-        isIOS,
-        isSmallScreen,
-        textColor: Colors.white,
-        icon: Icons.warning_amber_rounded,
-        onPressed: onPressed,
-      );
-    }
-
-    // When activeIssue is false, use dark red design with red border
+    // Use custom red design with red border (same for both active and inactive states)
     return Container(
       height: isSmallScreen ? 44 : 48,
       decoration: BoxDecoration(
-        color: const Color(0xFF330000), // Dark red background
-        borderRadius: BorderRadius.circular(isIOS ? 12 : 10),
+        color: const Color(0xFF8B0000), // Dark red background
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFFF6666), // Light red border
+          color: const Color(0xFFFF4444), // Light red border
           width: 1.5,
         ),
       ),
@@ -667,14 +663,14 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
                 children: [
                   Icon(
                     CupertinoIcons.exclamationmark_triangle_fill,
-                    color: const Color(0xFFFF6666),
+                    color: const Color(0xFFFF4444),
                     size: isSmallScreen ? 16 : 18,
                   ),
                   SizedBox(width: 8),
                   Text(
                     'VIEW ACTIVE ISSUE',
                     style: AppTheme.bebasNeue(
-                      color: const Color(0xFFFF6666), // Light red text
+                      color: const Color(0xFFFF4444), // Light red text
                       fontSize: isSmallScreen ? 12 : 14,
                       fontWeight: FontWeight.w400,
                       letterSpacing: 0.5,
@@ -687,21 +683,21 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
               color: Colors.transparent,
               child: InkWell(
                 onTap: onPressed,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(20),
                 child: Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
                         Icons.warning_amber_rounded,
-                        color: const Color(0xFFFF6666),
+                        color: const Color(0xFFFF4444),
                         size: isSmallScreen ? 16 : 18,
                       ),
                       SizedBox(width: 8),
                       Text(
                         'VIEW ACTIVE ISSUE',
                         style: AppTheme.bebasNeue(
-                          color: const Color(0xFFFF6666), // Light red text
+                          color: const Color(0xFFFF4444), // Light red text
                           fontSize: isSmallScreen ? 12 : 14,
                           fontWeight: FontWeight.w400,
                           letterSpacing: 0.5,
@@ -722,12 +718,17 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
     bool isSmallScreen, {
     VoidCallback? onPressed,
   }) {
-    // Red background with white text and icon
+    // Background color #222B2D and border/text colors
+    const backgroundColor = Color(0xFF222B2D); // Custom background color
+    const borderColor = Colors.white; // White border
+    const textIconColor = Colors.white; // White text and icon
+
     return Container(
       height: isSmallScreen ? 44 : 48,
       decoration: BoxDecoration(
-        color: Colors.red, // Red background
-        borderRadius: BorderRadius.circular(isIOS ? 12 : 10),
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(isIOS ? 16 : 16),
+        border: Border.all(color: borderColor.withOpacity(0.3), width: 1),
       ),
       child: isIOS
           ? CupertinoButton(
@@ -738,14 +739,14 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
                 children: [
                   Icon(
                     CupertinoIcons.exclamationmark_triangle,
-                    color: Colors.white,
+                    color: textIconColor,
                     size: isSmallScreen ? 16 : 18,
                   ),
                   SizedBox(width: 8),
                   Text(
                     'REPORT AN ISSUE',
                     style: AppTheme.bebasNeue(
-                      color: Colors.white,
+                      color: textIconColor,
                       fontSize: isSmallScreen ? 12 : 14,
                       fontWeight: FontWeight.w400,
                       letterSpacing: 0.5,
@@ -758,21 +759,21 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
               color: Colors.transparent,
               child: InkWell(
                 onTap: onPressed,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(16),
                 child: Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
                         Icons.warning_amber_rounded,
-                        color: Colors.white,
+                        color: textIconColor,
                         size: isSmallScreen ? 16 : 18,
                       ),
                       SizedBox(width: 8),
                       Text(
                         'REPORT AN ISSUE',
                         style: AppTheme.bebasNeue(
-                          color: Colors.white,
+                          color: textIconColor,
                           fontSize: isSmallScreen ? 12 : 14,
                           fontWeight: FontWeight.w400,
                           letterSpacing: 0.5,
@@ -801,7 +802,7 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
       height: isSmallScreen ? 44 : 48,
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(isIOS ? 12 : 10),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: isIOS
           ? CupertinoButton(
@@ -834,7 +835,7 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
               color: Colors.transparent,
               child: InkWell(
                 onTap: onPressed,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(20),
                 child: Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

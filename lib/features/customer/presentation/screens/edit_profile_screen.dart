@@ -549,7 +549,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           children: [
             _buildActionButton(
               text: 'CHANGE',
-              color: const Color(0xFF00D4AA),
+              color: AppTheme.primaryColor,
               onPressed: () => _pickImage(isIOS),
               isIOS: isIOS,
             ),
@@ -725,7 +725,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Profile image updated successfully'),
-            backgroundColor: Color(0xFF00D4AA),
+            backgroundColor: AppTheme.primaryColor,
           ),
         );
       }
@@ -806,6 +806,39 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  Widget _buildLabelWithAsterisk(String label) {
+    if (label.contains('*')) {
+      final parts = label.split('*');
+      return RichText(
+        text: TextSpan(
+          style: AppTheme.bebasNeue(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            letterSpacing: 1.2,
+          ),
+          children: [
+            TextSpan(text: parts[0]),
+            const TextSpan(
+              text: '*',
+              style: TextStyle(color: Color(0xFF04CDFE)),
+            ),
+            if (parts.length > 1) TextSpan(text: parts[1]),
+          ],
+        ),
+      );
+    }
+    return Text(
+      label,
+      style: AppTheme.bebasNeue(
+        color: Colors.white,
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 1.2,
+      ),
+    );
+  }
+
   Widget _buildNameField({required bool isIOS}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -813,15 +846,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'NAME *',
-              style: AppTheme.bebasNeue(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                letterSpacing: 1.2,
-              ),
-            ),
+            _buildLabelWithAsterisk('NAME *'),
             GestureDetector(
               onTap: () {
                 setState(() {
@@ -856,15 +881,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'PHONE *',
-              style: AppTheme.bebasNeue(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                letterSpacing: 1.2,
-              ),
-            ),
+            _buildLabelWithAsterisk('PHONE *'),
             GestureDetector(
               onTap: () {
                 setState(() {
@@ -1065,15 +1082,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'EMAIL *',
-              style: AppTheme.bebasNeue(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                letterSpacing: 1.2,
-              ),
-            ),
+            _buildLabelWithAsterisk('EMAIL *'),
             GestureDetector(
               onTap: () {
                 setState(() {
@@ -1109,15 +1118,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'BUILDING NAME *',
-              style: AppTheme.bebasNeue(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                letterSpacing: 1.2,
-              ),
-            ),
+            _buildLabelWithAsterisk('BUILDING NAME *'),
             GestureDetector(
               onTap: () {
                 if (_isEditingBuilding) {
@@ -1155,7 +1156,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: _buildTextField(
             controller: _buildingSearchController,
             enabled: _isEditingBuilding,
-            hintText: 'SELECT YOUR BUILDING',
+            hintText: 'Search the building',
             isIOS: isIOS,
             onChanged: (value) {
               _searchDebounce?.cancel();
@@ -1163,18 +1164,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const Duration(milliseconds: 300),
                 () async {
                   await context.read<PackageProvider>().searchBuildings(value);
-                  if (_isEditingBuilding) {
-                    _showBuildingSuggestions(isIOS: isIOS);
+                  if (_isEditingBuilding && mounted) {
+                    // Update existing overlay instead of recreating
+                    _buildingSuggestionsOverlay?.markNeedsBuild();
                   }
                 },
               );
             },
-            onTap: () {
+            onTap: () async {
               setState(() {
                 _isEditingBuilding = true;
               });
-              // Show suggestions when field is tapped
+              // Trigger initial search with empty query to show all buildings
+              if (_buildingSearchController.text.isEmpty) {
+                await context.read<PackageProvider>().searchBuildings('');
+              }
+              // Show suggestions when field is tapped - will create if doesn't exist
               _showBuildingSuggestions(isIOS: isIOS);
+              // Ensure overlay is updated after search
+              if (_buildingSuggestionsOverlay != null) {
+                _buildingSuggestionsOverlay!.markNeedsBuild();
+              }
             },
             suffixIcon: _isEditingBuilding
                 ? const Icon(Icons.arrow_drop_down, color: Colors.white)
@@ -1186,7 +1196,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _showBuildingSuggestions({required bool isIOS}) {
-    _buildingSuggestionsOverlay?.remove();
+    // If overlay already exists, just mark it for rebuild
+    if (_buildingSuggestionsOverlay != null) {
+      _buildingSuggestionsOverlay!.markNeedsBuild();
+      return;
+    }
 
     final overlay = Overlay.of(context);
 
@@ -1195,120 +1209,132 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     _buildingSuggestionsOverlay = OverlayEntry(
       builder: (ctx) {
-        final provider = Provider.of<PackageProvider>(ctx);
-        final results = provider.buildingResults;
-        final isSearching = provider.isSearching;
+        return Consumer<PackageProvider>(
+          builder: (ctx, provider, _) {
+            final results = provider.buildingResults;
+            final isSearching = provider.isSearching;
 
-        // Hide overlay if not searching, no results, and query is empty
-        if (!isSearching && results.isEmpty && provider.lastQuery.isEmpty) {
-          return const SizedBox.shrink();
-        }
+            // Show overlay if searching, has results, or if field is being edited
+            // Only hide if not searching, no results, and query is empty and field is not being edited
+            if (!isSearching &&
+                results.isEmpty &&
+                provider.lastQuery.isEmpty &&
+                !_isEditingBuilding) {
+              return const SizedBox.shrink();
+            }
 
-        return Positioned.fill(
-          child: Stack(
-            children: [
-              // Tap outside to hide suggestions
-              Positioned.fill(
-                child: GestureDetector(onTap: _hideBuildingSuggestions),
-              ),
-              // Suggestions dropdown
-              CompositedTransformFollower(
-                link: _buildingFieldLink,
-                showWhenUnlinked: false,
-                offset: const Offset(0, 56),
-                child: Material(
-                  color: Colors.transparent,
-                  child: Container(
-                    width: maxWidth,
-                    constraints: const BoxConstraints(maxHeight: 220),
-                    decoration: BoxDecoration(
-                      color: AppTheme.cardColor,
-                      borderRadius: BorderRadius.circular(isIOS ? 20 : 12),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.3),
-                        width: 1,
+            return Positioned.fill(
+              child: Stack(
+                children: [
+                  // Tap outside to hide suggestions
+                  Positioned.fill(
+                    child: GestureDetector(onTap: _hideBuildingSuggestions),
+                  ),
+                  // Suggestions dropdown
+                  CompositedTransformFollower(
+                    link: _buildingFieldLink,
+                    showWhenUnlinked: false,
+                    offset: const Offset(0, 56),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Container(
+                        width: maxWidth,
+                        constraints: const BoxConstraints(maxHeight: 220),
+                        decoration: BoxDecoration(
+                          color: AppTheme.cardColor,
+                          borderRadius: BorderRadius.circular(isIOS ? 20 : 12),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: isSearching && results.isEmpty
+                            ? Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Center(
+                                  child: SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : (!isSearching && results.isEmpty)
+                            ? Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Text(
+                                  'No buildings found',
+                                  style: AppTheme.bebasNeue(
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              )
+                            : ListView.separated(
+                                padding: EdgeInsets.zero,
+                                shrinkWrap: true,
+                                itemCount: results.length,
+                                separatorBuilder: (_, __) => Divider(
+                                  height: 1,
+                                  color: Colors.white.withValues(alpha: 0.08),
+                                ),
+                                itemBuilder: (context, index) {
+                                  final b = results[index];
+                                  return ListTile(
+                                    dense: true,
+                                    visualDensity: const VisualDensity(
+                                      vertical: -2,
+                                    ),
+                                    title: Text(
+                                      b.buildingName,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    onTap: () async {
+                                      // Update the text controller immediately
+                                      _buildingSearchController.text =
+                                          b.buildingName;
+
+                                      // Update providers
+                                      context
+                                          .read<PackageProvider>()
+                                          .selectBuilding(
+                                            id: b.id,
+                                            name: b.buildingName,
+                                          );
+                                      // Save building ID to user profile
+                                      context
+                                          .read<AuthProvider>()
+                                          .updateBuildingId(b.id);
+
+                                      // Hide suggestions
+                                      _hideBuildingSuggestions();
+
+                                      // Update state after a short delay to ensure overlay is removed
+                                      await Future.delayed(
+                                        const Duration(milliseconds: 100),
+                                      );
+                                      if (mounted) {
+                                        setState(() {
+                                          _selectedBuildingId = b.id;
+                                          _selectedBuildingName =
+                                              b.buildingName;
+                                          _isEditingBuilding = false;
+                                        });
+                                      }
+                                    },
+                                  );
+                                },
+                              ),
                       ),
                     ),
-                    child: isSearching && results.isEmpty
-                        ? Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Center(
-                              child: SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            ),
-                          )
-                        : (!isSearching && results.isEmpty)
-                        ? Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Text(
-                              'No buildings found',
-                              style: AppTheme.bebasNeue(color: Colors.white70),
-                            ),
-                          )
-                        : ListView.separated(
-                            padding: EdgeInsets.zero,
-                            shrinkWrap: true,
-                            itemCount: results.length,
-                            separatorBuilder: (_, __) => Divider(
-                              height: 1,
-                              color: Colors.white.withValues(alpha: 0.08),
-                            ),
-                            itemBuilder: (context, index) {
-                              final b = results[index];
-                              return ListTile(
-                                dense: true,
-                                visualDensity: const VisualDensity(
-                                  vertical: -2,
-                                ),
-                                title: Text(
-                                  b.buildingName,
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                                onTap: () async {
-                                  // Update the text controller immediately
-                                  _buildingSearchController.text =
-                                      b.buildingName;
-
-                                  // Update providers
-                                  context
-                                      .read<PackageProvider>()
-                                      .selectBuilding(
-                                        id: b.id,
-                                        name: b.buildingName,
-                                      );
-                                  // Save building ID to user profile
-                                  context.read<AuthProvider>().updateBuildingId(
-                                    b.id,
-                                  );
-
-                                  // Hide suggestions
-                                  _hideBuildingSuggestions();
-
-                                  // Update state after a short delay to ensure overlay is removed
-                                  await Future.delayed(
-                                    const Duration(milliseconds: 100),
-                                  );
-                                  if (mounted) {
-                                    setState(() {
-                                      _selectedBuildingId = b.id;
-                                      _selectedBuildingName = b.buildingName;
-                                      _isEditingBuilding = false;
-                                    });
-                                  }
-                                },
-                              );
-                            },
-                          ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -1677,7 +1703,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Contact details updated successfully'),
-              backgroundColor: Color(0xFF00D4AA),
+              backgroundColor: AppTheme.primaryColor,
             ),
           );
         } else {
@@ -1882,11 +1908,38 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         if (!mounted) return;
 
         if (success) {
+          // Update PackageProvider with new building if building was changed
+          if (buildingIdToSave != null &&
+              buildingIdToSave != current?.buildingId) {
+            try {
+              // Fetch building name and update PackageProvider
+              final repo = const PackageRepository();
+              final buildings = await repo.searchBuildings('');
+              final building = buildings.firstWhere(
+                (b) => b.id == buildingIdToSave,
+                orElse: () => BuildingModel(
+                  id: buildingIdToSave,
+                  buildingName: 'Selected Building',
+                ),
+              );
+              packageProvider.selectBuilding(
+                id: buildingIdToSave,
+                name: building.buildingName,
+              );
+            } catch (e) {
+              // If building name fetch fails, still update with ID
+              packageProvider.selectBuilding(
+                id: buildingIdToSave,
+                name: 'Selected Building',
+              );
+            }
+          }
+
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Profile updated successfully'),
-                backgroundColor: Color(0xFF00D4AA),
+                backgroundColor: AppTheme.primaryColor,
               ),
             );
             // Pop back to Profile screen (Edit Profile was opened from Profile)

@@ -218,33 +218,49 @@ class StaffProfileScreen extends StatelessWidget {
     bool isSmallScreen,
     bool isTablet,
   ) {
+    // Dark maroon background and bright coral-red border/text (same as user logout)
+    const darkMaroon = Color(0xFF5A1A1A); // Dark deep red/maroon background
+    const coralRed = Color(0xFFFF6B6B); // Bright coral-red for border, text, and icon
+
     return SizedBox(
       width: double.infinity,
       height: isSmallScreen ? 48 : 52,
       child: isIOS
           ? CupertinoButton(
               padding: EdgeInsets.zero,
-              color: const Color(0xFF04CDFE),
-              borderRadius: BorderRadius.circular(12),
               onPressed: () {
                 _handleLogout(context, isIOS);
               },
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(
+                  vertical: isSmallScreen ? 12.0 : 14.0,
+                  horizontal: 16.0,
+                ),
+                decoration: BoxDecoration(
+                  color: darkMaroon,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: coralRed, width: 1.5),
+                ),
               child: Text(
                 'LOGOUT',
+                  textAlign: TextAlign.center,
                 style: AppTheme.bebasNeue(
-                  color: Colors.white,
+                    color: coralRed,
                   fontSize: isSmallScreen ? 16 : 18,
                   fontWeight: FontWeight.w400,
                   letterSpacing: 1.2,
+                  ),
                 ),
               ),
             )
           : ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF04CDFE),
-                foregroundColor: Colors.white,
+                backgroundColor: darkMaroon,
+                foregroundColor: coralRed,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
+                  side: const BorderSide(color: coralRed, width: 1.5),
                 ),
                 elevation: 0,
               ),

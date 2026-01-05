@@ -22,10 +22,13 @@ class AuthRepository {
     try {
       const String url = '$baseurl/auth/register';
 
+      // Format phone number for API (remove + sign)
+      final phoneForApi = formatPhoneNumberForApi(phoneNumber);
+
       final Map<String, dynamic> requestBody = {
         'email': email,
         'name': name,
-        'phone': phoneNumber,
+        'phone': phoneForApi,
         'verificationMethod': verificationMethod,
       };
 
@@ -119,7 +122,10 @@ class AuthRepository {
     try {
       const String url = '$baseurl/auth/check-phone';
 
-      final Map<String, dynamic> requestBody = {'phone': phone, 'email': email};
+      // Format phone number for API (remove + sign)
+      final phoneForApi = formatPhoneNumberForApi(phone);
+
+      final Map<String, dynamic> requestBody = {'phone': phoneForApi, 'email': email};
 
       final response = await http.post(
         Uri.parse(url),
@@ -127,13 +133,19 @@ class AuthRepository {
         body: jsonEncode(requestBody),
       );
 
-      final data = jsonDecode(response.body);
-      return data;
-    } on SocketException catch (e) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      
+      // Include status code in response for handling 409 (phone already exists)
+      // 409 means phone exists - this is expected for sign-in, error for sign-up
+      return {
+        ...data,
+        'statusCode': response.statusCode,
+      };
+    } on SocketException {
       throw Exception('Network error: Please check your internet connection');
-    } on TimeoutException catch (e) {
+    } on TimeoutException {
       throw Exception('Network error: Request timeout. Please try again');
-    } on http.ClientException catch (e) {
+    } on http.ClientException {
       throw Exception('Network error: Please check your internet connection');
     } catch (e) {
       throw Exception('Check user request error: $e');
@@ -223,7 +235,12 @@ class AuthRepository {
     try {
       const String url = '$baseurl/auth/login-phone';
 
-      final Map<String, dynamic> requestBody = {'phone': phoneNumber ?? ""};
+      // Format phone number for API (remove + sign)
+      final phoneForApi = phoneNumber != null && phoneNumber.isNotEmpty
+          ? formatPhoneNumberForApi(phoneNumber)
+          : "";
+
+      final Map<String, dynamic> requestBody = {'phone': phoneForApi};
 
       final response = await http.post(
         Uri.parse(url),
@@ -282,11 +299,21 @@ class AuthRepository {
     return RegExp(r'^\+?[1-9]\d{1,14}$').hasMatch(phone.replaceAll(' ', ''));
   }
 
-  // Format phone number to E.164 format
+  // Format phone number to E.164 format (with + sign for Firebase)
   static String formatPhoneNumber(String phone) {
     String cleaned = phone.replaceAll(RegExp(r'[^\d+]'), '');
     if (!cleaned.startsWith('+')) {
       cleaned = '+$cleaned';
+    }
+    return cleaned;
+  }
+
+  // Format phone number for API calls (without + sign, just country code + number)
+  static String formatPhoneNumberForApi(String phone) {
+    String cleaned = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    // Remove the + sign if present
+    if (cleaned.startsWith('+')) {
+      cleaned = cleaned.substring(1);
     }
     return cleaned;
   }

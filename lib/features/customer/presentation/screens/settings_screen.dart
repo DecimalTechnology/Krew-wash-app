@@ -43,20 +43,6 @@ class SettingsScreen extends StatelessWidget {
                       SizedBox(height: isLargeScreen ? 16 : 12),
                       _buildSettingsItem(
                         context,
-                        'NOTIFICATIONS',
-                        CupertinoIcons.bell,
-                        () {
-                          Navigator.of(
-                            context,
-                            rootNavigator: true,
-                          ).pushNamed(Routes.customerNotifications);
-                        },
-                        isLargeScreen,
-                        isIOS: true,
-                      ),
-                      SizedBox(height: isLargeScreen ? 12 : 8),
-                      _buildSettingsItem(
-                        context,
                         'PRIVACY POLICY',
                         CupertinoIcons.shield,
                         () {
@@ -138,20 +124,6 @@ class SettingsScreen extends StatelessWidget {
                       SizedBox(height: isLargeScreen ? 16 : 12),
                       _buildSettingsItem(
                         context,
-                        'NOTIFICATIONS',
-                        Icons.notifications,
-                        () {
-                          Navigator.of(
-                            context,
-                            rootNavigator: true,
-                          ).pushNamed(Routes.customerNotifications);
-                        },
-                        isLargeScreen,
-                        isIOS: false,
-                      ),
-                      SizedBox(height: isLargeScreen ? 12 : 8),
-                      _buildSettingsItem(
-                        context,
                         'PRIVACY POLICY',
                         Icons.shield,
                         () {
@@ -218,10 +190,13 @@ class SettingsScreen extends StatelessWidget {
         horizontal: isLargeScreen ? 24.0 : 16.0,
         vertical: isLargeScreen ? 16.0 : 12.0,
       ),
-      child: Row(
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          const StandardBackButton(),
-          SizedBox(width: isLargeScreen ? 16 : 12),
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: StandardBackButton(),
+          ),
           Text(
             'SETTINGS',
             style: AppTheme.bebasNeue(
@@ -242,10 +217,13 @@ class SettingsScreen extends StatelessWidget {
         horizontal: isLargeScreen ? 24.0 : 16.0,
         vertical: isLargeScreen ? 16.0 : 12.0,
       ),
-      child: Row(
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          const StandardBackButton(),
-          SizedBox(width: isLargeScreen ? 16 : 12),
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: StandardBackButton(),
+          ),
           Text(
             'SETTINGS',
             style: AppTheme.bebasNeue(

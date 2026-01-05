@@ -295,21 +295,46 @@ class _ChooseSlotScreenState extends State<ChooseSlotScreen> {
     );
   }
 
+  Widget _buildLabelWithAsterisk(String label) {
+    if (label.contains('*')) {
+      final parts = label.split('*');
+      return RichText(
+        text: TextSpan(
+          style: AppTheme.bebasNeue(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+          children: [
+            TextSpan(text: parts[0]),
+            const TextSpan(
+              text: '*',
+              style: TextStyle(color: Color(0xFF04CDFE)),
+            ),
+            if (parts.length > 1) TextSpan(text: parts[1]),
+          ],
+        ),
+      );
+    }
+    return Text(
+      label,
+      style: AppTheme.bebasNeue(
+        color: Colors.white,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.5,
+      ),
+    );
+  }
+
   Widget _buildDateSelection() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'CHOOSE THE DATE*',
-            style: AppTheme.bebasNeue(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
-          ),
+          _buildLabelWithAsterisk('CHOOSE THE DATE*'),
           SizedBox(height: 12),
           GestureDetector(
             onTap: _selectDate,

@@ -31,6 +31,9 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _initializeAuth() async {
+    // Ensure splash screen shows for minimum duration (1.5 seconds)
+    final initializationStart = DateTime.now();
+    
     // First, try to restore user from secure storage (stay logged in)
     // Only restore from backend API data, not from Firebase
     await _restoreUserFromStorage();
@@ -38,6 +41,13 @@ class AuthProvider extends ChangeNotifier {
     // Don't listen to Firebase auth state changes
     // Firebase is only used for OTP verification, not for user authentication
     // All user data comes from the backend API only
+    
+    // Ensure minimum splash screen duration
+    final elapsed = DateTime.now().difference(initializationStart);
+    const minDuration = Duration(milliseconds: 1500);
+    if (elapsed < minDuration) {
+      await Future.delayed(minDuration - elapsed);
+    }
   }
 
   Future<void> _restoreUserFromStorage() async {
@@ -559,6 +569,10 @@ class AuthProvider extends ChangeNotifier {
 
   String formatPhoneNumber(String phone) {
     return AuthRepository.formatPhoneNumber(phone);
+  }
+
+  String formatPhoneNumberForApi(String phone) {
+    return AuthRepository.formatPhoneNumberForApi(phone);
   }
 
   // Check if user profile is complete

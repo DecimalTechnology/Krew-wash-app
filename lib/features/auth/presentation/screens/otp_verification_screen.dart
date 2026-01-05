@@ -124,7 +124,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       style: AppTheme.bebasNeue(
                         fontSize: 28,
                         fontWeight: FontWeight.w400,
-                        color: Color(0xFF00D4AA),
+                        color: AppTheme.primaryColor,
                         letterSpacing: 2,
                       ),
                     ),
@@ -170,9 +170,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   }
 
   Widget _buildAndroidOtpScreen() {
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: Colors.black,
-      body: Container(
+      child: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/loginScreen/car.png'),
@@ -207,7 +207,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       style: AppTheme.bebasNeue(
                         fontSize: 28,
                         fontWeight: FontWeight.w400,
-                        color: Color(0xFF00D4AA),
+                        color: AppTheme.primaryColor,
                         letterSpacing: 2,
                       ),
                     ),
@@ -230,15 +230,15 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                     SizedBox(height: 40),
 
                     // OTP Input Fields
-                    _buildOtpFields(false),
+                    _buildOtpFields(true),
                     SizedBox(height: 24),
 
                     // Resend Code Button
-                    _buildResendButton(false),
+                    _buildResendButton(true),
                     SizedBox(height: 24),
 
                     // Continue Button
-                    _buildContinueButton(false),
+                    _buildContinueButton(true),
                   ],
                 ),
               ),
@@ -256,15 +256,13 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: List.generate(6, (index) {
         return Container(
-          width: 45,
+          width: 50,
           height: 50,
           decoration: BoxDecoration(
             border: Border.all(color: Colors.white, width: 1),
-            borderRadius: BorderRadius.circular(isIOS ? 25 : 12),
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: isIOS
-              ? _buildIOSOtpField(index)
-              : _buildAndroidOtpField(index),
+          child: _buildIOSOtpField(index),
         );
       }),
     );
@@ -305,44 +303,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     );
   }
 
-  Widget _buildAndroidOtpField(int index) {
-    return TextField(
-      controller: _controllers[index],
-      focusNode: _focusNodes[index],
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 24,
-        fontWeight: FontWeight.w400,
-      ),
-      textAlign: TextAlign.center,
-      keyboardType: TextInputType.number,
-      maxLength: 1,
-      decoration: const InputDecoration(
-        border: InputBorder.none,
-        counterText: '',
-        contentPadding: EdgeInsets.zero,
-      ),
-      onChanged: (value) {
-        if (value.isNotEmpty) {
-          if (index < 5) {
-            _focusNodes[index + 1].requestFocus();
-          } else {
-            _focusNodes[index].unfocus();
-          }
-        } else if (value.isEmpty && index > 0) {
-          _focusNodes[index - 1].requestFocus();
-        }
-        _updateVerificationCode();
-      },
-      onSubmitted: (value) {
-        if (index < 5) {
-          _focusNodes[index + 1].requestFocus();
-        } else {
-          _focusNodes[index].unfocus();
-        }
-      },
-    );
-  }
 
   Widget _buildContinueButton(bool isIOS) {
     return Consumer<AuthProvider>(
@@ -351,69 +311,36 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           width: double.infinity,
           height: 56,
           decoration: BoxDecoration(
-            color: const Color(0xFF00D4AA),
-            borderRadius: BorderRadius.circular(isIOS ? 16 : 12),
+            color: AppTheme.primaryColor,
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF00D4AA).withValues(alpha: 0.3),
+                color: AppTheme.primaryColor.withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
             ],
           ),
-          child: isIOS
-              ? CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  onPressed:
-                      authProvider.isLoading || _verificationCode.length != 6
-                      ? null
-                      : _verifyOtp,
-                  child: Center(
-                    child: authProvider.isLoading
-                        ? const CupertinoActivityIndicator(color: Colors.white)
-                        : Text(
-                            'CONTINUE',
-                            style: AppTheme.bebasNeue(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                  ),
-                )
-              : Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap:
-                        authProvider.isLoading || _verificationCode.length != 6
-                        ? null
-                        : _verifyOtp,
-                    child: Center(
-                      child: authProvider.isLoading
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
-                              ),
-                            )
-                          : Text(
-                              'CONTINUE',
-                              style: AppTheme.bebasNeue(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400,
-                                letterSpacing: 1,
-                              ),
-                            ),
+          child: CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed:
+                authProvider.isLoading || _verificationCode.length != 6
+                ? null
+                : _verifyOtp,
+            child: Center(
+              child: authProvider.isLoading
+                  ? const CupertinoActivityIndicator(color: Colors.white)
+                  : Text(
+                      'CONTINUE',
+                      style: AppTheme.bebasNeue(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 1,
+                      ),
                     ),
-                  ),
-                ),
+            ),
+          ),
         );
       },
     );
@@ -430,44 +357,25 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   Widget _buildResendButton(bool isIOS) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        return isIOS
-            ? CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: _canResend && !authProvider.isLoading
-                    ? _resendCode
-                    : null,
-                child: Text(
-                  _canResend
-                      ? 'RESEND CODE'
-                      : 'RESEND CODE IN ${_resendTimer}s',
-                  style: AppTheme.bebasNeue(
-                    color: _canResend
-                        ? const Color(0xFF00D4AA)
-                        : Colors.white.withValues(alpha: 0.5),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1,
-                  ),
-                ),
-              )
-            : TextButton(
-                onPressed: _canResend && !authProvider.isLoading
-                    ? _resendCode
-                    : null,
-                child: Text(
-                  _canResend
-                      ? 'RESEND CODE'
-                      : 'RESEND CODE IN ${_resendTimer}s',
-                  style: AppTheme.bebasNeue(
-                    color: _canResend
-                        ? const Color(0xFF00D4AA)
-                        : Colors.white.withValues(alpha: 0.5),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1,
-                  ),
-                ),
-              );
+        return CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: _canResend && !authProvider.isLoading
+              ? _resendCode
+              : null,
+          child: Text(
+            _canResend
+                ? 'RESEND CODE'
+                : 'RESEND CODE IN ${_resendTimer}s',
+            style: AppTheme.bebasNeue(
+              color: _canResend
+                  ? AppTheme.primaryColor
+                  : Colors.white.withValues(alpha: 0.5),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1,
+            ),
+          ),
+        );
       },
     );
   }
@@ -792,94 +700,52 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   }
 
   void _showSuccessMessage(String message) {
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-
-    if (isIOS) {
-      showCupertinoDialog(
-        context: context,
-        builder: (context) => CupertinoAlertDialog(
-          title: Text('Success'),
-          content: Text(message),
-          actions: [
-            CupertinoDialogAction(
-              child: Text('OK'),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: const Color(0xFF00D4AA),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
-    }
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: Text('Success'),
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            child: Text('OK'),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showErrorMessage(String message) {
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-
-    if (isIOS) {
-      showCupertinoDialog(
-        context: context,
-        builder: (context) => CupertinoAlertDialog(
-          title: Text('Error'),
-          content: Text(message),
-          actions: [
-            CupertinoDialogAction(
-              child: Text('OK'),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red[700],
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
-    }
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: Text('Error'),
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            child: Text('OK'),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showPhoneNotRegisteredError() {
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-
-    if (isIOS) {
-      showCupertinoDialog(
-        context: context,
-        builder: (context) => CupertinoAlertDialog(
-          title: Text('Phone Number Not Registered'),
-          content: Text(
-            'This phone number is not registered. Please sign up to create an account.',
-          ),
-          actions: [
-            CupertinoDialogAction(
-              child: Text('OK'),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: Text('Phone Number Not Registered'),
+        content: Text(
+          'This phone number is not registered. Please sign up to create an account.',
         ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Phone number not registered. Please sign up to create an account.',
+        actions: [
+          CupertinoDialogAction(
+            child: Text('OK'),
+            onPressed: () => Navigator.pop(context),
           ),
-          backgroundColor: Colors.orange[700],
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          duration: const Duration(seconds: 4),
-        ),
-      );
-    }
+        ],
+      ),
+    );
   }
 }

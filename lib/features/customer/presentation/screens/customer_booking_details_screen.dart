@@ -674,34 +674,43 @@ class _CustomerBookingDetailsScreenState
         final url = shown[index];
         final isAsset = url.startsWith('asset:');
         final assetPath = isAsset ? url.replaceFirst('asset:', '') : '';
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: Container(
-            color: Colors.white.withValues(alpha: 0.06),
-            child: isAsset
-                ? Image.asset(assetPath, fit: BoxFit.cover)
-                : Image.network(
-                    url,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, _, __) => Container(
-                      color: Colors.white.withValues(alpha: 0.06),
-                      alignment: Alignment.center,
-                      child: Icon(
-                        Icons.broken_image_outlined,
-                        color: Colors.white38,
-                      ),
-                    ),
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
+        // Find the actual index in the full urls list
+        final actualIndex = urls.indexOf(url);
+        return GestureDetector(
+          onTap: () => _showImagePreview(
+            context,
+            urls,
+            actualIndex >= 0 ? actualIndex : index,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Container(
+              color: Colors.white.withValues(alpha: 0.06),
+              child: isAsset
+                  ? Image.asset(assetPath, fit: BoxFit.cover)
+                  : Image.network(
+                      url,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, _, __) => Container(
                         color: Colors.white.withValues(alpha: 0.06),
                         alignment: Alignment.center,
-                        child: isSmall
-                            ? const CupertinoActivityIndicator()
-                            : const CircularProgressIndicator(strokeWidth: 2),
-                      );
-                    },
-                  ),
+                        child: Icon(
+                          Icons.broken_image_outlined,
+                          color: Colors.white38,
+                        ),
+                      ),
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          color: Colors.white.withValues(alpha: 0.06),
+                          alignment: Alignment.center,
+                          child: isSmall
+                              ? const CupertinoActivityIndicator()
+                              : const CircularProgressIndicator(strokeWidth: 2),
+                        );
+                      },
+                    ),
+            ),
           ),
         );
       },
@@ -914,5 +923,147 @@ class _CustomerBookingDetailsScreenState
     final month = date.month.toString().padLeft(2, '0');
     final year = date.year.toString();
     return '$day/$month/$year';
+  }
+
+  void _showImagePreview(
+    BuildContext context,
+    List<String> urls,
+    int initialIndex,
+  ) {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+
+    if (isIOS) {
+      Navigator.of(context).push(
+        CupertinoPageRoute(
+          builder: (_) =>
+              _ImagePreviewScreen(images: urls, initialIndex: initialIndex),
+        ),
+      );
+    } else {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) =>
+              _ImagePreviewScreen(images: urls, initialIndex: initialIndex),
+        ),
+      );
+    }
+  }
+}
+
+class _ImagePreviewScreen extends StatefulWidget {
+  final List<String> images;
+  final int initialIndex;
+
+  const _ImagePreviewScreen({required this.images, required this.initialIndex});
+
+  @override
+  State<_ImagePreviewScreen> createState() => _ImagePreviewScreenState();
+}
+
+class _ImagePreviewScreenState extends State<_ImagePreviewScreen> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            isIOS ? CupertinoIcons.back : Icons.arrow_back,
+            color: Colors.white,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          '${_currentIndex + 1} / ${widget.images.length}',
+          style: AppTheme.bebasNeue(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w400,
+            letterSpacing: 1.2,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: widget.images.length,
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        itemBuilder: (context, index) {
+          final url = widget.images[index];
+          final isAsset = url.startsWith('asset:');
+          final assetPath = isAsset ? url.replaceFirst('asset:', '') : '';
+
+          return Center(
+            child: InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: isAsset
+                  ? Image.asset(assetPath, fit: BoxFit.contain)
+                  : Image.network(
+                      url,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, _, __) => Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.broken_image_outlined,
+                              color: Colors.white38,
+                              size: 64,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Failed to load image',
+                              style: AppTheme.bebasNeue(
+                                color: Colors.white54,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: isIOS
+                              ? const CupertinoActivityIndicator(
+                                  color: Colors.white,
+                                )
+                              : const CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                        );
+                      },
+                    ),
+            ),
+          );
+        },
+      ),
+    );
   }
 }

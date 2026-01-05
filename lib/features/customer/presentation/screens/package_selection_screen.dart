@@ -25,6 +25,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
   bool _initializedFromProfile = false;
   VoidCallback? _authListener;
   AuthProvider? _authProvider;
+  String? _lastBuildingId;
 
   Future<void> _handlePullToRefresh() async {
     final packageProvider = context.read<PackageProvider>();
@@ -45,12 +46,12 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
     });
   }
 
-  Future<void> _initializeWithSavedBuilding() async {
+  Future<void> _initializeWithSavedBuilding({bool force = false}) async {
     final authProvider = context.read<AuthProvider>();
     final packageProvider = context.read<PackageProvider>();
 
     Future<void> initFromUser() async {
-      if (_initializedFromProfile) return;
+      if (_initializedFromProfile && !force) return;
       final user = authProvider.user;
       if (user?.buildingId == null || user!.buildingId!.isEmpty) return;
       _initializedFromProfile = true;
@@ -124,6 +125,29 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen to AuthProvider changes and update building when buildingId changes
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final user = authProvider.user;
+        final currentBuildingId = user?.buildingId;
+        
+        // Check if buildingId changed and update if needed
+        if (currentBuildingId != _lastBuildingId && currentBuildingId != null && currentBuildingId.isNotEmpty) {
+          _lastBuildingId = currentBuildingId;
+          // Update building selection when buildingId changes
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            if (mounted) {
+              await _initializeWithSavedBuilding(force: true);
+            }
+          });
+        }
+        
+        return _buildContent(context);
+      },
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     final mediaQuery = MediaQuery.of(context);
     final screenSize = mediaQuery.size;
@@ -244,8 +268,13 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
     final adjustedFontSize = isWideScreen ? fontSize * 1.1 : fontSize;
 
     final bottomInset = MediaQuery.of(context).padding.bottom;
+    // Calculate bottom navigation bar height (navBarHeight + navBarMargin * 2 + bottomInset)
+    // Approximate values: navBarHeight ~70, navBarMargin ~16, so total ~102 + bottomInset
+    final navBarTotalHeight = 70 + 10.0 + bottomInset;
+    final buttonPadding = 10.0;
+    // Padding to ensure button appears above bottom nav bar when scrolled to bottom
     final bottomScrollPadding =
-        bottomInset + kBottomNavigationBarHeight + adjustedVerticalSpacing;
+        navBarTotalHeight + buttonPadding + adjustedVerticalSpacing;
 
     return CupertinoPageScaffold(
       backgroundColor: Colors.black,
@@ -269,24 +298,24 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
         ),
         child: SafeArea(
           bottom: false,
-                  child: Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+            children: [
               // Fixed header (same style as car listing)
               _buildSliverHeader(true),
 
               // Fixed building/address + vehicle type selector
-                      _buildSearchAndAddressFields(
-                        true,
-                        adjustedHorizontalPadding,
-                        adjustedVerticalSpacing,
-                        adjustedFontSize,
-                      ),
-                      _buildCarTypeSelection(
-                        true,
-                        adjustedHorizontalPadding,
-                        adjustedFontSize,
-                      ),
+              _buildSearchAndAddressFields(
+                true,
+                adjustedHorizontalPadding,
+                adjustedVerticalSpacing,
+                adjustedFontSize,
+              ),
+              _buildCarTypeSelection(
+                true,
+                adjustedHorizontalPadding,
+                adjustedFontSize,
+              ),
 
               // Only the content BELOW vehicle type selector should scroll
               Expanded(
@@ -301,38 +330,38 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                       ),
                       child: Column(
                         children: [
-                      _buildSectionTitle(
-                        true,
-                        adjustedHorizontalPadding,
-                        adjustedFontSize,
+                          _buildSectionTitle(
+                            true,
+                            adjustedHorizontalPadding,
+                            adjustedFontSize,
+                          ),
+                          _buildPackageOptions(
+                            true,
+                            adjustedHorizontalPadding,
+                            adjustedVerticalSpacing,
+                            packageCardPadding,
+                            adjustedFontSize,
+                          ),
+                          SizedBox(height: adjustedFontSize * 0.5),
+                          _buildAddOnsSection(
+                            isIOS: true,
+                            horizontalPadding: adjustedHorizontalPadding,
+                            fontSize: adjustedFontSize,
+                          ),
+                          SizedBox(height: adjustedVerticalSpacing),
+                          _buildNextButton(
+                            isIOS: true,
+                            horizontalPadding: adjustedHorizontalPadding,
+                            fontSize: adjustedFontSize,
+                          ),
+                          SizedBox(height: bottomScrollPadding),
+                        ],
                       ),
-                      _buildPackageOptions(
-                        true,
-                        adjustedHorizontalPadding,
-                        adjustedVerticalSpacing,
-                        packageCardPadding,
-                        adjustedFontSize,
-                      ),
-                      SizedBox(height: adjustedVerticalSpacing),
-                      _buildAddOnsSection(
-                        isIOS: true,
-                        horizontalPadding: adjustedHorizontalPadding,
-                        fontSize: adjustedFontSize,
-                      ),
-                      SizedBox(height: adjustedVerticalSpacing),
-                      _buildNextButton(
-                        isIOS: true,
-                        horizontalPadding: adjustedHorizontalPadding,
-                        fontSize: adjustedFontSize,
-                      ),
-                      SizedBox(height: bottomScrollPadding),
-                    ],
+                    ),
                   ),
                 ),
-                  ),
-                ),
-            ),
-          ],
+              ),
+            ],
           ),
         ),
       ),
@@ -412,8 +441,13 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
         : verticalSpacing;
     final adjustedFontSize = isWideScreen ? fontSize * 1.1 : fontSize;
     final bottomInset = MediaQuery.of(context).padding.bottom;
+    // Calculate bottom navigation bar height (navBarHeight + navBarMargin * 2 + bottomInset)
+    // Approximate values: navBarHeight ~70, navBarMargin ~16, so total ~102 + bottomInset
+    final navBarTotalHeight = 70.0 + 32.0 + bottomInset;
+    final buttonPadding = 10.0;
+    // Padding to ensure button appears above bottom nav bar when scrolled to bottom
     final bottomScrollPadding =
-        bottomInset + kBottomNavigationBarHeight + adjustedVerticalSpacing;
+        navBarTotalHeight + buttonPadding + adjustedVerticalSpacing;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -437,24 +471,24 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
         ),
         child: SafeArea(
           bottom: false,
-                  child: Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+            children: [
               // Fixed header (same style as car listing)
               _buildSliverHeader(false),
 
               // Fixed building/address + vehicle type selector
-                      _buildSearchAndAddressFields(
-                        false,
-                        adjustedHorizontalPadding,
-                        adjustedVerticalSpacing,
-                        adjustedFontSize,
-                      ),
-                      _buildCarTypeSelection(
-                        false,
-                        adjustedHorizontalPadding,
-                        adjustedFontSize,
-                      ),
+              _buildSearchAndAddressFields(
+                false,
+                adjustedHorizontalPadding,
+                adjustedVerticalSpacing,
+                adjustedFontSize,
+              ),
+              _buildCarTypeSelection(
+                false,
+                adjustedHorizontalPadding,
+                adjustedFontSize,
+              ),
 
               // Only the content BELOW vehicle type selector should scroll
               Expanded(
@@ -467,37 +501,37 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                     ),
                     child: Column(
                       children: [
-                      _buildSectionTitle(
-                        false,
-                        adjustedHorizontalPadding,
-                        adjustedFontSize,
-                      ),
-                      _buildPackageOptions(
-                        false,
-                        adjustedHorizontalPadding,
-                        adjustedVerticalSpacing,
-                        packageCardPadding,
-                        adjustedFontSize,
-                      ),
-                      SizedBox(height: adjustedVerticalSpacing),
-                      _buildAddOnsSection(
-                        isIOS: false,
-                        horizontalPadding: adjustedHorizontalPadding,
-                        fontSize: adjustedFontSize,
-                      ),
-                      SizedBox(height: adjustedVerticalSpacing),
-                      _buildNextButton(
-                        isIOS: false,
-                        horizontalPadding: adjustedHorizontalPadding,
-                        fontSize: adjustedFontSize,
-                      ),
-                      SizedBox(height: bottomScrollPadding),
-                    ],
+                        _buildSectionTitle(
+                          false,
+                          adjustedHorizontalPadding,
+                          adjustedFontSize,
+                        ),
+                        _buildPackageOptions(
+                          false,
+                          adjustedHorizontalPadding,
+                          adjustedVerticalSpacing,
+                          packageCardPadding,
+                          adjustedFontSize,
+                        ),
+                        SizedBox(height: adjustedFontSize * 0.5),
+                        _buildAddOnsSection(
+                          isIOS: false,
+                          horizontalPadding: adjustedHorizontalPadding,
+                          fontSize: adjustedFontSize,
+                        ),
+                        SizedBox(height: adjustedVerticalSpacing),
+                        _buildNextButton(
+                          isIOS: false,
+                          horizontalPadding: adjustedHorizontalPadding,
+                          fontSize: adjustedFontSize,
+                        ),
+                        SizedBox(height: bottomScrollPadding),
+                      ],
+                    ),
                   ),
                 ),
-                ),
-            ),
-          ],
+              ),
+            ],
           ),
         ),
       ),
@@ -526,9 +560,11 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
     final showShimmer = provider.isFetchingVehicleTypes && buildingName == null;
 
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: horizontalPadding,
-        vertical: verticalSpacing * 0.6,
+      padding: EdgeInsets.only(
+        left: horizontalPadding,
+        right: horizontalPadding,
+        top: fontSize * 0.3,
+        bottom: verticalSpacing * 0.6,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -697,66 +733,74 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Left side - Addon Name and Description
                   Expanded(
+                    flex: 3,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        // Addon Name
                         Text(
                           name.toUpperCase(),
                           style: AppTheme.bebasNeue(
                             color: const Color(0xFF04CDFE),
                             fontSize: fontSize * 1.1,
                             fontWeight: FontWeight.w400,
-                            letterSpacing: 0.5,
+                            letterSpacing: 1.0,
                           ),
                         ),
-                        if (frequency.isNotEmpty) ...[
-                          SizedBox(height: fontSize * 0.3),
-                          Text(
-                            frequency,
-                            style: AppTheme.bebasNeue(
-                              color: Colors.white70,
-                              fontSize: fontSize * 0.75,
-                            ),
-                          ),
-                        ],
                         if (description.isNotEmpty) ...[
-                          SizedBox(height: fontSize * 0.4),
+                          SizedBox(height: fontSize * 0.5),
+                          // Description
                           Text(
                             description,
                             style: AppTheme.bebasNeue(
-                              color: Colors.white70,
-                              fontSize: fontSize * 0.75,
+                              color: Colors.white,
+                              fontSize: fontSize * 0.85,
+                              fontWeight: FontWeight.normal,
                               height: 1.3,
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ],
                     ),
                   ),
-                  Column(
+                  SizedBox(width: fontSize * 0.8),
+                  // Right side - Frequency and Price
+                  Expanded(
+                    flex: 2,
+                    child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                        // Frequency
                       Text(
-                        'EACH SERVICE',
+                          (frequency.isNotEmpty ? frequency : 'EACH SERVICE').toUpperCase(),
                         style: AppTheme.bebasNeue(
-                          color: Colors.white70,
-                          fontSize: fontSize * 0.7,
-                          fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            fontSize: fontSize * 0.9,
+                            fontWeight: FontWeight.w400,
                           letterSpacing: 0.5,
                         ),
+                          textAlign: TextAlign.end,
                       ),
-                      SizedBox(height: fontSize * 0.3),
+                        SizedBox(height: fontSize * 0.5),
+                        // Price
                       Text(
                         price,
                         style: AppTheme.bebasNeue(
                           color: const Color(0xFF04CDFE),
-                          fontSize: fontSize * 1.2,
+                            fontSize: fontSize * 1.1,
                           fontWeight: FontWeight.w400,
-                          letterSpacing: 0.8,
+                            letterSpacing: 0.5,
                         ),
+                          textAlign: TextAlign.end,
                       ),
                     ],
+                    ),
                   ),
                 ],
               ),
@@ -807,7 +851,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
 
   Widget _buildHeaderContent(bool isIOS) {
     return Padding(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 8.0),
       child: Row(
         children: [
           // Back Button
@@ -869,16 +913,6 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
         : isTablet
         ? 70.0
         : 65.0;
-
-    final vehicleTextSize = isSmallScreen
-        ? fontSize * 0.7
-        : isMediumScreen
-        ? fontSize * 0.8
-        : isLargeScreen
-        ? fontSize * 0.9
-        : isTablet
-        ? fontSize * 1.0
-        : fontSize * 0.95;
 
     final iconSize = isSmallScreen
         ? fontSize * 0.8
@@ -985,9 +1019,9 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                           typeName.toUpperCase(),
                           style: AppTheme.bebasNeue(
                             color: Colors.white,
-                            fontSize: vehicleTextSize,
+                            fontSize: fontSize * 1.1,
                             fontWeight: FontWeight.w400,
-                            letterSpacing: 1,
+                            letterSpacing: 0.5,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1291,7 +1325,12 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
       return const SizedBox.shrink();
     }
 
-    final button = SizedBox(
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: 8.0,
+      ),
+      child: SizedBox(
       width: double.infinity,
       height: fontSize * 3.2,
       child: ElevatedButton(
@@ -1309,14 +1348,10 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
             fontSize: fontSize * 0.95,
             fontWeight: FontWeight.w400,
             letterSpacing: 1.2,
+            ),
           ),
         ),
       ),
-    );
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-      child: isIOS ? button : button,
     );
   }
 

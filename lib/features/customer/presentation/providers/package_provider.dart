@@ -131,17 +131,7 @@ class PackageProvider extends ChangeNotifier {
 
   Future<void> searchBuildings(String query) async {
     final trimmed = query.trim();
-    if (trimmed.isEmpty) {
-      _buildingResults = [];
-      _isSearching = false;
-      _lastQuery = '';
-      _packages = [];
-      _addOns = [];
-      _selectedAddOnIds.clear();
-      _selectedPackageIndex = -1;
-      notifyListeners();
-      return;
-    }
+    // Allow empty search to show all buildings (useful for dropdown)
     _isSearching = true;
     _lastQuery = trimmed;
     _packages = [];

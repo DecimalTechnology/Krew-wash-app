@@ -195,9 +195,10 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
   Widget _buildSearchBar(bool isIOS, bool isSmallScreen) {
     void handleSearch() {
       final query = _searchController.text.trim();
+      // Pass empty string if query is empty, so it clears the search
       context.read<CleanerBookingProvider>().fetchCompletedBookings(
         force: true,
-        search: query,
+        search: query.isEmpty ? '' : query,
       );
     }
 

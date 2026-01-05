@@ -151,10 +151,10 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
     // Calculate prices
     final basePrice = package != null
         ? ((package['rawPrice'] as num?)?.toDouble() ??
-            double.tryParse(
-              package['price']?.toString().replaceAll(' AED', '') ?? '',
-            ) ??
-            0.0)
+              double.tryParse(
+                package['price']?.toString().replaceAll(' AED', '') ?? '',
+              ) ??
+              0.0)
         : 0.0;
 
     double addOnTotal = 0.0;
@@ -194,10 +194,6 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
                         (addOn) => _buildAddOnSection(addOn, dates.length),
                       ),
                     ],
-                    if (dates.isNotEmpty) ...[
-                      SizedBox(height: 24),
-                      _buildSelectedDatesSection(dates),
-                    ],
                     SizedBox(height: 24),
                     _buildVehicleSection(vehicle),
                     SizedBox(height: 24),
@@ -229,10 +225,10 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
     // Calculate prices
     final basePrice = package != null
         ? ((package['rawPrice'] as num?)?.toDouble() ??
-            double.tryParse(
-              package['price']?.toString().replaceAll(' AED', '') ?? '',
-            ) ??
-            0.0)
+              double.tryParse(
+                package['price']?.toString().replaceAll(' AED', '') ?? '',
+              ) ??
+              0.0)
         : 0.0;
 
     double addOnTotal = 0.0;
@@ -271,10 +267,6 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
                       ...addOns.map(
                         (addOn) => _buildAddOnSection(addOn, dates.length),
                       ),
-                    ],
-                    if (dates.isNotEmpty) ...[
-                      SizedBox(height: 24),
-                      _buildSelectedDatesSection(dates),
                     ],
                     SizedBox(height: 24),
                     _buildVehicleSection(vehicle),
@@ -362,8 +354,9 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey[700]!, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -379,7 +372,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
           ),
           SizedBox(height: 8),
           Text(
-            description,
+            description.toUpperCase(),
             style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: 14,
@@ -400,14 +393,16 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
     final description =
         addOn['description']?.toString() ??
         'WE PROVIDE PROFESSIONAL CAR INTERIOR VACUUM CLEANING.';
+    final dates = widget.arguments?.selectedDates ?? [];
 
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey[700]!, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -415,7 +410,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
           Text(
             addOnName,
             style: AppTheme.bebasNeue(
-              color: Color(0xFF04CDFE),
+              color: const Color(0xFF04CDFE),
               fontSize: 16,
               fontWeight: FontWeight.w400,
               letterSpacing: 1.0,
@@ -423,7 +418,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
           ),
           SizedBox(height: 8),
           Text(
-            description,
+            description.toUpperCase(),
             style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: 14,
@@ -432,54 +427,66 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
               height: 1.4,
             ),
           ),
+          if (dates.isNotEmpty) ...[
+            SizedBox(height: 16),
+            Text(
+              'SELECTED DATES',
+              style: AppTheme.bebasNeue(
+                color: const Color(0xFF04CDFE),
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+                letterSpacing: 1.0,
+              ),
+            ),
+            SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: dates.map((date) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[900],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[700]!, width: 1),
+                  ),
+                  child: Text(
+                    _formatDate(date),
+                    style: AppTheme.bebasNeue(
+                      color: const Color(0xFF04CDFE),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildSelectedDatesSection(List<DateTime> dates) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'SELECTED DATES',
-          style: AppTheme.bebasNeue(
-            color: Color(0xFF04CDFE),
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-            letterSpacing: 1.0,
-          ),
-        ),
-        SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: dates.map((date) {
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: AppTheme.cardColor,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                _formatDate(date),
-                style: AppTheme.bebasNeue(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
   Widget _buildVehicleSection(Map<String, dynamic> vehicle) {
-    final model =
-        vehicle['vehicleModel']?.toString().toUpperCase() ?? 'VEHICLE';
+    // Extract company name
+    final company = vehicle['company']?.toString() ?? '';
+    final typeString = vehicle['type']?.toString() ?? '';
+    final companyName = company.isNotEmpty
+        ? company
+        : (typeString.isNotEmpty ? typeString.split(' ').first : '');
+
+    final model = vehicle['vehicleModel']?.toString() ?? '--';
+
+    // Build vehicle name (Company + Model)
+    final vehicleName = [companyName, model]
+        .where((value) => value.isNotEmpty && value != '--')
+        .map((value) => value.toUpperCase())
+        .join(' ');
+
     final type = vehicle['type']?.toString().toUpperCase() ?? '--';
     final number = vehicle['vehicleNumber']?.toString().toUpperCase() ?? '--';
     final color = vehicle['color']?.toString().toUpperCase() ?? '--';
@@ -489,8 +496,9 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey[700]!, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -498,7 +506,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
           Text(
             'SELECTED VEHICLE',
             style: AppTheme.bebasNeue(
-              color: Color(0xFF04CDFE),
+              color: const Color(0xFF04CDFE),
               fontSize: 16,
               fontWeight: FontWeight.w400,
               letterSpacing: 1.0,
@@ -506,18 +514,21 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
           ),
           SizedBox(height: 12),
           Text(
-            model,
+            vehicleName.isNotEmpty ? vehicleName : 'VEHICLE',
             style: AppTheme.bebasNeue(
-              color: Colors.white,
-              fontSize: 16,
+              color: const Color(0xFF04CDFE),
+              fontSize: 18,
               fontWeight: FontWeight.w400,
-              letterSpacing: 0.5,
+              letterSpacing: 1.0,
             ),
           ),
-          SizedBox(height: 12),
+          SizedBox(height: 20),
           _buildVehicleInfoRow('TYPE', type),
+          SizedBox(height: 12),
           _buildVehicleInfoRow('NUMBER', number),
+          SizedBox(height: 12),
           _buildVehicleInfoRow('COLOR', color),
+          SizedBox(height: 12),
           _buildVehicleInfoRow('PARKING NUMBER', parking),
         ],
       ),
@@ -525,31 +536,28 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
   }
 
   Widget _buildVehicleInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: AppTheme.bebasNeue(
-              color: Colors.white70,
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              letterSpacing: 0.5,
-            ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: AppTheme.bebasNeue(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            letterSpacing: 0.5,
           ),
-          Text(
-            value,
-            style: AppTheme.bebasNeue(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              letterSpacing: 0.5,
-            ),
+        ),
+        Text(
+          value,
+          style: AppTheme.bebasNeue(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            letterSpacing: 0.5,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -564,8 +572,9 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey[700]!, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -593,7 +602,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
                     addOn['price']?.toString().replaceAll(' AED', '') ?? '',
                   ) ??
                   0.0;
-              final addOnName = (addOn['name'] ?? 'ADD-ON')
+              final addOnName = (addOn['name'] ?? 'INTERIOR CLEANING')
                   .toString()
                   .toUpperCase();
               final dateText = dateCount > 0
@@ -602,7 +611,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: _buildPriceRow(
-                  '$addOnName',
+                  '$addOnName ADD-ON',
                   '${addOnPrice.toStringAsFixed(0)} AED $dateText',
                   isSecondary: true,
                 ),
@@ -612,11 +621,12 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
             _buildPriceRow(
               'ADD-ON TOTAL',
               '${addOnTotal(addOns, dateCount).toStringAsFixed(0)} AED',
+              isBold: true,
             ),
             SizedBox(height: 12),
-            const Divider(color: Colors.white24, height: 1),
-            SizedBox(height: 12),
           ],
+          const Divider(color: Colors.white24, height: 1),
+          SizedBox(height: 12),
           _buildPriceRow(
             'TOTAL',
             '${total.toStringAsFixed(0)} AED',
@@ -632,7 +642,9 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
     String value, {
     bool isSecondary = false,
     bool isTotal = false,
+    bool isBold = false,
   }) {
+    final shouldBold = isTotal || isBold;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -640,18 +652,18 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
           child: Text(
             label,
             style: AppTheme.bebasNeue(
-              color: isTotal ? Colors.white : Colors.white70,
+              color: shouldBold ? Colors.white : Colors.white70,
               fontSize: isTotal ? 16 : 14,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              fontWeight: shouldBold ? FontWeight.bold : FontWeight.normal,
             ),
           ),
         ),
         Text(
           value,
           style: AppTheme.bebasNeue(
-            color: isTotal ? Colors.white : Colors.white70,
+            color: shouldBold ? Colors.white : Colors.white70,
             fontSize: isTotal ? 18 : 14,
-            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            fontWeight: shouldBold ? FontWeight.bold : FontWeight.normal,
           ),
         ),
       ],
@@ -679,7 +691,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
             backgroundColor: const Color(0xFF04CDFE),
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(20),
             ),
           ),
           onPressed: () {
@@ -717,7 +729,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
         child: CupertinoButton(
           padding: EdgeInsets.zero,
           color: const Color(0xFF04CDFE),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(20),
           onPressed: () {
             _navigateToPayment(context, total);
           },

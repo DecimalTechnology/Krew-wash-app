@@ -276,7 +276,7 @@ class _EditProfileOtpDialogState extends State<EditProfileOtpDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: const Color(0xFF00D4AA),
+          backgroundColor: AppTheme.primaryColor,
         ),
       );
     }
@@ -329,7 +329,7 @@ class _EditProfileOtpDialogState extends State<EditProfileOtpDialog> {
                 style: AppTheme.bebasNeue(
                   fontSize: 24,
                   fontWeight: FontWeight.w400,
-                  color: const Color(0xFF00D4AA),
+                  color: AppTheme.primaryColor,
                   letterSpacing: 2,
                 ),
               ),
@@ -467,7 +467,7 @@ class _EditProfileOtpDialogState extends State<EditProfileOtpDialog> {
                       : 'RESEND CODE IN ${_resendTimer}s',
                   style: AppTheme.bebasNeue(
                     color: _canResend
-                        ? const Color(0xFF00D4AA)
+                        ? AppTheme.primaryColor
                         : Colors.white.withValues(alpha: 0.5),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -486,7 +486,7 @@ class _EditProfileOtpDialogState extends State<EditProfileOtpDialog> {
                       : 'RESEND CODE IN ${_resendTimer}s',
                   style: AppTheme.bebasNeue(
                     color: _canResend
-                        ? const Color(0xFF00D4AA)
+                        ? AppTheme.primaryColor
                         : Colors.white.withValues(alpha: 0.5),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -505,7 +505,7 @@ class _EditProfileOtpDialogState extends State<EditProfileOtpDialog> {
           width: double.infinity,
           height: 48,
           decoration: BoxDecoration(
-            color: const Color(0xFF00D4AA),
+            color: AppTheme.primaryColor,
             borderRadius: BorderRadius.circular(isIOS ? 16 : 8),
           ),
           child: isIOS

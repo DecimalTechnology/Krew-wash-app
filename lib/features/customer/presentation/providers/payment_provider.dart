@@ -303,10 +303,25 @@ class PaymentProvider extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> cancelPayment({required String orderRef}) async {
+  /// Cancel Payment
+  ///
+  /// Marks a Telr payment as FAILED or CANCELLED.
+  ///
+  /// **Parameters:**
+  /// - `orderRef`: Telr order reference (required)
+  /// - `status`: Payment status - must be "FAILED" or "CANCELLED" (required)
+  ///
+  /// **Returns:**
+  /// - Success: `{success: true, message: "...", bookingId: "..."}`
+  /// - Error: `{success: false, message: "...", statusCode: ...}`
+  Future<Map<String, dynamic>> cancelPayment({
+    required String orderRef,
+    required String status,
+  }) async {
     if (kDebugMode) {
       print('🔄 [PaymentProvider] cancelPayment called');
       print('   orderRef: $orderRef');
+      print('   status: $status');
     }
 
     _isProcessing = true;
@@ -314,7 +329,10 @@ class PaymentProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _repository.cancelPayment(orderRef: orderRef);
+      final response = await _repository.cancelPayment(
+        orderRef: orderRef,
+        status: status,
+      );
 
       if (kDebugMode) {
         print('✅ [PaymentProvider] cancelPayment response received');

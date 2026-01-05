@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:carwash_app/core/constants/api.dart';
 import 'package:carwash_app/core/services/secure_storage_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class PaymentRepository {
@@ -440,27 +441,65 @@ class PaymentRepository {
     }
   }
 
-  // Check payment status using reference ID
-  Future<Map<String, dynamic>> checkPaymentStatus({
-    required String reference,
+  /// Verify Telr Payment Status
+  /// 
+  /// Verifies the payment status of a Telr transaction using the order reference.
+  /// Returns a normalized response with status and bookingStatus fields.
+  /// 
+  /// Status values:
+  /// - SUCCESS: Payment completed
+  /// - PENDING: Processing
+  /// - REJECTED: Merchant/test rejection
+  /// - CANCELLED: User cancelled
+  /// - DECLINED: Bank declined
+  /// - FAILED: Payment failed
+  /// - EXPIRED: Session expired
+  /// - UNKNOWN: Unrecognized state
+  /// - INVALID_REQUEST: Missing order reference
+  /// - VERIFICATION_ERROR: Gateway/Network error
+  Future<Map<String, dynamic>> verifyTelrPaymentStatus({
+    required String orderRef,
   }) async {
+    if (kDebugMode) {
     print('═══════════════════════════════════════════════════════════');
-    print('🔄 [PaymentRepository] checkPaymentStatus API Call');
+      print('🔄 [PaymentRepository] verifyTelrPaymentStatus API Call');
     print('═══════════════════════════════════════════════════════════');
-    print('📦 reference: $reference');
+      print('📦 orderRef: $orderRef');
+    }
+
+    // Validate order reference
+    if (orderRef.isEmpty || orderRef.trim().isEmpty) {
+      if (kDebugMode) {
+        print('❌ [PaymentRepository] Missing Telr order reference');
+      }
+      return {
+        'success': false,
+        'status': 'INVALID_REQUEST',
+        'message': 'Missing Telr order reference',
+      };
+    }
 
     try {
       final token = await SecureStorageService.getAccessToken();
+      if (kDebugMode) {
       print('📦 token available: ${token != null && token.isNotEmpty}');
+      }
 
-      final uri = Uri.parse('$baseurl/payments/status');
+      // Try /payments/status (plural) first, fallback to /payment/status (singular) if 404
+      Uri uri = Uri.parse('$baseurl/payments/status');
+      if (kDebugMode) {
       print('📦 API URL: $uri');
+      }
 
-      final body = jsonEncode({'ref': reference});
+      final body = jsonEncode({'ref': orderRef.trim()});
+      if (kDebugMode) {
       print('📦 Request body: $body');
+      }
 
+      if (kDebugMode) {
       print('🔄 Sending POST request...');
-      final response = await http
+      }
+      http.Response response = await http
           .post(
             uri,
             headers: {
@@ -473,87 +512,177 @@ class PaymentRepository {
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
+              if (kDebugMode) {
               print('❌ [PaymentRepository] Request timeout');
+              }
               throw TimeoutException(
-                'Payment status check request timeout',
+                'Payment status verification request timeout',
                 const Duration(seconds: 30),
               );
             },
           );
 
+      if (kDebugMode) {
       print('📦 Response status code: ${response.statusCode}');
       print('📦 Response body: ${response.body}');
-
-      // Check HTTP status code
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        print(
-          '❌ [PaymentRepository] HTTP error status: ${response.statusCode}',
-        );
-        final errorResponse = {
-          'success': false,
-          'message': 'Server error: HTTP ${response.statusCode}',
-          'statusCode': response.statusCode,
-        };
-        print('📦 Returning error response: $errorResponse');
-        print('═══════════════════════════════════════════════════════════');
-        return errorResponse;
       }
 
+      // If 404, try the singular endpoint as fallback
+      if (response.statusCode == 404) {
+        if (kDebugMode) {
+          print('⚠️ [PaymentRepository] 404 on /payments/status, trying /payment/status...');
+        }
+        uri = Uri.parse('$baseurl/payment/status');
+        if (kDebugMode) {
+          print('📦 Fallback API URL: $uri');
+        }
+        response = await http
+            .post(
+              uri,
+              headers: {
+                'Content-Type': 'application/json',
+                if (token != null && token.isNotEmpty)
+                  'Authorization': 'Bearer $token',
+              },
+              body: body,
+            )
+            .timeout(
+              const Duration(seconds: 30),
+              onTimeout: () {
+                if (kDebugMode) {
+                  print('❌ [PaymentRepository] Fallback request timeout');
+                }
+                throw TimeoutException(
+                  'Payment status verification request timeout',
+                  const Duration(seconds: 30),
+                );
+              },
+            );
+        if (kDebugMode) {
+          print('📦 Fallback response status code: ${response.statusCode}');
+          print('📦 Fallback response body: ${response.body}');
+        }
+      }
+
+      // Parse response
       final decoded = jsonDecode(response.body) as Map<String, dynamic>;
 
+      // Handle different HTTP status codes
+      if (response.statusCode == 400) {
+        // Missing order reference
+        if (kDebugMode) {
+          print('❌ [PaymentRepository] Bad Request (400)');
+        }
+        return {
+          'success': false,
+          'status': decoded['status'] ?? 'INVALID_REQUEST',
+          'message': decoded['message'] ?? 'Missing Telr order reference',
+        };
+      } else if (response.statusCode == 500) {
+        // Verification error
+        if (kDebugMode) {
+          print('❌ [PaymentRepository] Server Error (500)');
+        }
+        return {
+          'success': false,
+          'status': decoded['status'] ?? 'VERIFICATION_ERROR',
+          'bookingStatus': decoded['bookingStatus'] ?? 'FAILED',
+          'message': decoded['message'] ??
+              'Error verifying payment with payment gateway',
+        };
+      } else if (response.statusCode >= 200 && response.statusCode < 300) {
+        // Success response (200 OK)
+        // The API returns 200 for all statuses (success, pending, rejected, etc.)
+        if (kDebugMode) {
       if (decoded['success'] == true) {
-        print('✅ [PaymentRepository] Payment status check successful');
+            print('✅ [PaymentRepository] Payment status: SUCCESS');
       } else {
-        print('❌ [PaymentRepository] Payment status check failed');
-        print('   success: ${decoded['success']}');
+            print(
+              '⚠️ [PaymentRepository] Payment status: ${decoded['status'] ?? 'UNKNOWN'}',
+            );
+          }
+          print('   bookingStatus: ${decoded['bookingStatus']}');
         print('   message: ${decoded['message']}');
       }
 
-      print('📦 Response: $decoded');
-      print('═══════════════════════════════════════════════════════════');
-
-      return decoded;
+        // Return normalized response
+        return {
+          'success': decoded['success'] ?? false,
+          'status': decoded['status'] ?? 'UNKNOWN',
+          'bookingStatus': decoded['bookingStatus'] ?? 'FAILED',
+          'message': decoded['message'] ?? 'Unable to determine payment status',
+          if (decoded['data'] != null) 'data': decoded['data'],
+          if (decoded['debugInfo'] != null) 'debugInfo': decoded['debugInfo'],
+        };
+      } else {
+        // Other HTTP errors
+        if (kDebugMode) {
+          print(
+            '❌ [PaymentRepository] HTTP error status: ${response.statusCode}',
+          );
+        }
+        return {
+          'success': false,
+          'status': 'VERIFICATION_ERROR',
+          'bookingStatus': 'FAILED',
+          'message': 'Server error: HTTP ${response.statusCode}',
+          'statusCode': response.statusCode,
+        };
+      }
     } on SocketException catch (e) {
+      if (kDebugMode) {
       print('❌ [PaymentRepository] SocketException: $e');
-      final errorResponse = {
+      }
+      return {
         'success': false,
+        'status': 'VERIFICATION_ERROR',
+        'bookingStatus': 'FAILED',
         'message': 'Network error: Please check your internet connection',
         'isNetworkError': true,
       };
-      print('📦 Returning error response: $errorResponse');
-      print('═══════════════════════════════════════════════════════════');
-      return errorResponse;
     } on TimeoutException catch (e) {
+      if (kDebugMode) {
       print('❌ [PaymentRepository] TimeoutException: $e');
-      final errorResponse = {
+      }
+      return {
         'success': false,
+        'status': 'VERIFICATION_ERROR',
+        'bookingStatus': 'FAILED',
         'message': 'Network error: Request timeout. Please try again',
         'isNetworkError': true,
       };
-      print('📦 Returning error response: $errorResponse');
-      print('═══════════════════════════════════════════════════════════');
-      return errorResponse;
     } on http.ClientException catch (e) {
+      if (kDebugMode) {
       print('❌ [PaymentRepository] ClientException: $e');
-      final errorResponse = {
+      }
+      return {
         'success': false,
+        'status': 'VERIFICATION_ERROR',
+        'bookingStatus': 'FAILED',
         'message': 'Network error: Please check your internet connection',
         'isNetworkError': true,
       };
-      print('📦 Returning error response: $errorResponse');
-      print('═══════════════════════════════════════════════════════════');
-      return errorResponse;
     } catch (e, stackTrace) {
+      if (kDebugMode) {
       print('❌ [PaymentRepository] Unexpected error: $e');
       print('   Stack trace: $stackTrace');
-      final errorResponse = {
+      }
+      return {
         'success': false,
-        'message': 'Failed to check payment status: $e',
+        'status': 'VERIFICATION_ERROR',
+        'bookingStatus': 'FAILED',
+        'message': 'Failed to verify payment status: $e',
       };
-      print('📦 Returning error response: $errorResponse');
-      print('═══════════════════════════════════════════════════════════');
-      return errorResponse;
     }
+  }
+
+  // Legacy method - kept for backward compatibility
+  // Check payment status using reference ID
+  @Deprecated('Use verifyTelrPaymentStatus instead')
+  Future<Map<String, dynamic>> checkPaymentStatus({
+    required String reference,
+  }) async {
+    return verifyTelrPaymentStatus(orderRef: reference);
   }
 
   // Confirm payment success
@@ -654,24 +783,80 @@ class PaymentRepository {
     }
   }
 
-  // Cancel payment (when status check returns success=false)
-  Future<Map<String, dynamic>> cancelPayment({required String orderRef}) async {
+  /// Cancel Payment
+  /// 
+  /// Marks a Telr payment as FAILED or CANCELLED and updates the related booking.
+  /// 
+  /// **Status Rules:**
+  /// - Status must be either "FAILED" or "CANCELLED"
+  /// - Cannot cancel if payment is already COMPLETED
+  /// - Cannot set same status if already set (idempotent)
+  /// 
+  /// **Error Responses:**
+  /// - 400: Missing order reference, invalid status, or payment already completed
+  /// - 404: Booking not found
+  /// - 409: Booking already cancelled/failed
+  Future<Map<String, dynamic>> cancelPayment({
+    required String orderRef,
+    required String status,
+  }) async {
+    if (kDebugMode) {
     print('═══════════════════════════════════════════════════════════');
     print('🔄 [PaymentRepository] cancelPayment API Call');
     print('═══════════════════════════════════════════════════════════');
     print('📦 orderRef: $orderRef');
+      print('📦 status: $status');
+    }
+
+    // Validate order reference
+    if (orderRef.isEmpty || orderRef.trim().isEmpty) {
+      if (kDebugMode) {
+        print('❌ [PaymentRepository] Missing order reference');
+      }
+      return {
+        'success': false,
+        'message': 'Missing Telr order reference',
+      };
+    }
+
+    // Validate status - must be FAILED or CANCELLED
+    final normalizedStatus = status.trim().toUpperCase();
+    if (normalizedStatus != 'FAILED' && normalizedStatus != 'CANCELLED') {
+      if (kDebugMode) {
+        print('❌ [PaymentRepository] Invalid status: $status');
+        print('   Allowed values: FAILED, CANCELLED');
+      }
+      return {
+        'success': false,
+        'message': 'Invalid payment status. Must be FAILED or CANCELLED',
+      };
+    }
 
     try {
       final token = await SecureStorageService.getAccessToken();
+      if (kDebugMode) {
       print('📦 token available: ${token != null && token.isNotEmpty}');
+      }
 
       final uri = Uri.parse('$baseurl/payments/cancel');
+      if (kDebugMode) {
       print('📦 API URL: $uri');
+      }
 
-      final body = jsonEncode({'orderRef': orderRef});
+      // Build request body with orderRef and status (both required)
+      final requestBody = <String, dynamic>{
+        'orderRef': orderRef.trim(),
+        'status': normalizedStatus,
+      };
+
+      final body = jsonEncode(requestBody);
+      if (kDebugMode) {
       print('📦 Request body: $body');
+      }
 
+      if (kDebugMode) {
       print('🔄 Sending POST request...');
+      }
       final response = await http
           .post(
             uri,
@@ -685,7 +870,9 @@ class PaymentRepository {
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
+              if (kDebugMode) {
               print('❌ [PaymentRepository] Request timeout');
+              }
               throw TimeoutException(
                 'Payment cancel request timeout',
                 const Duration(seconds: 30),
@@ -693,50 +880,103 @@ class PaymentRepository {
             },
           );
 
+      if (kDebugMode) {
       print('📦 Response status code: ${response.statusCode}');
       print('📦 Response body: ${response.body}');
+      }
 
-      // Check HTTP status code
-      if (response.statusCode < 200 || response.statusCode >= 300) {
+      // Parse response
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+
+      // Handle different HTTP status codes
+      if (response.statusCode == 400) {
+        // Bad Request: Missing order reference, invalid status, or payment already completed
+        if (kDebugMode) {
+          print('❌ [PaymentRepository] Bad Request (400)');
+          print('   message: ${decoded['message']}');
+        }
+        return {
+          'success': false,
+          'message': decoded['message'] ?? 'Invalid request',
+          'statusCode': 400,
+        };
+      } else if (response.statusCode == 404) {
+        // Not Found: Booking not found
+        if (kDebugMode) {
+          print('❌ [PaymentRepository] Not Found (404)');
+          print('   message: ${decoded['message']}');
+        }
+        return {
+          'success': false,
+          'message': decoded['message'] ?? 'Booking not found for this payment',
+          'statusCode': 404,
+        };
+      } else if (response.statusCode == 409) {
+        // Conflict: Booking already cancelled/failed
+        if (kDebugMode) {
+          print('❌ [PaymentRepository] Conflict (409)');
+          print('   message: ${decoded['message']}');
+        }
+        return {
+          'success': false,
+          'message': decoded['message'] ?? 'Booking already cancelled or failed',
+          'statusCode': 409,
+        };
+      } else if (response.statusCode >= 200 && response.statusCode < 300) {
+        // Success response
+        if (kDebugMode) {
+          print('✅ [PaymentRepository] cancelPayment successful');
+          print('   bookingId: ${decoded['bookingId']}');
+          print('   message: ${decoded['message']}');
+          print('═══════════════════════════════════════════════════════════');
+        }
+        return decoded;
+      } else {
+        // Other HTTP errors
+        if (kDebugMode) {
         print(
           '❌ [PaymentRepository] HTTP error status: ${response.statusCode}',
         );
+        }
         return {
           'success': false,
-          'message': 'Server error: HTTP ${response.statusCode}',
+          'message': decoded['message'] ??
+              'Server error: HTTP ${response.statusCode}',
           'statusCode': response.statusCode,
         };
       }
-
-      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-      print('✅ [PaymentRepository] cancelPayment API call completed');
-      print('   Response: $decoded');
-      print('═══════════════════════════════════════════════════════════');
-      return decoded;
     } on SocketException catch (e) {
+      if (kDebugMode) {
       print('❌ [PaymentRepository] SocketException: $e');
+      }
       return {
         'success': false,
         'message': 'Network error: Please check your internet connection',
         'isNetworkError': true,
       };
     } on TimeoutException catch (e) {
+      if (kDebugMode) {
       print('❌ [PaymentRepository] TimeoutException: $e');
+      }
       return {
         'success': false,
         'message': 'Network error: Request timeout. Please try again',
         'isNetworkError': true,
       };
     } on http.ClientException catch (e) {
+      if (kDebugMode) {
       print('❌ [PaymentRepository] ClientException: $e');
+      }
       return {
         'success': false,
         'message': 'Network error: Please check your internet connection',
         'isNetworkError': true,
       };
     } catch (e, stackTrace) {
+      if (kDebugMode) {
       print('❌ [PaymentRepository] Unexpected error: $e');
       print('   Stack trace: $stackTrace');
+      }
       return {'success': false, 'message': 'Failed to cancel payment: $e'};
     }
   }

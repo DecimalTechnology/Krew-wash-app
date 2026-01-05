@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../providers/cleaner_booking_provider.dart';
@@ -18,10 +20,13 @@ class StaffUpcomingBookingsScreen extends StatefulWidget {
 class _StaffUpcomingBookingsScreenState
     extends State<StaffUpcomingBookingsScreen> {
   final _searchController = TextEditingController();
+  Timer? _searchDebounceTimer;
 
   @override
   void initState() {
     super.initState();
+    // Add listener for search with debouncing
+    _searchController.addListener(_onSearchChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CleanerBookingProvider>().fetchAssignedBookings(force: true);
     });
@@ -29,8 +34,28 @@ class _StaffUpcomingBookingsScreenState
 
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    // Cancel previous timer
+    _searchDebounceTimer?.cancel();
+
+    // Set new timer to debounce search
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        final query = _searchController.text.trim();
+        debugPrint('🔍 [SEARCH] Debounced search query: "$query"');
+        // Always use force: true to ensure search executes
+        context.read<CleanerBookingProvider>().fetchAssignedBookings(
+          force: true,
+          search: query.isEmpty ? '' : query,
+        );
+      }
+    });
   }
 
   @override
@@ -94,6 +119,12 @@ class _StaffUpcomingBookingsScreenState
 
         return Consumer<CleanerBookingProvider>(
           builder: (context, bookingProvider, _) {
+            // Debug: Track Consumer rebuilds
+            if (kDebugMode) {
+              debugPrint(
+                '🔍 [UI] Consumer rebuilt - Search: "${bookingProvider.assignedSearch}", Bookings: ${bookingProvider.assignedBookings.length}, Loading: ${bookingProvider.isAssignedLoading}',
+              );
+            }
             return RefreshIndicator(
               color: const Color(0xFF04CDFE),
               onRefresh: () =>
@@ -158,7 +189,11 @@ class _StaffUpcomingBookingsScreenState
 
   Widget _buildSearchBar(bool isIOS, bool isSmallScreen) {
     void handleSearch() {
+      // Cancel any pending debounced search
+      _searchDebounceTimer?.cancel();
+
       final query = _searchController.text.trim();
+      debugPrint('🔍 [SEARCH] Manual search query (Enter/Button): "$query"');
       // Pass empty string if query is empty, so it clears the search
       context.read<CleanerBookingProvider>().fetchAssignedBookings(
         force: true,
@@ -250,16 +285,32 @@ class _StaffUpcomingBookingsScreenState
     required bool isSmallScreen,
     required bool isTablet,
   }) {
-    if (bookingProvider.isAssignedLoading &&
-        bookingProvider.assignedBookings.isEmpty) {
+    // Check if there's an active search
+    final hasSearch = bookingProvider.assignedSearch.isNotEmpty;
+
+    // Debug: Track when this method is called
+    if (kDebugMode) {
+      debugPrint(
+        '🔍 [UI] _buildBookingsSliver called - Search: "$hasSearch", Query: "${bookingProvider.assignedSearch}", Loading: ${bookingProvider.isAssignedLoading}, Bookings: ${bookingProvider.assignedBookings.length}',
+      );
+    }
+
+    // Show shimmer loading (show even when searching with existing bookings)
+    if (bookingProvider.isAssignedLoading) {
       return SliverList(
         delegate: SliverChildListDelegate([
-          SizedBox(height: 40),
-          Center(child: CupertinoActivityIndicator(color: Colors.white)),
+          SizedBox(height: 20),
+          ...List.generate(3, (index) {
+            return Padding(
+              padding: EdgeInsets.only(top: index == 0 ? 0 : 16),
+              child: _buildBookingCardShimmer(isIOS, isSmallScreen),
+            );
+          }),
         ]),
       );
     }
 
+    // Show error state
     if (bookingProvider.assignedError != null &&
         bookingProvider.assignedBookings.isEmpty) {
       return SliverList(
@@ -267,52 +318,92 @@ class _StaffUpcomingBookingsScreenState
           _buildErrorState(
             message: bookingProvider.assignedError!,
             isIOS: isIOS,
-            onRetry: () => bookingProvider.fetchAssignedBookings(force: true),
+            onRetry: () => bookingProvider.fetchAssignedBookings(
+              force: true,
+              search: hasSearch ? bookingProvider.assignedSearch : null,
+            ),
           ),
         ]),
       );
     }
 
-    if (bookingProvider.assignedBookings.isEmpty) {
-      return SliverList(
-        delegate: SliverChildListDelegate([_buildEmptyState(isIOS)]),
+    // Filter bookings based on search or status
+    final filteredBookings = hasSearch
+        ? bookingProvider.assignedBookings.toList()
+        : bookingProvider.assignedBookings.where((booking) {
+            final status = booking.status.toLowerCase();
+            return status == 'assigned' ||
+                status == 'pending' ||
+                status.contains('progress') ||
+                status == 'in progress';
+          }).toList();
+
+    // Debug: Print filtering info
+    if (kDebugMode) {
+      debugPrint(
+        '🔍 [UI] Total bookings from provider: ${bookingProvider.assignedBookings.length}',
       );
+      debugPrint(
+        '🔍 [UI] Has search: $hasSearch, Search query: "${bookingProvider.assignedSearch}"',
+      );
+      debugPrint('🔍 [UI] Filtered bookings count: ${filteredBookings.length}');
+      if (filteredBookings.isNotEmpty) {
+        final bookingIds = filteredBookings.map((b) => b.bookingId).join(', ');
+        debugPrint('🔍 [UI] All filtered booking IDs: [$bookingIds]');
+        debugPrint(
+          '🔍 [UI] First filtered booking ID: ${filteredBookings.first.bookingId}',
+        );
+      }
     }
 
-    // Filter bookings to only show assigned with pending or in progress status
-    final filteredBookings = bookingProvider.assignedBookings.where((booking) {
-      final status = booking.status.toLowerCase();
-      return status == 'assigned' ||
-          status == 'pending' ||
-          status.contains('progress') ||
-          status == 'in progress';
-    }).toList();
-
+    // Show empty state if no bookings match
     if (filteredBookings.isEmpty) {
+      if (kDebugMode) {
+        debugPrint('🔍 [UI] Showing empty state - hasSearch: $hasSearch');
+      }
       return SliverList(
-        delegate: SliverChildListDelegate([_buildEmptyState(isIOS)]),
+        delegate: SliverChildListDelegate([
+          _buildEmptyState(
+            isIOS,
+            message: hasSearch
+                ? 'No bookings found matching "${bookingProvider.assignedSearch}"'
+                : null,
+          ),
+        ]),
       );
     }
 
+    // Use key to force rebuild when search changes
     return SliverList(
+      key: ValueKey(
+        'bookings_${hasSearch ? bookingProvider.assignedSearch : 'all'}',
+      ),
       delegate: SliverChildBuilderDelegate((context, index) {
         final booking = filteredBookings[index];
+
+        // Debug: Print what's being displayed
+        if (kDebugMode && index == 0) {
+          debugPrint(
+            '🔍 [UI] Displaying booking at index $index: ${booking.bookingId}',
+          );
+          debugPrint(
+            '🔍 [UI] Total bookings to display: ${filteredBookings.length}',
+          );
+        }
         final packageName =
             booking.package?.packageId?.name ?? 'Assigned Package';
         final customer = booking.user?.name ?? 'Customer';
-        // Try multiple sources for location
+        // Location logic: Match details page - building name OR apartment number
+        // Format apartment number consistently
         String location;
         if (booking.buildingInfo?.name != null &&
-            booking.buildingInfo!.name.isNotEmpty) {
-          location = booking.buildingInfo!.name;
-        } else if (booking.vehicleInfo?.vehicleNumber != null &&
-            booking.vehicleInfo!.vehicleNumber!.isNotEmpty) {
-          location = booking.vehicleInfo!.vehicleNumber!;
+            booking.buildingInfo!.name.trim().isNotEmpty) {
+          location = booking.buildingInfo!.name.trim();
         } else if (booking.user?.apartmentNumber != null &&
-            booking.user!.apartmentNumber!.isNotEmpty) {
-          location = 'Apt ${booking.user!.apartmentNumber!}';
+            booking.user!.apartmentNumber!.trim().isNotEmpty) {
+          location = booking.user!.apartmentNumber!.trim();
         } else {
-          location = 'Location not available';
+          location = 'N/A';
         }
 
         // Debug: Print location info
@@ -614,7 +705,7 @@ class _StaffUpcomingBookingsScreenState
     );
   }
 
-  Widget _buildEmptyState(bool isIOS) {
+  Widget _buildEmptyState(bool isIOS, {String? message}) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -626,7 +717,7 @@ class _StaffUpcomingBookingsScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'No bookings found',
+            message ?? 'No bookings found',
             style: AppTheme.bebasNeue(
               color: Colors.white,
               fontSize: 16,
@@ -635,7 +726,9 @@ class _StaffUpcomingBookingsScreenState
           ),
           SizedBox(height: 8),
           Text(
-            'Assigned bookings will appear here. Try refreshing to check for new tasks.',
+            message != null
+                ? 'Try a different search term or clear the search to see all bookings.'
+                : 'Assigned bookings will appear here. Try refreshing to check for new tasks.',
             style: AppTheme.bebasNeue(color: Colors.white70, fontSize: 14),
           ),
         ],
@@ -679,5 +772,213 @@ class _StaffUpcomingBookingsScreenState
       'Dec',
     ];
     return months[(month - 1).clamp(0, 11)];
+  }
+
+  Widget _buildBookingCardShimmer(bool isIOS, bool isSmallScreen) {
+    return Shimmer.fromColors(
+      baseColor: Colors.white.withValues(alpha: 0.08),
+      highlightColor: Colors.white.withValues(alpha: 0.25),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: isSmallScreen ? 18 : 24,
+          vertical: isSmallScreen ? 20 : 26,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(isIOS ? 26 : 22),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.2),
+            width: 1.2,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with vehicle info and status
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: isSmallScreen ? 14 : 16,
+                        width: 120,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Container(
+                        height: isSmallScreen ? 12 : 14,
+                        width: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Container(
+                        height: isSmallScreen ? 12 : 14,
+                        width: 80,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 60,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 18),
+            Container(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+            SizedBox(height: 18),
+            // Service details shimmer
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: isSmallScreen ? 80 : 100,
+                  height: isSmallScreen ? 12 : 14,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    height: isSmallScreen ? 12 : 14,
+                    margin: EdgeInsets.only(left: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: isSmallScreen ? 80 : 100,
+                  height: isSmallScreen ? 12 : 14,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    height: isSmallScreen ? 12 : 14,
+                    margin: EdgeInsets.only(left: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: isSmallScreen ? 80 : 100,
+                  height: isSmallScreen ? 12 : 14,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    height: isSmallScreen ? 12 : 14,
+                    margin: EdgeInsets.only(left: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: isSmallScreen ? 80 : 100,
+                  height: isSmallScreen ? 12 : 14,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    height: isSmallScreen ? 12 : 14,
+                    margin: EdgeInsets.only(left: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: isSmallScreen ? 80 : 100,
+                  height: isSmallScreen ? 12 : 14,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    height: isSmallScreen ? 12 : 14,
+                    margin: EdgeInsets.only(left: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
+            // Button shimmer
+            Center(
+              child: Container(
+                width: isSmallScreen ? 200 : 220,
+                height: isSmallScreen ? 40 : 44,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

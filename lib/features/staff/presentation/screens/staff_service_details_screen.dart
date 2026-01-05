@@ -145,6 +145,7 @@ class _StaffServiceDetailsScreenState extends State<StaffServiceDetailsScreen> {
                     isSmallScreen,
                     horizontalPadding,
                   ),
+                  SizedBox(height: 24),
                   // Sessions Overview
                   Padding(
                     padding: EdgeInsets.symmetric(
@@ -227,13 +228,6 @@ class _StaffServiceDetailsScreenState extends State<StaffServiceDetailsScreen> {
           // Centered heading
           Column(
             children: [
-              Text(
-                'Booking Details',
-                style: AppTheme.bebasNeue(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontSize: isSmallScreen ? 12 : 14,
-                ),
-              ),
               SizedBox(height: 4),
               Text(
                 widget.serviceName.toUpperCase(),

@@ -12,10 +12,11 @@
     <!-- For Android 13+ (API 33+), image_picker handles storage permissions automatically -->
     
     <application
-        android:label="carwash_app"
+        android:label="KREW CAR WASH"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
-        tools:replace="android:label">
+        android:icon="@mipmap/launcher_icon"
+        android:roundIcon="@mipmap/launcher_icon"
+        tools:replace="android:label,android:icon,android:roundIcon">
         
         <!-- Google Maps API Key -->
         <meta-data

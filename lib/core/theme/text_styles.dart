@@ -14,6 +14,7 @@ class AppTextStyles {
     Color? color,
     double? letterSpacing,
     double? height,
+    BuildContext? context, // Optional context for responsive sizing
   }) {
     return AppTheme.bebasNeue(
       fontSize: fontSize,
@@ -21,6 +22,7 @@ class AppTextStyles {
       color: color,
       letterSpacing: letterSpacing,
       height: height,
+      context: context,
     );
   }
 
@@ -52,58 +54,48 @@ class AppTextStyles {
   static TextStyle get buttonSmall =>
       bebasNeue(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.0);
 
-  // Responsive text styles
+  // Responsive text styles - reduces font size on large screens
   static TextStyle responsiveTitle(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final isLargeScreen = screenSize.width > 400;
-
     return bebasNeue(
-      fontSize: isLargeScreen ? 28 : 24,
+      fontSize: 24,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.5,
+      context: context, // Pass context for responsive sizing
     );
   }
 
   static TextStyle responsiveSubtitle(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final isLargeScreen = screenSize.width > 400;
-
     return bebasNeue(
-      fontSize: isLargeScreen ? 20 : 18,
+      fontSize: 18,
       fontWeight: FontWeight.w600,
       letterSpacing: 1.0,
+      context: context, // Pass context for responsive sizing
     );
   }
 
   static TextStyle responsiveBody(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final isLargeScreen = screenSize.width > 400;
-
     return bebasNeue(
-      fontSize: isLargeScreen ? 18 : 16,
+      fontSize: 16,
       fontWeight: FontWeight.normal,
+      context: context, // Pass context for responsive sizing
     );
   }
 
   static TextStyle responsiveCaption(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final isLargeScreen = screenSize.width > 400;
-
     return bebasNeue(
-      fontSize: isLargeScreen ? 16 : 14,
+      fontSize: 12,
       fontWeight: FontWeight.w500,
       color: AppTheme.textSecondaryColor,
+      context: context, // Pass context for responsive sizing
     );
   }
 
   static TextStyle responsiveButton(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final isLargeScreen = screenSize.width > 400;
-
     return bebasNeue(
-      fontSize: isLargeScreen ? 18 : 16,
+      fontSize: 16,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.0,
+      context: context, // Pass context for responsive sizing
     );
   }
 

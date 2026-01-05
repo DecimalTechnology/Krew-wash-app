@@ -18,7 +18,7 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(seconds: 2),
+      duration: const Duration(milliseconds: 800),
       vsync: this,
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -26,12 +26,8 @@ class _SplashScreenState extends State<SplashScreen>
     );
     _animationController.forward();
 
-    // Navigate to auth wrapper after splash
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/auth-wrapper');
-      }
-    });
+    // Note: Navigation is handled by AuthWrapper, not here
+    // This ensures the splash screen shows for the full duration during initialization
   }
 
   @override
@@ -75,13 +71,6 @@ class _SplashScreenState extends State<SplashScreen>
                         borderRadius: BorderRadius.circular(
                           20,
                         ), // More rounded for iOS
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF00D4AA).withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(20),
@@ -186,9 +175,11 @@ class _SplashScreenState extends State<SplashScreen>
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF00D4AA).withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
+                            color: const Color(
+                              0xFF04CDFE,
+                            ).withValues(alpha: 0.2),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
                           ),
                         ],
                       ),

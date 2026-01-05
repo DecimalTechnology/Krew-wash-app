@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'customer_home_screen.dart';
@@ -194,68 +195,92 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             // Main content - use IndexedStack to keep all navigators alive
             IndexedStack(index: _currentIndex, children: _navigatorScreens),
 
+            // Blurred background container behind navigation bar
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height:
+                  navBarHeight +
+                  (navBarMargin * 2) +
+                  MediaQuery.of(context).padding.bottom,
+              child: ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: Container(color: Colors.transparent),
+                ),
+              ),
+            ),
+
             // Positioned bottom navigation bar - fixed at bottom
             Positioned(
               left: navBarMargin,
               right: navBarMargin,
               bottom: navBarMargin + MediaQuery.of(context).padding.bottom,
-              child: Container(
-                height: navBarHeight,
-                decoration: BoxDecoration(
-                  color: AppTheme.cardColor,
-                  borderRadius: BorderRadius.circular(navBarRadius),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(navBarRadius),
+                child: Container(
+                  height: navBarHeight,
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardColor.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(navBarRadius),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 1.5,
                     ),
-                  ],
-                ),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: horizontalPadding,
-                    vertical: verticalPadding,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildIOSNavItem(
-                        0,
-                        CupertinoIcons.house,
-                        CupertinoIcons.house_fill,
-                        iconSize,
-                        navItemSize,
-                      ),
-                      _buildIOSNavItem(
-                        1,
-                        CupertinoIcons.square_grid_2x2,
-                        CupertinoIcons.square_grid_2x2_fill,
-                        iconSize,
-                        navItemSize,
-                      ),
-                      _buildIOSNavItem(
-                        2,
-                        CupertinoIcons.car,
-                        CupertinoIcons.car_fill,
-                        iconSize,
-                        navItemSize,
-                      ),
-                      _buildIOSNavItem(
-                        3,
-                        CupertinoIcons.calendar,
-                        CupertinoIcons.calendar_today,
-                        iconSize,
-                        navItemSize,
-                      ),
-                      _buildIOSNavItem(
-                        4,
-                        CupertinoIcons.person,
-                        CupertinoIcons.person_fill,
-                        iconSize,
-                        navItemSize,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
                       ),
                     ],
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                      vertical: verticalPadding,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildIOSNavItem(
+                          0,
+                          CupertinoIcons.house,
+                          CupertinoIcons.house_fill,
+                          iconSize,
+                          navItemSize,
+                        ),
+                        _buildIOSNavItem(
+                          1,
+                          CupertinoIcons.square_grid_2x2,
+                          CupertinoIcons.square_grid_2x2_fill,
+                          iconSize,
+                          navItemSize,
+                        ),
+                        _buildIOSNavItem(
+                          2,
+                          CupertinoIcons.car,
+                          CupertinoIcons.car_fill,
+                          iconSize,
+                          navItemSize,
+                        ),
+                        _buildIOSNavItem(
+                          3,
+                          CupertinoIcons.calendar,
+                          CupertinoIcons.calendar_today,
+                          iconSize,
+                          navItemSize,
+                        ),
+                        _buildIOSNavItem(
+                          4,
+                          CupertinoIcons.person,
+                          CupertinoIcons.person_fill,
+                          iconSize,
+                          navItemSize,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -300,68 +325,92 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             // Main content - use IndexedStack to keep all navigators alive
             IndexedStack(index: _currentIndex, children: _navigatorScreens),
 
+            // Blurred background container behind navigation bar
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height:
+                  navBarHeight +
+                  (navBarMargin * 2) +
+                  MediaQuery.of(context).padding.bottom,
+              child: ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: Container(color: Colors.transparent),
+                ),
+              ),
+            ),
+
             // Positioned bottom navigation bar - fixed at bottom
             Positioned(
               left: navBarMargin,
               right: navBarMargin,
               bottom: navBarMargin + MediaQuery.of(context).padding.bottom,
-              child: Container(
-                height: navBarHeight,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0B0E1F),
-                  borderRadius: BorderRadius.circular(navBarRadius),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(navBarRadius),
+                child: Container(
+                  height: navBarHeight,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0B0E1F).withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(navBarRadius),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 1.5,
                     ),
-                  ],
-                ),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: horizontalPadding,
-                    vertical: verticalPadding,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildAndroidNavItem(
-                        0,
-                        Icons.home_outlined,
-                        Icons.home,
-                        iconSize,
-                        navItemSize,
-                      ),
-                      _buildAndroidNavItem(
-                        1,
-                        Icons.grid_view_outlined,
-                        Icons.grid_view,
-                        iconSize,
-                        navItemSize,
-                      ),
-                      _buildAndroidNavItem(
-                        2,
-                        Icons.directions_car_outlined,
-                        Icons.directions_car,
-                        iconSize,
-                        navItemSize,
-                      ),
-                      _buildAndroidNavItem(
-                        3,
-                        Icons.calendar_today_outlined,
-                        Icons.calendar_today,
-                        iconSize,
-                        navItemSize,
-                      ),
-                      _buildAndroidNavItem(
-                        4,
-                        Icons.person_outline,
-                        Icons.person,
-                        iconSize,
-                        navItemSize,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
                       ),
                     ],
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                      vertical: verticalPadding,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildAndroidNavItem(
+                          0,
+                          Icons.home_outlined,
+                          Icons.home,
+                          iconSize,
+                          navItemSize,
+                        ),
+                        _buildAndroidNavItem(
+                          1,
+                          Icons.grid_view_outlined,
+                          Icons.grid_view,
+                          iconSize,
+                          navItemSize,
+                        ),
+                        _buildAndroidNavItem(
+                          2,
+                          Icons.directions_car_outlined,
+                          Icons.directions_car,
+                          iconSize,
+                          navItemSize,
+                        ),
+                        _buildAndroidNavItem(
+                          3,
+                          Icons.calendar_today_outlined,
+                          Icons.calendar_today,
+                          iconSize,
+                          navItemSize,
+                        ),
+                        _buildAndroidNavItem(
+                          4,
+                          Icons.person_outline,
+                          Icons.person,
+                          iconSize,
+                          navItemSize,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

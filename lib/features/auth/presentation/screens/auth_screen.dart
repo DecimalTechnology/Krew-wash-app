@@ -44,10 +44,10 @@ class _AuthScreenState extends State<AuthScreen> {
       body: Container(
         width: screenWidth,
         height: screenHeight,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           image: DecorationImage(
-            image: const AssetImage('assets/bmw.jpg'),
-            fit: BoxFit.fill,
+            image: AssetImage('assets/loginScreen/Sign Up.jpg'),
+            fit: BoxFit.cover,
             alignment: Alignment.center,
           ),
         ),

@@ -133,7 +133,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
             controller: _nameController,
             placeholder: 'NAME',
             clearButtonMode: OverlayVisibilityMode.editing,
-            style: const TextStyle(color: Colors.white),
+            style: AppTheme.textFieldStyle(color: Colors.white),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
@@ -143,7 +143,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
           )
         : TextField(
             controller: _nameController,
-            style: const TextStyle(color: Colors.white),
+            style: AppTheme.textFieldStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'NAME',
               hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
@@ -151,15 +151,19 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
               fillColor: Colors.white.withValues(alpha: 0.1),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF00D4AA)),
+                borderSide: const BorderSide(color: AppTheme.primaryColor),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
@@ -185,7 +189,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
             placeholder: 'EMAIL',
             keyboardType: TextInputType.emailAddress,
             clearButtonMode: OverlayVisibilityMode.editing,
-            style: const TextStyle(color: Colors.white),
+            style: AppTheme.textFieldStyle(color: Colors.white),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
@@ -196,7 +200,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
         : TextField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
-            style: const TextStyle(color: Colors.white),
+            style: AppTheme.textFieldStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'EMAIL',
               hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
@@ -204,15 +208,19 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
               fillColor: Colors.white.withValues(alpha: 0.1),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF00D4AA)),
+                borderSide: const BorderSide(color: AppTheme.primaryColor),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
@@ -250,11 +258,13 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                   placeholder: 'PHONE',
                   keyboardType: TextInputType.phone,
                   clearButtonMode: OverlayVisibilityMode.editing,
-                  style: const TextStyle(color: Colors.white),
+                  style: AppTheme.textFieldStyle(color: Colors.white),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
                   ),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -264,10 +274,12 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
               : TextField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
-                  style: const TextStyle(color: Colors.white),
+                  style: AppTheme.textFieldStyle(color: Colors.white),
                   decoration: InputDecoration(
                     hintText: 'PHONE',
-                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                    hintStyle: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                    ),
                     filled: true,
                     fillColor: Colors.white.withValues(alpha: 0.1),
                     border: OutlineInputBorder(
@@ -284,7 +296,9 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF00D4AA)),
+                      borderSide: const BorderSide(
+                        color: AppTheme.primaryColor,
+                      ),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -337,11 +351,13 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                     placeholder: 'PHONE',
                     keyboardType: TextInputType.phone,
                     clearButtonMode: OverlayVisibilityMode.editing,
-                    style: const TextStyle(color: Colors.white),
+                    style: AppTheme.textFieldStyle(color: Colors.white),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.3),
+                      ),
                     ),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -351,7 +367,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                 : TextField(
                     controller: _emailController,
                     keyboardType: TextInputType.phone,
-                    style: const TextStyle(color: Colors.white),
+                    style: AppTheme.textFieldStyle(color: Colors.white),
                     decoration: InputDecoration(
                       hintText: 'PHONE',
                       hintStyle: TextStyle(
@@ -373,7 +389,9 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF00D4AA)),
+                        borderSide: const BorderSide(
+                          color: AppTheme.primaryColor,
+                        ),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -405,7 +423,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
             placeholder: 'EMAIL / PHONE',
             keyboardType: TextInputType.emailAddress,
             clearButtonMode: OverlayVisibilityMode.editing,
-            style: const TextStyle(color: Colors.white),
+            style: AppTheme.textFieldStyle(color: Colors.white),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
@@ -421,7 +439,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
         : TextField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
-            style: const TextStyle(color: Colors.white),
+            style: AppTheme.textFieldStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'EMAIL / PHONE',
               hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
@@ -429,15 +447,19 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
               fillColor: Colors.white.withValues(alpha: 0.1),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF00D4AA)),
+                borderSide: const BorderSide(color: AppTheme.primaryColor),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
@@ -471,11 +493,11 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
       width: double.infinity,
       height: 56,
       decoration: BoxDecoration(
-        color: const Color(0xFF00D4AA),
+        color: AppTheme.primaryColor,
         borderRadius: BorderRadius.circular(isIOS ? 16 : 12),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF00D4AA).withValues(alpha: 0.3),
+            color: AppTheme.primaryColor.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -647,7 +669,9 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                           height: 2,
                           width: 120,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF04CDFE).withValues(alpha: 0.6),
+                            color: const Color(
+                              0xFF04CDFE,
+                            ).withValues(alpha: 0.6),
                             borderRadius: BorderRadius.circular(1),
                           ),
                         ),
@@ -700,7 +724,9 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                           height: 2,
                           width: 120,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF04CDFE).withValues(alpha: 0.6),
+                            color: const Color(
+                              0xFF04CDFE,
+                            ).withValues(alpha: 0.6),
                             borderRadius: BorderRadius.circular(1),
                           ),
                         ),
@@ -782,7 +808,39 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
       _emailController.text,
     );
 
-    if (phoneandemailExists['message'] == null) {
+    // Debug: Log the response
+    if (kDebugMode) {
+      print('📱 Sign-Up Phone Check Response: $phoneandemailExists');
+      print('📱 Status Code: ${phoneandemailExists['statusCode']}');
+      print('📱 Success: ${phoneandemailExists['success']}');
+    }
+
+    // For SIGN-UP logic:
+    // - If statusCode is 200 AND success=true: Phone does NOT exist -> Send OTP (proceed with sign-up)
+    // - If statusCode is 409 OR message contains "already exists": Phone EXISTS -> Don't send OTP, show error
+    final statusCode = phoneandemailExists['statusCode'] as int?;
+    final success = phoneandemailExists['success'] as bool?;
+    final errorMessage =
+        phoneandemailExists['message']?.toString().toLowerCase() ?? '';
+    final is200Success = statusCode == 200 && success == true;
+    final is409Error = statusCode == 409;
+    final messageIndicatesExists =
+        errorMessage.contains('already exists') ||
+        errorMessage.contains('phone number already exists');
+
+    if (kDebugMode) {
+      print(
+        '📱 Sign-Up check: statusCode=$statusCode, success=$success, is200Success=$is200Success, is409Error=$is409Error, messageIndicatesExists=$messageIndicatesExists',
+      );
+    }
+
+    // If phone does NOT exist (200 success), proceed with sign-up OTP
+    if (is200Success) {
+      if (kDebugMode) {
+        print(
+          '✅ Phone does NOT exist (200 success), proceeding with sign-up OTP',
+        );
+      }
       final otpMethod = await _showOtpMethodSelectionDialog();
       if (otpMethod == null) return;
 
@@ -791,8 +849,21 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
       } else {
         await _sendEmailOtpForSignUp();
       }
+    } else if (is409Error || messageIndicatesExists) {
+      // Phone already exists, show error
+      if (kDebugMode) {
+        print('❌ Phone already exists, cannot sign up');
+      }
+      final errorMsg =
+          phoneandemailExists['message'] ??
+          'This phone number or email is already registered. Please sign in instead.';
+      _showErrorMessage(errorMsg);
     } else {
-      _showErrorMessage(phoneandemailExists['message']);
+      // Other errors (network, etc.)
+      final errorMsg =
+          phoneandemailExists['message'] ??
+          'Failed to check phone number. Please try again.';
+      _showErrorMessage(errorMsg);
     }
   }
 
@@ -899,7 +970,6 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
   ///
   // Sign In Handler
   Future<void> _handleSignIn() async {
-    print('hiiiiiiiiiiiiiiii');
     final authProvider = context.read<AuthProvider>();
 
     // Verify fields
@@ -909,9 +979,17 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
     }
 
     // Determine if input is email or phone
-    final input = _emailController.text;
+    final input = _emailController.text.trim();
     final isEmail = authProvider.isValidEmail(input);
     final isPhone = authProvider.isValidPhoneNumber(input);
+
+    // Print the input data for debugging
+    if (kDebugMode) {
+      print('\n🔐 ========== SIGN-IN ATTEMPT ==========');
+      print('📝 Input: $input');
+      print('📧 Is Email: $isEmail');
+      print('📱 Is Phone: $isPhone');
+    }
 
     if (!isEmail && !isPhone) {
       _showErrorMessage('Please enter a valid email or phone number');
@@ -921,30 +999,88 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
     // For phone sign-in, check if user exists
     if (isPhone) {
       try {
+        // If input already has country code, use it; otherwise prepend selected country code
+        final phoneNumber = input.trim().startsWith('+')
+            ? input.trim()
+            : _selectedCountryCode.dialCode + input.trim();
+
+        // Format to E.164 for Firebase
+        final formattedPhone = authProvider.formatPhoneNumber(phoneNumber);
+
+        // Format for API (remove + sign)
+        final phoneForApi = authProvider.formatPhoneNumberForApi(
+          formattedPhone,
+        );
+
+        if (kDebugMode) {
+          print('📱 Phone Sign-In:');
+          print('   Original Input: $input');
+          print('   Selected Country Code: ${_selectedCountryCode.dialCode}');
+          print('   Phone with Country Code: $phoneNumber');
+          print('   Formatted Phone (E.164): $formattedPhone');
+          print('   Phone for API (no +): $phoneForApi');
+        }
+
         final phoneExists = await authProvider.checkPhoneExists(
-          authProvider.formatPhoneNumber(input),
+          formattedPhone, // Pass E.164 format, repository will format for API
           '', // Empty email for phone-only sign-in
         );
 
         // Debug: Log the full response to understand the structure
         if (kDebugMode) {
           print('📱 Phone check response: $phoneExists');
+          print('📱 Status Code: ${phoneExists['statusCode']}');
+          print('📱 Success: ${phoneExists['success']}');
         }
 
-        // Check if phone is actually registered
-        // The API returns message: null when phone exists (similar to sign-up flow)
-        // If message is not null, it means phone doesn't exist or there's an error
+        // For SIGN-IN logic:
+        // - If statusCode is 200 AND success=true: Phone does NOT exist -> Don't send OTP, ask to register
+        // - If statusCode is 409: Phone EXISTS -> Send OTP for sign-in
+        // - If message contains "already exists": Phone EXISTS -> Send OTP for sign-in
+        // - If success=false and message is null: Phone EXISTS -> Send OTP for sign-in
+        final statusCode = phoneExists['statusCode'] as int?;
+        final success = phoneExists['success'] as bool?;
+        final errorMessage =
+            phoneExists['message']?.toString().toLowerCase() ?? '';
         final hasMessage = phoneExists['message'] != null;
-        final phoneRegistered = !hasMessage;
+        final is409Error = statusCode == 409;
+        final is200Success = statusCode == 200 && success == true;
+        final messageIndicatesExists =
+            errorMessage.contains('already exists') ||
+            errorMessage.contains('phone number already exists');
+
+        // Phone exists if: 409 error OR "already exists" message OR (success=false and no message)
+        // Phone does NOT exist if: 200 with success=true
+        final phoneRegistered =
+            is409Error ||
+            messageIndicatesExists ||
+            (success == false && !hasMessage);
 
         if (kDebugMode) {
           print(
-            '📱 Phone registered check: hasMessage=$hasMessage, phoneRegistered=$phoneRegistered',
+            '📱 Phone registered check: hasMessage=$hasMessage, statusCode=$statusCode, success=$success, is409Error=$is409Error, is200Success=$is200Success, messageIndicatesExists=$messageIndicatesExists, phoneRegistered=$phoneRegistered',
           );
         }
 
-        if (phoneRegistered) {
-          // Phone is registered, proceed with OTP for login
+        // If phone does NOT exist (200 success), don't send OTP - ask to register
+        if (is200Success) {
+          if (kDebugMode) {
+            print(
+              '❌ Phone does NOT exist (200 success), user needs to register first',
+            );
+          }
+          _showPhoneNotRegisteredError();
+          return;
+        }
+
+        // If phone exists, proceed with OTP for sign-in
+        if (phoneRegistered || is409Error || messageIndicatesExists) {
+          // Phone is registered (409 or "already exists" message means phone exists) - proceed with OTP for login
+          if (kDebugMode) {
+            print(
+              '✅ Phone exists (409 or "already exists" message), proceeding with OTP for sign-in',
+            );
+          }
           await _sendPhoneOtpForSignIn(input);
         } else {
           // Check if it's a network error
@@ -986,7 +1122,16 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
       }
     } else if (isEmail) {
       // For email sign-in, send OTP directly (API will handle email lookup)
+      // Print email being used for sign-in
+      if (kDebugMode) {
+        print('📧 Email Sign-In:');
+        print('   Email: $input');
+      }
       await _sendEmailOtpForSignIn(input);
+    }
+
+    if (kDebugMode) {
+      print('🔐 ======================================\n');
     }
   }
 
@@ -994,7 +1139,20 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
     try {
       final authProvider = context.read<AuthProvider>();
 
+      // Print email OTP request
+      if (kDebugMode) {
+        print('\n📧 ========== EMAIL OTP REQUEST ==========');
+        print('📧 Email: $email');
+        print('📧 Sending OTP to email...');
+      }
+
       final result = await authProvider.sendEmailOtp(email: email);
+
+      if (kDebugMode) {
+        print('📧 OTP Result: ${result['success']}');
+        print('📧 Message: ${result['message']}');
+        print('📧 =======================================\n');
+      }
 
       if (result['success']) {
         _showSuccessMessage('OTP sent to your email');
@@ -1027,8 +1185,19 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
       final phoneNumber =
           _selectedCountryCode.dialCode + _phoneController.text.trim();
 
+      // Format to E.164 for Firebase
+      final formattedPhone = authProvider.formatPhoneNumber(phoneNumber);
+
+      if (kDebugMode) {
+        print('📱 Sign-Up: Sending OTP to phone...');
+        print('📱 Phone: $phoneNumber');
+        print('📱 Formatted Phone (E.164): $formattedPhone');
+      }
+
+      // Note: User existence check is already done in _handleSignUp
+      // If we reach here, it means phone does NOT exist (200 success), so proceed with OTP
       final result = await authProvider.sendPhoneVerificationCode(
-        phoneNumber: phoneNumber,
+        phoneNumber: formattedPhone,
       );
 
       if (result.isSuccess) {
@@ -1054,7 +1223,12 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
         _showErrorMessage(result.errorMessage ?? 'Failed to send OTP');
       }
     } catch (e) {
-      _showErrorMessage('Failed to send OTP: $e');
+      // Check if it's a network error
+      if (NetworkErrorUtils.isNetworkError(e)) {
+        _showErrorMessage(NetworkErrorUtils.getNetworkErrorMessage());
+      } else {
+        _showErrorMessage('Failed to send OTP: $e');
+      }
     }
   }
 
@@ -1066,9 +1240,37 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
           ? inputPhoneNumber.trim()
           : _selectedCountryCode.dialCode + inputPhoneNumber.trim();
 
-      final result = await authProvider.sendPhoneVerificationCode(
-        phoneNumber: phoneNumber,
+      // Format to E.164 for Firebase
+      final formattedPhoneForFirebase = authProvider.formatPhoneNumber(
+        phoneNumber,
       );
+
+      // Format for API (remove + sign) - for debug purposes
+      final phoneForApi = authProvider.formatPhoneNumberForApi(
+        formattedPhoneForFirebase,
+      );
+
+      // Print phone OTP request
+      if (kDebugMode) {
+        print('\n📱 ========== PHONE OTP REQUEST ==========');
+        print('📱 Input Phone: $inputPhoneNumber');
+        print('📱 Selected Country Code: ${_selectedCountryCode.dialCode}');
+        print('📱 Phone with Country Code: $phoneNumber');
+        print('📱 Final Phone Number (E.164): $formattedPhoneForFirebase');
+        print('📱 Phone for API (no +): $phoneForApi');
+        print('📱 Sending OTP to phone...');
+      }
+
+      final result = await authProvider.sendPhoneVerificationCode(
+        phoneNumber: formattedPhoneForFirebase,
+      );
+
+      if (kDebugMode) {
+        print('📱 OTP Result: ${result.isSuccess}');
+        print('📱 Verification ID: ${result.verificationId}');
+        print('📱 Error Message: ${result.errorMessage}');
+        print('📱 =======================================\n');
+      }
 
       if (result.isSuccess) {
         _showSuccessMessage('OTP sent to your phone number');
@@ -1079,7 +1281,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
             context,
             MaterialPageRoute(
               builder: (context) => OtpVerificationScreen(
-                phoneNumber: phoneNumber,
+                phoneNumber: formattedPhoneForFirebase,
                 otpMethod: 'phone',
                 verificationId: result.verificationId,
                 isSignUp: false,
@@ -1116,7 +1318,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: const Color(0xFF00D4AA),
+          backgroundColor: AppTheme.primaryColor,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),

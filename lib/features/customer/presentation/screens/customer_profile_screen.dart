@@ -20,6 +20,7 @@ class CustomerProfileScreen extends StatefulWidget {
 
 class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
   String? _buildingName;
+  String? _lastBuildingId;
 
   @override
   void initState() {
@@ -242,6 +243,11 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
 
   Widget _buildLogoutButton(BuildContext context, bool isLargeScreen) {
     final isIOS = Platform.isIOS;
+    // Dark maroon background and bright coral-red border/text
+    const darkMaroon = Color(0xFF5A1A1A); // Dark deep red/maroon background
+    const coralRed = Color(
+      0xFFFF6B6B,
+    ); // Bright coral-red for border, text, and icon
 
     return Container(
       width: double.infinity,
@@ -260,22 +266,23 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                   horizontal: isLargeScreen ? 24.0 : 16.0,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE53935),
+                  color: darkMaroon,
                   borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
+                  border: Border.all(color: coralRed, width: 1.5),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      CupertinoIcons.arrow_right_square,
-                      color: Colors.white,
+                      CupertinoIcons.arrow_right_circle_fill,
+                      color: coralRed,
                       size: isLargeScreen ? 20 : 18,
                     ),
                     SizedBox(width: isLargeScreen ? 12 : 8),
                     Text(
-                      'LOG OUT',
+                      'LOGOUT',
                       style: AppTheme.bebasNeue(
-                        color: Colors.white,
+                        color: coralRed,
                         fontWeight: FontWeight.w400,
                         letterSpacing: 1.0,
                       ),
@@ -287,30 +294,31 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
           : ElevatedButton(
               onPressed: () => _showLogoutDialog(context, isIOS),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE53935),
+                backgroundColor: darkMaroon,
+                foregroundColor: coralRed,
                 padding: EdgeInsets.symmetric(
                   vertical: isLargeScreen ? 16.0 : 12.0,
                   horizontal: isLargeScreen ? 24.0 : 16.0,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(isLargeScreen ? 16 : 12),
+                  side: BorderSide(color: coralRed, width: 1.5),
                 ),
-                elevation: 6,
-                shadowColor: const Color(0xFFE53935).withValues(alpha: 0.3),
+                elevation: 0,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.logout,
-                    color: Colors.white,
+                    Icons.arrow_forward_rounded,
+                    color: coralRed,
                     size: isLargeScreen ? 20 : 18,
                   ),
                   SizedBox(width: isLargeScreen ? 12 : 8),
                   Text(
-                    'LOG OUT',
+                    'LOGOUT',
                     style: AppTheme.bebasNeue(
-                      color: Colors.white,
+                      color: coralRed,
                       fontWeight: FontWeight.w400,
                       letterSpacing: 1.0,
                     ),
@@ -634,6 +642,19 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         final name = user?.name ?? 'N/A';
         final phone = user?.phone != null ? '+${user!.phone}' : 'N/A';
         final email = user?.email ?? 'N/A';
+        
+        // Reload building data when buildingId changes
+        final currentBuildingId = user?.buildingId;
+        if (currentBuildingId != _lastBuildingId) {
+          _lastBuildingId = currentBuildingId;
+          // Reload building data when buildingId changes
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _loadProfileData();
+            }
+          });
+        }
+        
         final buildingName = _buildingName ?? 'N/A';
 
         return Container(
@@ -709,7 +730,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
           ).pushNamed(Routes.customerEditProfile);
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF00D4AA),
+          backgroundColor: AppTheme.primaryColor,
           padding: EdgeInsets.symmetric(
             vertical: isLargeScreen ? 16.0 : 12.0,
             horizontal: isLargeScreen ? 24.0 : 16.0,

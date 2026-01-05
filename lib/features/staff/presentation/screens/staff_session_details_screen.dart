@@ -41,7 +41,8 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
   String? _error;
   final ImagePicker _imagePicker = ImagePicker();
   bool _isUploadingImage = false;
-  List<String> _selectedImagePaths = []; // Store selected image paths before upload
+  List<String> _selectedImagePaths =
+      []; // Store selected image paths before upload
 
   @override
   void initState() {
@@ -416,26 +417,14 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
           // Spacer to push heading to center
           const Spacer(),
           // Centered heading
-          Column(
-            children: [
-              Text(
-                'Session Details',
-                style: AppTheme.bebasNeue(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontSize: isSmallScreen ? 12 : 14,
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'SESSION ${widget.sessionNumber} DETAILS',
-                style: AppTheme.bebasNeue(
-                  color: Colors.white,
-                  fontSize: isSmallScreen ? 20 : 24,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ],
+          Text(
+            'SESSION ${widget.sessionNumber} DETAILS',
+            style: AppTheme.bebasNeue(
+              color: Colors.white,
+              fontSize: isSmallScreen ? 20 : 24,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 1.2,
+            ),
           ),
           // Spacer to balance the back button on the left
           const Spacer(),
@@ -751,11 +740,7 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
                     color: Colors.red,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 16,
-                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 16),
                 ),
               ),
             ),

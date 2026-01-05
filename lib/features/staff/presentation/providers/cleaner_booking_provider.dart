@@ -81,8 +81,6 @@ class CleanerBookingProvider extends ChangeNotifier {
     bool force = false,
     String? search,
   }) async {
-    if (_isAssignedLoading) return;
-
     // Normalize search: treat null and empty string as empty
     final normalizedSearch = search?.trim() ?? '';
 
@@ -90,12 +88,38 @@ class CleanerBookingProvider extends ChangeNotifier {
     final searchChanged = normalizedSearch != _assignedSearch;
 
     // Only skip if already loaded, not forcing, and search hasn't changed
-    if (_hasLoadedAssigned && !force && !searchChanged) return;
+    if (_hasLoadedAssigned && !force && !searchChanged && !_isAssignedLoading)
+      return;
+
+    // If already loading and search hasn't changed, skip (unless forced)
+    if (_isAssignedLoading && !force && !searchChanged) {
+      if (kDebugMode) {
+        print('🔍 [PROVIDER] Already loading with same search, skipping');
+      }
+      return;
+    }
 
     _isAssignedLoading = true;
     _assignedError = null;
+
+    // If search changed, clear the list immediately so UI updates
+    if (searchChanged) {
+      _assignedBookings.clear();
+      if (kDebugMode) {
+        print('🔍 [PROVIDER] Search changed, clearing list immediately');
+      }
+    }
+
     // Update search value
     _assignedSearch = normalizedSearch;
+
+    // Debug: Print search query
+    if (kDebugMode) {
+      print(
+        '🔍 [PROVIDER] Search query received: "${_assignedSearch.isEmpty ? "(empty - clearing search)" : _assignedSearch}"',
+      );
+    }
+
     notifyListeners();
 
     final token = await SecureStorageService.getStaffAccessToken();
@@ -106,13 +130,30 @@ class CleanerBookingProvider extends ChangeNotifier {
       return;
     }
 
+    final searchParam = _assignedSearch.isNotEmpty ? _assignedSearch : null;
+    if (kDebugMode) {
+      print(
+        '🔍 [PROVIDER] Sending to API - search parameter: ${searchParam ?? "(null)"}',
+      );
+    }
+
     final response = await CleanerBookingRepository.fetchAssignedBookings(
       accessToken: token,
-      search: _assignedSearch.isNotEmpty ? _assignedSearch : null,
+      search: searchParam,
     );
 
     if (response['success'] == true) {
       final dataList = response['data'] as List<dynamic>? ?? [];
+      if (kDebugMode) {
+        print(
+          '🔍 [PROVIDER] API Response - Received ${dataList.length} bookings',
+        );
+        if (dataList.isNotEmpty && _assignedSearch.isNotEmpty) {
+          print(
+            '🔍 [PROVIDER] Search results for "${_assignedSearch}": ${dataList.length} found',
+          );
+        }
+      }
       _assignedBookings
         ..clear()
         ..addAll(
@@ -120,6 +161,16 @@ class CleanerBookingProvider extends ChangeNotifier {
             (raw) => CleanerBooking.fromMap(raw as Map<String, dynamic>),
           ),
         );
+      if (kDebugMode) {
+        print(
+          '🔍 [PROVIDER] Updated _assignedBookings list: ${_assignedBookings.length} bookings',
+        );
+        if (_assignedBookings.isNotEmpty) {
+          print(
+            '🔍 [PROVIDER] First booking ID: ${_assignedBookings.first.bookingId}',
+          );
+        }
+      }
       _assignedPagination = BookingPagination.fromMap(
         response['pagination'] as Map<String, dynamic>?,
       );
@@ -127,6 +178,9 @@ class CleanerBookingProvider extends ChangeNotifier {
     } else {
       _assignedError =
           response['message']?.toString() ?? 'Failed to load bookings';
+      if (kDebugMode) {
+        print('🔍 [PROVIDER] API Error: $_assignedError');
+      }
     }
 
     _isAssignedLoading = false;
@@ -137,14 +191,45 @@ class CleanerBookingProvider extends ChangeNotifier {
     bool force = false,
     String? search,
   }) async {
-    if (_isCompletedLoading) return;
-    if (_hasLoadedCompleted && !force && search == null) return;
+    // Normalize search: treat null and empty string as empty
+    final normalizedSearch = search?.trim() ?? '';
+
+    // Check if search has changed
+    final searchChanged = normalizedSearch != _completedSearch;
+
+    // Only skip if already loaded, not forcing, and search hasn't changed
+    if (_hasLoadedCompleted && !force && !searchChanged && !_isCompletedLoading)
+      return;
+
+    // If already loading and search hasn't changed, skip (unless forced)
+    if (_isCompletedLoading && !force && !searchChanged) {
+      if (kDebugMode) {
+        print('🔍 [PROVIDER] Already loading completed bookings with same search, skipping');
+      }
+      return;
+    }
 
     _isCompletedLoading = true;
     _completedError = null;
-    if (search != null) {
-      _completedSearch = search;
+
+    // If search changed, clear the list immediately so UI updates
+    if (searchChanged) {
+      _completedBookings.clear();
+      if (kDebugMode) {
+        print('🔍 [PROVIDER] Completed bookings search changed, clearing list immediately');
+      }
     }
+
+    // Update search value
+    _completedSearch = normalizedSearch;
+
+    // Debug: Print search query
+    if (kDebugMode) {
+      print(
+        '🔍 [PROVIDER] Completed bookings search query received: "${_completedSearch.isEmpty ? "(empty - clearing search)" : _completedSearch}"',
+      );
+    }
+
     notifyListeners();
 
     final token = await SecureStorageService.getStaffAccessToken();

@@ -607,9 +607,14 @@ class _VehicleCard extends StatelessWidget {
     final vehicleNumber = vehicle['vehicleNumber']?.toString() ?? '--';
     final company = _extractCompany(vehicle);
     final model = vehicle['vehicleModel']?.toString() ?? '--';
-    final color = vehicle['color']?.toString();
-    final parkingNumber = vehicle['parkingNumber']?.toString();
-    final parkingArea = vehicle['parkingArea']?.toString();
+    final color = vehicle['color']?.toString() ?? '';
+    final parkingNumber = vehicle['parkingNumber']?.toString() ?? '--';
+
+    // Build vehicle name (Company + Model)
+    final vehicleName = [company, model]
+        .where((value) => value.isNotEmpty && value != '--')
+        .map((value) => value.toUpperCase())
+        .join(' ');
 
     return Container(
       margin: EdgeInsets.symmetric(
@@ -618,75 +623,49 @@ class _VehicleCard extends StatelessWidget {
       ),
       padding: EdgeInsets.all(screenWidth > 400 ? 24.0 : 20.0),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor.withValues(alpha: 0.9),
+        color: Colors.black,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF04CDFE).withValues(alpha: 0.3),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF04CDFE).withValues(alpha: 0.2),
-            blurRadius: 10,
-            spreadRadius: 1,
-          ),
-        ],
+        border: Border.all(color: const Color(0xFF04CDFE), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.directions_car,
-                    color: Colors.white,
-                    size: screenWidth > 400 ? 20 : 18,
+              Expanded(
+                child: Text(
+                  vehicleName.isNotEmpty ? vehicleName : 'VEHICLE',
+                  style: AppTheme.bebasNeue(
+                    color: const Color(0xFF04CDFE),
+                    fontSize: screenWidth > 400 ? 18 : 16,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 1.0,
                   ),
-                  SizedBox(width: screenWidth > 400 ? 8 : 6),
-                  Text(
-                    vehicleType,
-                    style: AppTheme.bebasNeue(
-                      color: Colors.white,
-                      fontSize: screenWidth > 400 ? 18 : 16,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
+                ),
               ),
-              const Spacer(),
               IconButton(
                 onPressed: onDelete,
                 icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
                 tooltip: 'Delete vehicle',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
               ),
             ],
           ),
           SizedBox(height: screenWidth > 400 ? 20 : 16),
-          _buildInfoRow('VEHICLE NUMBER', vehicleNumber, screenWidth),
-          SizedBox(height: screenWidth > 400 ? 16 : 12),
-          _buildInfoRow('TYPE', company, screenWidth),
-          SizedBox(height: screenWidth > 400 ? 16 : 12),
-          _buildInfoRow('MODEL', model, screenWidth),
-          if (color != null && color.isNotEmpty) ...[
-            SizedBox(height: screenWidth > 400 ? 16 : 12),
-            _buildInfoRow('COLOR', color, screenWidth),
-          ],
-          if ((parkingNumber != null && parkingNumber.isNotEmpty) ||
-              (parkingArea != null && parkingArea.isNotEmpty)) ...[
-            SizedBox(height: screenWidth > 400 ? 16 : 12),
-            _buildInfoRow(
-              'PARKING',
-              [parkingNumber, parkingArea]
-                  .whereType<String>()
-                  .where((value) => value.isNotEmpty)
-                  .join(' • '),
-              screenWidth,
-            ),
-          ],
+          _buildInfoRow('TYPE', vehicleType, screenWidth),
+          SizedBox(height: screenWidth > 400 ? 12 : 10),
+          _buildInfoRow('NUMBER', vehicleNumber, screenWidth),
+          SizedBox(height: screenWidth > 400 ? 12 : 10),
+          _buildInfoRow(
+            'COLOR',
+            color.isNotEmpty ? color.toUpperCase() : '--',
+            screenWidth,
+          ),
+          SizedBox(height: screenWidth > 400 ? 12 : 10),
+          _buildInfoRow('PARKING NUMBER', parkingNumber, screenWidth),
         ],
       ),
     );
@@ -708,24 +687,21 @@ class _VehicleCard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(
-          child: Text(
-            label,
-            style: AppTheme.bebasNeue(
-              color: Colors.white70,
-              fontSize: screenWidth > 400 ? 16 : 14,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.5,
-            ),
+        Text(
+          label,
+          style: AppTheme.bebasNeue(
+            color: Colors.white,
+            fontSize: screenWidth > 400 ? 14 : 12,
+            fontWeight: FontWeight.w400,
+            letterSpacing: 0.5,
           ),
         ),
-        SizedBox(width: 12),
         Text(
           value,
           style: AppTheme.bebasNeue(
             color: Colors.white,
-            fontSize: screenWidth > 400 ? 16 : 14,
-            fontWeight: FontWeight.w600,
+            fontSize: screenWidth > 400 ? 14 : 12,
+            fontWeight: FontWeight.w400,
             letterSpacing: 0.5,
           ),
         ),

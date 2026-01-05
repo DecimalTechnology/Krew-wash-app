@@ -78,17 +78,23 @@ class SizeConstants {
   }
 
   static double getResponsiveFontSize(double screenWidth, double baseSize) {
+    // Reduce font size on large screens instead of increasing
     if (screenWidth < smallScreenBreakpoint) return baseSize * 0.8;
     if (screenWidth < mediumScreenBreakpoint) return baseSize * 0.9;
     if (screenWidth < largeScreenBreakpoint) return baseSize;
-    return baseSize * 1.1;
+    if (screenWidth >= 800)
+      return baseSize * 0.75; // 25% reduction on extra large screens
+    return baseSize * 0.85; // 15% reduction on large screens
   }
 
   static double getResponsiveIconSize(double screenWidth, double baseSize) {
+    // Reduce icon size on large screens instead of increasing
     if (screenWidth < smallScreenBreakpoint) return baseSize * 0.8;
     if (screenWidth < mediumScreenBreakpoint) return baseSize * 0.9;
     if (screenWidth < largeScreenBreakpoint) return baseSize;
-    return baseSize * 1.1;
+    if (screenWidth >= 800)
+      return baseSize * 0.75; // 25% reduction on extra large screens
+    return baseSize * 0.85; // 15% reduction on large screens
   }
 
   static double getResponsiveButtonHeight(double screenWidth) {

@@ -264,15 +264,7 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'CAR TYPE *',
-          style: AppTheme.bebasNeue(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1.0,
-          ),
-        ),
+        _buildLabelWithAsterisk('CAR TYPE *'),
         SizedBox(height: 8),
         CompositedTransformTarget(
           link: _carTypeFieldLink,
@@ -340,15 +332,7 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'VEHICLE MODEL *',
-          style: AppTheme.bebasNeue(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1.0,
-          ),
-        ),
+        _buildLabelWithAsterisk('VEHICLE MODEL *'),
         SizedBox(height: 8),
         CompositedTransformTarget(
           link: _vehicleModelFieldLink,
@@ -401,15 +385,7 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1.0,
-          ),
-        ),
+        _buildLabelWithAsterisk(label),
         SizedBox(height: 8),
         TextFormField(
           controller: controller,
@@ -434,13 +410,51 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
     );
   }
 
+  Widget _buildLabelWithAsterisk(String label) {
+    if (label.contains('*')) {
+      final parts = label.split('*');
+      return RichText(
+        text: TextSpan(
+          style: AppTheme.bebasNeue(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            letterSpacing: 1.2,
+          ),
+          children: [
+            TextSpan(text: parts[0]),
+            const TextSpan(
+              text: '*',
+              style: TextStyle(color: Color(0xFF04CDFE)),
+            ),
+            if (parts.length > 1) TextSpan(text: parts[1]),
+          ],
+        ),
+      );
+    }
+    return Text(
+      label,
+      style: AppTheme.bebasNeue(
+        color: Colors.white,
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 1.2,
+      ),
+    );
+  }
+
   InputDecoration _inputDecoration({
     required String hintText,
     Widget? suffixIcon,
   }) {
     return InputDecoration(
       hintText: hintText,
-      hintStyle: const TextStyle(color: Colors.white54, fontSize: 14),
+      hintStyle: AppTheme.bebasNeue(
+        color: Colors.white54,
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 1.0,
+      ),
       filled: true,
       fillColor: const Color(0xFF0B0E1F),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -507,7 +521,9 @@ class _AddNewCarViewState extends State<_AddNewCarView> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: success ? const Color(0xFF00D4AA) : Colors.redAccent,
+          backgroundColor: success
+              ? AppTheme.primaryColor
+              : AppTheme.primaryColor,
         ),
       );
 

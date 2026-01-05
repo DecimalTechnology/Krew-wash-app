@@ -11,6 +11,13 @@ class StaffProvider extends ChangeNotifier {
   bool _isInitializing = true;
   String? _errorMessage;
 
+  // Dashboard data
+  Map<String, dynamic>? _currentBooking;
+  int _completedBookingCount = 0;
+  int _upcomingBookingCount = 0;
+  bool _isLoadingDashboard = false;
+  String? _dashboardErrorMessage;
+
   // Getters
   StaffModel? get staff => _staff;
   bool get isAuthenticated => _staff != null;
@@ -18,15 +25,32 @@ class StaffProvider extends ChangeNotifier {
   bool get isInitializing => _isInitializing;
   String? get errorMessage => _errorMessage;
 
+  // Dashboard getters
+  Map<String, dynamic>? get currentBooking => _currentBooking;
+  int get completedBookingCount => _completedBookingCount;
+  int get upcomingBookingCount => _upcomingBookingCount;
+  bool get isLoadingDashboard => _isLoadingDashboard;
+  String? get dashboardErrorMessage => _dashboardErrorMessage;
+
   StaffProvider() {
     _initializeStaffAuth();
   }
 
   /// Initialize - restore staff from storage if available
   Future<void> _initializeStaffAuth() async {
+    // Ensure splash screen shows for minimum duration (1.5 seconds)
+    final initializationStart = DateTime.now();
+    
     try {
       await _restoreStaffFromStorage();
     } finally {
+      // Ensure minimum splash screen duration
+      final elapsed = DateTime.now().difference(initializationStart);
+      const minDuration = Duration(milliseconds: 1500);
+      if (elapsed < minDuration) {
+        await Future.delayed(minDuration - elapsed);
+      }
+      
       _isInitializing = false;
       notifyListeners();
     }
@@ -113,6 +137,7 @@ class StaffProvider extends ChangeNotifier {
       await SecureStorageService.clearStaffData();
 
       _staff = null;
+      clearDashboardData(); // Clear dashboard data on logout
       _setLoading(false);
       notifyListeners();
 
@@ -153,5 +178,86 @@ class StaffProvider extends ChangeNotifier {
   /// Get stored access token
   Future<String?> getAccessToken() async {
     return await SecureStorageService.getStaffAccessToken();
+  }
+
+  /// Fetch dashboard data (booking, completedBooking, upcomingBooking)
+  Future<void> fetchDashboardData({bool force = false}) async {
+    // Don't fetch if already loading
+    if (_isLoadingDashboard) {
+      return;
+    }
+
+    _isLoadingDashboard = true;
+    _dashboardErrorMessage = null;
+    notifyListeners();
+
+    try {
+      final accessToken = await SecureStorageService.getStaffAccessToken();
+      if (accessToken == null || accessToken.isEmpty) {
+        _dashboardErrorMessage = 'Not authenticated';
+        _isLoadingDashboard = false;
+        notifyListeners();
+        return;
+      }
+
+      final result = await StaffRepository.getDashboardData(
+        accessToken: accessToken,
+      );
+
+      if (result['success'] == true) {
+        // Store booking data
+        _currentBooking = result['booking'] as Map<String, dynamic>?;
+        _completedBookingCount = result['completedBooking'] as int? ?? 0;
+        _upcomingBookingCount = result['upcomingBooking'] as int? ?? 0;
+
+        if (kDebugMode) {
+          print('\n✅ Dashboard data fetched and stored successfully');
+          print(
+            '   📋 Current Booking: ${_currentBooking != null ? _currentBooking!['bookingId'] ?? 'N/A' : 'None'}',
+          );
+          print('   ✅ Completed Bookings: $_completedBookingCount');
+          print('   📅 Upcoming Bookings: $_upcomingBookingCount');
+
+          if (_currentBooking != null) {
+            print('\n   📋 Stored Booking Details:');
+            print('      - Booking ID: ${_currentBooking!['bookingId']}');
+            print('      - Status: ${_currentBooking!['status']}');
+            print(
+              '      - Vehicle: ${_currentBooking!['vehicleModel']} (${_currentBooking!['vehilceNumber'] ?? _currentBooking!['vehicleNumber']})',
+            );
+            final services = _currentBooking!['services'] as List? ?? [];
+            if (services.isNotEmpty) {
+              print('      - Services: ${services.join(', ')}');
+            }
+          }
+          print('');
+        }
+
+        _dashboardErrorMessage = null;
+      } else {
+        _dashboardErrorMessage =
+            result['message'] ?? 'Failed to fetch dashboard data';
+        if (kDebugMode) {
+          print('❌ Failed to fetch dashboard: ${_dashboardErrorMessage}');
+        }
+      }
+    } catch (e) {
+      _dashboardErrorMessage = 'An unexpected error occurred';
+      if (kDebugMode) {
+        print('❌ Error fetching dashboard: $e');
+      }
+    } finally {
+      _isLoadingDashboard = false;
+      notifyListeners();
+    }
+  }
+
+  /// Clear dashboard data
+  void clearDashboardData() {
+    _currentBooking = null;
+    _completedBookingCount = 0;
+    _upcomingBookingCount = 0;
+    _dashboardErrorMessage = null;
+    notifyListeners();
   }
 }
