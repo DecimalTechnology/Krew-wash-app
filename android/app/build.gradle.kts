@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.carwash_app"
+    namespace = "com.krew.wash"
     // Updated to SDK 36 to support latest plugin dependencies
     compileSdk = 36
     ndkVersion = "27.0.12077973"
@@ -15,6 +15,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -23,12 +24,12 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.carwash_app"
+        applicationId = "com.krew.wash"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        // Telr Payment SDK requires minSdkVersion 21, targetSdkVersion 34
+        // Telr Payment SDK requires minSdkVersion 21, targetSdkVersion 35
         minSdk = flutter.minSdkVersion  // Updated to 23 to support Firebase Auth 23.2.1 (meets Telr requirement of >= 21)
-        targetSdk = 34  // Telr Payment SDK requires targetSdkVersion 34
+        targetSdk = 35  // Updated to API level 35 for Play Store requirements
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -69,4 +70,8 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }

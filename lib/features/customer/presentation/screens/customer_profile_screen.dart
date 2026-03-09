@@ -154,6 +154,31 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
   }
 
   Widget _buildIOSScreen(BuildContext context, bool isLargeScreen) {
+    // Calculate bottom nav bar height + margin + safe area for padding
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width <= 360;
+    final isMediumScreen = screenSize.width > 360 && screenSize.width <= 400;
+    final isTablet = screenSize.width > 600;
+    final navBarHeight = isSmallScreen
+        ? 60.0
+        : isMediumScreen
+        ? 65.0
+        : isTablet
+        ? 80.0
+        : 70.0;
+    final navBarMargin = isSmallScreen
+        ? 8.0
+        : isMediumScreen
+        ? 10.0
+        : isTablet
+        ? 12.0
+        : 10.0;
+    final bottomPadding =
+        navBarHeight +
+        (navBarMargin * 2) +
+        MediaQuery.of(context).padding.bottom +
+        16;
+
     return CupertinoPageScaffold(
       backgroundColor: CupertinoColors.black,
       child: Stack(
@@ -163,33 +188,41 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
 
           // Main Content
           SafeArea(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  // Header Section
-                  _buildIOSHeader(context, isLargeScreen),
+            child: Column(
+              children: [
+                // Fixed Header Section
+                _buildIOSHeader(context, isLargeScreen),
 
-                  // Profile Title
-                  _buildProfileTitle(isLargeScreen),
+                // Scrollable Content
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        // Profile Title
+                        _buildProfileTitle(isLargeScreen),
 
-                  // Profile Avatar
-                  _buildProfileAvatar(isLargeScreen),
+                        // Profile Avatar
+                        _buildProfileAvatar(isLargeScreen),
 
-                  // Profile Information Card
-                  _buildProfileCard(isLargeScreen),
+                        // Profile Information Card
+                        _buildProfileCard(isLargeScreen),
 
-                  // Edit Profile Button
-                  _buildEditProfileButton(context, isLargeScreen),
+                        // Edit Profile Button
+                        _buildEditProfileButton(context, isLargeScreen),
 
-                  // History and My Cars Buttons (side by side)
-                  _buildHistoryAndCarsButtons(context, isLargeScreen),
+                        // History and My Cars Buttons (side by side)
+                        _buildHistoryAndCarsButtons(context, isLargeScreen),
 
-                  // Logout Button
-                  _buildLogoutButton(context, isLargeScreen),
+                        // Logout Button
+                        _buildLogoutButton(context, isLargeScreen),
 
-                  SizedBox(height: isLargeScreen ? 60 : 40),
-                ],
-              ),
+                        // Bottom padding to position logout button above nav bar
+                        SizedBox(height: bottomPadding),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -198,6 +231,31 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
   }
 
   Widget _buildAndroidScreen(BuildContext context, bool isLargeScreen) {
+    // Calculate bottom nav bar height + margin + safe area for padding
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width <= 360;
+    final isMediumScreen = screenSize.width > 360 && screenSize.width <= 400;
+    final isTablet = screenSize.width > 600;
+    final navBarHeight = isSmallScreen
+        ? 60.0
+        : isMediumScreen
+        ? 65.0
+        : isTablet
+        ? 80.0
+        : 70.0;
+    final navBarMargin = isSmallScreen
+        ? 8.0
+        : isMediumScreen
+        ? 10.0
+        : isTablet
+        ? 12.0
+        : 10.0;
+    final bottomPadding =
+        navBarHeight +
+        (navBarMargin * 2) +
+        MediaQuery.of(context).padding.bottom +
+        16;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -207,33 +265,39 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
 
           // Main Content
           SafeArea(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  // Header Section
-                  _buildAndroidHeader(context, isLargeScreen),
+            child: Column(
+              children: [
+                // Fixed Header Section
+                _buildAndroidHeader(context, isLargeScreen),
 
-                  // Profile Title
-                  _buildProfileTitle(isLargeScreen),
+                // Scrollable Content
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        SizedBox(height: isLargeScreen ? 10.0 : 8.0),
+                        // Profile Avatar
+                        _buildProfileAvatar(isLargeScreen),
 
-                  // Profile Avatar
-                  _buildProfileAvatar(isLargeScreen),
+                        // Profile Information Card
+                        _buildProfileCard(isLargeScreen),
 
-                  // Profile Information Card
-                  _buildProfileCard(isLargeScreen),
+                        // Edit Profile Button
+                        _buildEditProfileButton(context, isLargeScreen),
 
-                  // Edit Profile Button
-                  _buildEditProfileButton(context, isLargeScreen),
+                        // History and My Cars Buttons (side by side)
+                        _buildHistoryAndCarsButtons(context, isLargeScreen),
 
-                  // History and My Cars Buttons (side by side)
-                  _buildHistoryAndCarsButtons(context, isLargeScreen),
+                        // Logout Button
+                        _buildLogoutButton(context, isLargeScreen),
 
-                  // Logout Button
-                  _buildLogoutButton(context, isLargeScreen),
-
-                  SizedBox(height: isLargeScreen ? 60 : 40),
-                ],
-              ),
+                        // Bottom padding to position logout button above nav bar
+                        SizedBox(height: bottomPadding),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -251,10 +315,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
 
     return Container(
       width: double.infinity,
-      margin: EdgeInsets.symmetric(
-        horizontal: isLargeScreen ? 24.0 : 16.0,
-        vertical: isLargeScreen ? 16.0 : 12.0,
-      ),
+      margin: EdgeInsets.symmetric(horizontal: isLargeScreen ? 24.0 : 16.0),
       child: isIOS
           ? CupertinoButton(
               padding: EdgeInsets.zero,
@@ -536,6 +597,20 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
               );
             },
           ),
+          // Profile Title in center
+          Expanded(
+            child: Center(
+              child: Text(
+                'PROFILE',
+                style: AppTheme.bebasNeue(
+                  fontSize: isLargeScreen ? 28 : 24,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.white,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ),
+          ),
           // Settings Icon
           GestureDetector(
             onTap: () {
@@ -642,7 +717,8 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         final name = user?.name ?? 'N/A';
         final phone = user?.phone != null ? '+${user!.phone}' : 'N/A';
         final email = user?.email ?? 'N/A';
-        
+        final apartmentName = user?.apartmentNumber ?? 'N/A';
+
         // Reload building data when buildingId changes
         final currentBuildingId = user?.buildingId;
         if (currentBuildingId != _lastBuildingId) {
@@ -654,7 +730,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
             }
           });
         }
-        
+
         final buildingName = _buildingName ?? 'N/A';
 
         return Container(
@@ -676,6 +752,8 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
               _buildInfoRow('NAME', name, isLargeScreen),
               SizedBox(height: isLargeScreen ? 12 : 8),
               _buildInfoRow('BUILDING NAME', buildingName, isLargeScreen),
+              SizedBox(height: isLargeScreen ? 12 : 8),
+              _buildInfoRow('APARTMENT NAME', apartmentName, isLargeScreen),
               SizedBox(height: isLargeScreen ? 12 : 8),
               _buildInfoRow('PHONE', phone, isLargeScreen),
               SizedBox(height: isLargeScreen ? 12 : 8),

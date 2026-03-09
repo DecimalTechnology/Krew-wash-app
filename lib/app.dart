@@ -50,10 +50,12 @@ class MyApp extends StatelessWidget {
             final mediaQuery = MediaQuery.of(context);
             final screenWidth = mediaQuery.size.width;
 
-            // Calculate text scale factor - reduces on large screens
+            // Text scale: keep 1.0 on iPad 13" so widget-level scaling (SizeConstants) controls size; reduce on other large screens
             double textScaleFactor = 1.0;
-            if (screenWidth >= 800) {
-              textScaleFactor = 0.75; // 25% reduction on extra large screens
+            if (screenWidth >= 1024) {
+              textScaleFactor = 1.0; // iPad 13" – widget sizes scaled via SizeConstants.ipadContentScaleFactor
+            } else if (screenWidth >= 800) {
+              textScaleFactor = 0.75; // 25% reduction on extra large (non‑iPad) screens
             } else if (screenWidth >= 600) {
               textScaleFactor = 0.85; // 15% reduction on large screens
             } else if (screenWidth >= 400) {

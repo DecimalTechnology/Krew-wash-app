@@ -368,7 +368,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen>
               child: const Icon(
                 Icons.person_outline,
                 color: Colors.white,
-                size: 24,
+              size: 24,
               ),
             ),
           ),

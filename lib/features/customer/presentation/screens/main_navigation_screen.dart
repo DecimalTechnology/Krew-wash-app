@@ -8,6 +8,8 @@ import 'customer_profile_screen.dart';
 import 'car_list_screen.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/route_constants.dart';
+import '../../../../core/constants/size_constants.dart';
+import '../../../../core/widgets/ipad_max_width_center.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key, this.initialTab});
@@ -84,16 +86,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final screenSize = MediaQuery.of(context).size;
     final screenWidth = screenSize.width;
 
-    // Responsive sizing based on screen width
+    // Responsive sizing based on screen width (incl. iPad 13")
     final isSmallScreen = screenWidth < 350;
     final isMediumScreen = screenWidth >= 350 && screenWidth < 400;
     final isTablet = screenWidth > 600;
+    final isIpad13 = SizeConstants.isIpad13OrLarger(screenWidth);
 
-    // Calculate responsive values
+    // Calculate responsive values (add iPad 13" tier)
     final navBarMargin = isSmallScreen
         ? 12.0
         : isMediumScreen
         ? 14.0
+        : isIpad13
+        ? 24.0
         : isTablet
         ? 20.0
         : 16.0;
@@ -101,6 +106,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ? 60.0
         : isMediumScreen
         ? 65.0
+        : isIpad13
+        ? 88.0
         : isTablet
         ? 80.0
         : 70.0;
@@ -108,6 +115,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ? 20.0
         : isMediumScreen
         ? 22.0
+        : isIpad13
+        ? 32.0
         : isTablet
         ? 30.0
         : 25.0;
@@ -115,6 +124,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ? 16.0
         : isMediumScreen
         ? 18.0
+        : isIpad13
+        ? 28.0
         : isTablet
         ? 25.0
         : 20.0;
@@ -122,6 +133,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ? 6.0
         : isMediumScreen
         ? 7.0
+        : isIpad13
+        ? 12.0
         : isTablet
         ? 10.0
         : 8.0;
@@ -129,6 +142,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ? 20.0
         : isMediumScreen
         ? 22.0
+        : isIpad13
+        ? 30.0
         : isTablet
         ? 28.0
         : 24.0;
@@ -136,6 +151,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ? 40.0
         : isMediumScreen
         ? 45.0
+        : isIpad13
+        ? 64.0
         : isTablet
         ? 60.0
         : 50.0;
@@ -192,8 +209,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Main content - use IndexedStack to keep all navigators alive
-            IndexedStack(index: _currentIndex, children: _navigatorScreens),
+            // Main content - use IndexedStack; constrain width on iPad 13"
+            IpadMaxWidthCenter(
+              fillHeight: true,
+              child: IndexedStack(index: _currentIndex, children: _navigatorScreens),
+            ),
 
             // Blurred background container behind navigation bar
             Positioned(
@@ -322,8 +342,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         body: Stack(
           fit: StackFit.expand,
           children: [
-            // Main content - use IndexedStack to keep all navigators alive
-            IndexedStack(index: _currentIndex, children: _navigatorScreens),
+            // Main content - use IndexedStack; constrain width on iPad 13"
+            IpadMaxWidthCenter(
+              child: IndexedStack(index: _currentIndex, children: _navigatorScreens),
+            ),
 
             // Blurred background container behind navigation bar
             Positioned(

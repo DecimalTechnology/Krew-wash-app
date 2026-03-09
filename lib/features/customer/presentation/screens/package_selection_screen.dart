@@ -26,6 +26,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
   VoidCallback? _authListener;
   AuthProvider? _authProvider;
   String? _lastBuildingId;
+  bool _isInitialLoad = true;
 
   Future<void> _handlePullToRefresh() async {
     final packageProvider = context.read<PackageProvider>();
@@ -40,9 +41,15 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
       final packageProvider = context.read<PackageProvider>();
       await packageProvider.loadVehicleTypes();
       await _initializeWithSavedBuilding();
+      if (mounted) {
+        setState(() {
+          _isInitialLoad = false;
+        });
+      }
     });
   }
 
@@ -130,9 +137,11 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
       builder: (context, authProvider, child) {
         final user = authProvider.user;
         final currentBuildingId = user?.buildingId;
-        
+
         // Check if buildingId changed and update if needed
-        if (currentBuildingId != _lastBuildingId && currentBuildingId != null && currentBuildingId.isNotEmpty) {
+        if (currentBuildingId != _lastBuildingId &&
+            currentBuildingId != null &&
+            currentBuildingId.isNotEmpty) {
           _lastBuildingId = currentBuildingId;
           // Update building selection when buildingId changes
           WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -141,7 +150,7 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
             }
           });
         }
-        
+
         return _buildContent(context);
       },
     );
@@ -773,33 +782,34 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
                   Expanded(
                     flex: 2,
                     child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+                      children: [
                         // Frequency
-                      Text(
-                          (frequency.isNotEmpty ? frequency : 'EACH SERVICE').toUpperCase(),
-                        style: AppTheme.bebasNeue(
+                        Text(
+                          (frequency.isNotEmpty ? frequency : 'EACH SERVICE')
+                              .toUpperCase(),
+                          style: AppTheme.bebasNeue(
                             color: Colors.white,
                             fontSize: fontSize * 0.9,
                             fontWeight: FontWeight.w400,
-                          letterSpacing: 0.5,
-                        ),
+                            letterSpacing: 0.5,
+                          ),
                           textAlign: TextAlign.end,
-                      ),
+                        ),
                         SizedBox(height: fontSize * 0.5),
                         // Price
-                      Text(
-                        price,
-                        style: AppTheme.bebasNeue(
-                          color: const Color(0xFF04CDFE),
+                        Text(
+                          price,
+                          style: AppTheme.bebasNeue(
+                            color: const Color(0xFF04CDFE),
                             fontSize: fontSize * 1.1,
-                          fontWeight: FontWeight.w400,
+                            fontWeight: FontWeight.w400,
                             letterSpacing: 0.5,
-                        ),
+                          ),
                           textAlign: TextAlign.end,
-                      ),
-                    ],
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -1331,23 +1341,23 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
         vertical: 8.0,
       ),
       child: SizedBox(
-      width: double.infinity,
-      height: fontSize * 3.2,
-      child: ElevatedButton(
-        onPressed: _handleNext,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF04CDFE),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+        width: double.infinity,
+        height: fontSize * 3.2,
+        child: ElevatedButton(
+          onPressed: _handleNext,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF04CDFE),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
-        ),
-        child: Text(
-          'NEXT',
-          style: AppTheme.bebasNeue(
-            color: Colors.white,
-            fontSize: fontSize * 0.95,
-            fontWeight: FontWeight.w400,
-            letterSpacing: 1.2,
+          child: Text(
+            'NEXT',
+            style: AppTheme.bebasNeue(
+              color: Colors.white,
+              fontSize: fontSize * 0.95,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 1.2,
             ),
           ),
         ),

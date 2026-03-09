@@ -1,6 +1,6 @@
 {
-    "name": "carwash_app",
-    "short_name": "carwash_app",
+    "name": "Krew Carwash",
+    "short_name": "Krew Carwash",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/platform_auth_widget.dart';
+import '../../../../core/widgets/ipad_max_width_center.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -67,10 +68,11 @@ class _AuthScreenState extends State<AuthScreen> {
                     child: SingleChildScrollView(
                       physics: const ClampingScrollPhysics(),
                       padding: EdgeInsets.only(bottom: viewInsetsBottom),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(minHeight: availableHeight),
-                        child: Consumer<AuthProvider>(
-                          builder: (context, authProvider, child) {
+                      child: IpadMaxWidthCenter(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minHeight: availableHeight),
+                          child: Consumer<AuthProvider>(
+                            builder: (context, authProvider, child) {
                             return IntrinsicHeight(
                               child: Column(
                                 children: [
@@ -104,6 +106,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                     ),
                   ),
+                ),
 
                   // Title at top-left
                 ],

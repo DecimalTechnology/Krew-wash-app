@@ -24,6 +24,7 @@ class ProfileDetailsScreen extends StatefulWidget {
 class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
   final _nameController = TextEditingController();
   final _buildingController = TextEditingController();
+  final _apartmentController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
 
@@ -48,6 +49,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
 
     if (user != null) {
       _nameController.text = user.name ?? '';
+      _apartmentController.text = user.apartmentNumber ?? '';
       _phoneController.text = user.phone?.toString() ?? '';
       _emailController.text = user.email ?? '';
       _selectedBuildingId = user.buildingId;
@@ -90,6 +92,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
     _buildingOverlay?.remove();
     _nameController.dispose();
     _buildingController.dispose();
+    _apartmentController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
     super.dispose();
@@ -249,13 +252,15 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
     final authProvider = context.read<AuthProvider>();
     final editProfileProvider = context.read<EditProfileProvider>();
 
+    final apartmentName = _apartmentController.text.trim();
+
     final success = await editProfileProvider.saveProfile(
       authProvider: authProvider,
       name: name,
       phone: phone,
       email: email,
       buildingId: _selectedBuildingId,
-      apartmentName: null, // Apartment name field removed
+      apartmentName: apartmentName.isEmpty ? null : apartmentName,
     );
 
     if (!mounted) return;
@@ -525,6 +530,15 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                     }
                   },
                 ),
+        ),
+        SizedBox(height: 32),
+
+        _buildLabel('APARTMENT NAME'),
+        SizedBox(height: 10),
+        _buildTextField(
+          controller: _apartmentController,
+          hintText: 'Enter apartment name',
+          isIOS: isIOS,
         ),
         SizedBox(height: 32),
 

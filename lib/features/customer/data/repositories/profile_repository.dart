@@ -70,16 +70,20 @@ class ProfileRepository {
         body: jsonEncode(body),
       );
 
+      // Always log response for debugging (both success and error)
+      if (kDebugMode) {
+        debugPrint(
+          '📦 [ProfileRepository.updateProfile] Response status: ${res.statusCode}',
+        );
+        debugPrint(
+          '📦 [ProfileRepository.updateProfile] Response body: ${res.body}',
+        );
+      }
+
       if (res.statusCode == 200 || res.statusCode == 201) {
         try {
           final response = jsonDecode(res.body) as Map<String, dynamic>;
           if (kDebugMode) {
-            debugPrint(
-              '📦 [ProfileRepository.updateProfile] Response status: ${res.statusCode}',
-            );
-            debugPrint(
-              '📦 [ProfileRepository.updateProfile] Response body: ${res.body}',
-            );
             if (response.containsKey('data') && response['data'] is Map) {
               final data = response['data'] as Map;
               debugPrint(
@@ -91,24 +95,51 @@ class ProfileRepository {
                 );
               }
             }
+            debugPrint(
+              '✅ [ProfileRepository.updateProfile] Success: ${response['success'] ?? true}',
+            );
           }
           return response;
-        } catch (_) {
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint(
+              '⚠️ [ProfileRepository.updateProfile] Error parsing response: $e',
+            );
+          }
           return {'success': true};
         }
       }
 
+      // Handle error responses - log detailed error info
+      if (kDebugMode) {
+        debugPrint(
+          '❌ [ProfileRepository.updateProfile] Request failed with status: ${res.statusCode}',
+        );
+      }
+
       try {
         final err = jsonDecode(res.body) as Map<String, dynamic>;
-        return {
-          'success': false,
-          'message': err['message'] ?? 'Failed to update profile',
-        };
-      } catch (_) {
-        return {
-          'success': false,
-          'message': 'Failed to update profile: ${res.statusCode}',
-        };
+        final errorMessage = err['message'] ?? 'Failed to update profile';
+        if (kDebugMode) {
+          debugPrint(
+            '❌ [ProfileRepository.updateProfile] Error message: $errorMessage',
+          );
+          debugPrint(
+            '❌ [ProfileRepository.updateProfile] Full error: ${err.toString()}',
+          );
+        }
+        return {'success': false, 'message': errorMessage};
+      } catch (e) {
+        final errorMessage = 'Failed to update profile: ${res.statusCode}';
+        if (kDebugMode) {
+          debugPrint(
+            '❌ [ProfileRepository.updateProfile] Error parsing error response: $e',
+          );
+          debugPrint(
+            '❌ [ProfileRepository.updateProfile] Raw response: ${res.body}',
+          );
+        }
+        return {'success': false, 'message': errorMessage};
       }
     } on SocketException catch (e) {
       if (kDebugMode) {

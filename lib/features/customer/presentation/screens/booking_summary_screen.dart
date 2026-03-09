@@ -170,7 +170,8 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
     }
 
     final subtotal = basePrice + addOnTotal;
-    final total = subtotal;
+    final vat = subtotal * 0.05; // 5% VAT
+    final total = subtotal + vat;
 
     return CupertinoPageScaffold(
       backgroundColor: Colors.black,
@@ -202,6 +203,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
                       addOns,
                       dates.length,
                       subtotal,
+                      vat,
                       total,
                     ),
                     SizedBox(height: 32),
@@ -244,7 +246,8 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
     }
 
     final subtotal = basePrice + addOnTotal;
-    final total = subtotal;
+    final vat = subtotal * 0.05; // 5% VAT
+    final total = subtotal + vat;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -276,6 +279,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
                       addOns,
                       dates.length,
                       subtotal,
+                      vat,
                       total,
                     ),
                     SizedBox(height: 32),
@@ -566,6 +570,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
     List<Map<String, dynamic>> addOns,
     int dateCount,
     double subtotal,
+    double vat,
     double total,
   ) {
     return Container(
@@ -627,9 +632,13 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
           ],
           const Divider(color: Colors.white24, height: 1),
           SizedBox(height: 12),
+          _buildPriceRow('SUBTOTAL', '${subtotal.toStringAsFixed(2)} AED'),
+          SizedBox(height: 12),
+          _buildPriceRow('VAT (5%)', '${vat.toStringAsFixed(2)} AED'),
+          SizedBox(height: 12),
           _buildPriceRow(
             'TOTAL',
-            '${total.toStringAsFixed(0)} AED',
+            '${total.toStringAsFixed(2)} AED',
             isTotal: true,
           ),
         ],

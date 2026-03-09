@@ -6,6 +6,33 @@ class SizeConstants {
   static const double smallScreenBreakpoint = 350;
   static const double mediumScreenBreakpoint = 400;
   static const double largeScreenBreakpoint = 600;
+  /// iPad 13" (iPad Pro 12.9") portrait width in logical pixels (~1024).
+  /// Use for appropriate layout and max content width on large tablets.
+  static const double ipad13Breakpoint = 1024;
+  /// Max width for main content when on iPad 13" or larger (keeps layout readable).
+  static const double maxContentWidthForLargeScreen = 800;
+  /// Scale factor for widgets (fonts, icons, padding, etc.) on iPad 13" and larger.
+  /// Use to increase widget sizes for better touch targets and readability.
+  static const double ipadContentScaleFactor = 1.2;
+
+  /// Returns a size scaled for iPad 13" when applicable (e.g. baseSize * 1.2 on iPad).
+  /// Use for any dimension you want larger on iPad: fonts, icons, padding, heights.
+  static double getIpadAwareSize(double screenWidth, double baseSize) {
+    if (screenWidth >= ipad13Breakpoint) {
+      return baseSize * ipadContentScaleFactor;
+    }
+    return baseSize;
+  }
+
+  /// Returns true when screen width is iPad 13" or larger (e.g. iPad Pro 12.9").
+  static bool isIpad13OrLarger(double screenWidth) =>
+      screenWidth >= ipad13Breakpoint;
+
+  /// Returns max content width to use for the current screen (for centered, readable layout on iPad).
+  static double getMaxContentWidth(double screenWidth) {
+    if (screenWidth >= ipad13Breakpoint) return maxContentWidthForLargeScreen;
+    return double.infinity;
+  }
 
   // Padding and margins
   static const double smallPadding = 8.0;
@@ -74,26 +101,32 @@ class SizeConstants {
     if (screenWidth < smallScreenBreakpoint) return smallPadding;
     if (screenWidth < mediumScreenBreakpoint) return mediumPadding;
     if (screenWidth < largeScreenBreakpoint) return largePadding;
+    if (screenWidth >= ipad13Breakpoint)
+      return hugePadding * ipadContentScaleFactor;
     return extraLargePadding;
   }
 
   static double getResponsiveFontSize(double screenWidth, double baseSize) {
-    // Reduce font size on large screens instead of increasing
     if (screenWidth < smallScreenBreakpoint) return baseSize * 0.8;
     if (screenWidth < mediumScreenBreakpoint) return baseSize * 0.9;
     if (screenWidth < largeScreenBreakpoint) return baseSize;
+    // iPad 13": scale up for readability and prominence
+    if (screenWidth >= ipad13Breakpoint)
+      return baseSize * ipadContentScaleFactor;
     if (screenWidth >= 800)
-      return baseSize * 0.75; // 25% reduction on extra large screens
+      return baseSize * 0.75; // 25% reduction on extra large (non‑iPad) screens
     return baseSize * 0.85; // 15% reduction on large screens
   }
 
   static double getResponsiveIconSize(double screenWidth, double baseSize) {
-    // Reduce icon size on large screens instead of increasing
     if (screenWidth < smallScreenBreakpoint) return baseSize * 0.8;
     if (screenWidth < mediumScreenBreakpoint) return baseSize * 0.9;
     if (screenWidth < largeScreenBreakpoint) return baseSize;
+    // iPad 13": scale up for touch targets and clarity
+    if (screenWidth >= ipad13Breakpoint)
+      return baseSize * ipadContentScaleFactor;
     if (screenWidth >= 800)
-      return baseSize * 0.75; // 25% reduction on extra large screens
+      return baseSize * 0.75; // 25% reduction on extra large (non‑iPad) screens
     return baseSize * 0.85; // 15% reduction on large screens
   }
 
@@ -101,6 +134,9 @@ class SizeConstants {
     if (screenWidth < smallScreenBreakpoint) return smallButtonHeight;
     if (screenWidth < mediumScreenBreakpoint) return mediumButtonHeight;
     if (screenWidth < largeScreenBreakpoint) return largeButtonHeight;
+    // iPad 13": larger tap targets
+    if (screenWidth >= ipad13Breakpoint)
+      return extraLargeButtonHeight * ipadContentScaleFactor;
     return extraLargeButtonHeight;
   }
 
@@ -108,6 +144,8 @@ class SizeConstants {
     if (screenWidth < smallScreenBreakpoint) return smallBorderRadius;
     if (screenWidth < mediumScreenBreakpoint) return mediumBorderRadius;
     if (screenWidth < largeScreenBreakpoint) return largeBorderRadius;
+    if (screenWidth >= ipad13Breakpoint)
+      return hugeBorderRadius * (ipadContentScaleFactor * 0.9); // Slightly scaled
     return extraLargeBorderRadius;
   }
 
@@ -115,6 +153,8 @@ class SizeConstants {
     if (screenWidth < smallScreenBreakpoint) return smallSpacing;
     if (screenWidth < mediumScreenBreakpoint) return mediumSpacing;
     if (screenWidth < largeScreenBreakpoint) return largeSpacing;
+    if (screenWidth >= ipad13Breakpoint)
+      return hugeSpacing * (ipadContentScaleFactor * 0.85);
     return extraLargeSpacing;
   }
 
@@ -122,6 +162,7 @@ class SizeConstants {
     if (screenWidth < smallScreenBreakpoint) return smallElevation;
     if (screenWidth < mediumScreenBreakpoint) return mediumElevation;
     if (screenWidth < largeScreenBreakpoint) return largeElevation;
+    if (screenWidth >= ipad13Breakpoint) return largeElevation;
     return extraLargeElevation;
   }
 }

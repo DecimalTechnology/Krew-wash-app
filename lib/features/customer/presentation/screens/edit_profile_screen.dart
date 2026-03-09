@@ -32,6 +32,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _phoneDisplayController = TextEditingController();
   final _emailController = TextEditingController();
   final _buildingSearchController = TextEditingController();
+  final _apartmentController = TextEditingController();
   final LayerLink _buildingFieldLink = LayerLink();
   OverlayEntry? _buildingSuggestionsOverlay;
   Timer? _searchDebounce;
@@ -71,6 +72,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     if (user != null) {
       _nameController.text = user.name ?? '';
+      _apartmentController.text = user.apartmentNumber ?? '';
 
       // Extract country code from phone if it starts with +
       final phoneStr = user.phone?.toString() ?? '';
@@ -295,6 +297,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _phoneDisplayController.dispose();
     _emailController.dispose();
     _buildingSearchController.dispose();
+    _apartmentController.dispose();
     super.dispose();
   }
 
@@ -355,6 +358,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         SizedBox(height: 24),
                         // Building ID Field
                         _buildBuildingIdField(isIOS: true),
+                        SizedBox(height: 24),
+                        // Apartment Name Field
+                        _buildApartmentField(isIOS: true),
                         SizedBox(height: 40),
                         // Save Button
                         Builder(
@@ -431,6 +437,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         SizedBox(height: 24),
                         // Building ID Field
                         _buildBuildingIdField(isIOS: false),
+                        SizedBox(height: 24),
+                        // Apartment Name Field
+                        _buildApartmentField(isIOS: false),
                         SizedBox(height: 40),
                         // Save Button
                         Builder(
@@ -1195,6 +1204,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  Widget _buildApartmentField({required bool isIOS}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabelWithAsterisk('APARTMENT NAME'),
+        SizedBox(height: 12),
+        _buildTextField(
+          controller: _apartmentController,
+          enabled: true,
+          hintText: 'Enter apartment name',
+          isIOS: isIOS,
+        ),
+      ],
+    );
+  }
+
   void _showBuildingSuggestions({required bool isIOS}) {
     // If overlay already exists, just mark it for rebuild
     if (_buildingSuggestionsOverlay != null) {
@@ -1690,7 +1715,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           authProvider: authProvider,
           phone: phoneChanged ? newPhone : null,
           email: emailChanged ? newEmail : null,
-          apartmentName: null, // Apartment name field removed
+          apartmentName: _apartmentController.text.trim().isEmpty
+              ? null
+              : _apartmentController.text.trim(),
         );
 
         if (!mounted) return;
@@ -1898,7 +1925,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           phone: phoneChanged ? newPhone : null,
           email: emailChanged ? newEmail : null,
           buildingId: buildingIdToSave,
-          apartmentName: null, // Apartment name field removed
+          apartmentName: _apartmentController.text.trim().isEmpty
+              ? null
+              : _apartmentController.text.trim(),
         );
 
         if (kDebugMode) {

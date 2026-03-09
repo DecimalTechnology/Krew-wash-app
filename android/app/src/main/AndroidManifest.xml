@@ -12,7 +12,7 @@
     <!-- For Android 13+ (API 33+), image_picker handles storage permissions automatically -->
     
     <application
-        android:label="KREW CAR WASH"
+        android:label="Krew Carwash"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
         android:roundIcon="@mipmap/launcher_icon"
