@@ -86,13 +86,15 @@ class UserModel {
       return value.toString().isEmpty ? null : value.toString();
     }
 
-    // Helper to safely parse phone
+    // Helper to safely parse phone (API may send as 'phone' or 'phoneNumber', int or string with/without +)
     int? safePhone() {
-      final value = map['phone'];
+      final value = map['phone'] ?? map['phoneNumber'];
       if (value == null) return null;
       if (value is int) return value;
       if (value is String && value.isNotEmpty) {
-        return int.tryParse(value);
+        final digitsOnly = value.replaceAll(RegExp(r'[^\d]'), '');
+        if (digitsOnly.isEmpty) return null;
+        return int.tryParse(digitsOnly);
       }
       return null;
     }
@@ -100,10 +102,15 @@ class UserModel {
     // Check for both 'image' and 'photo' fields (API uses 'image', model uses 'photo')
     final imageUrl = safeStringOrNull('image') ?? safeStringOrNull('photo');
 
+    // API may use 'name' or 'displayName'
+    final nameValue = safeStringOrNull('name') ?? safeStringOrNull('displayName');
+
     return UserModel(
-      uid: safeString('_id').isEmpty ? safeString('uid') : safeString('_id'),
+      uid: safeString('_id').isEmpty
+          ? (safeString('id').isEmpty ? safeString('uid') : safeString('id'))
+          : safeString('_id'),
       email: safeStringOrNull('email'),
-      name: safeStringOrNull('name'),
+      name: nameValue,
       phone: safePhone(),
       photo: imageUrl,
       buildingId: safeStringOrNull('buildingId'),

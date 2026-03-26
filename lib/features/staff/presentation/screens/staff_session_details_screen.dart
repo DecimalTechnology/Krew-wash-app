@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/standard_back_button.dart';
@@ -43,6 +44,7 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
   bool _isUploadingImage = false;
   List<String> _selectedImagePaths =
       []; // Store selected image paths before upload
+  String? _uploadSuccessMessage;
 
   @override
   void initState() {
@@ -128,35 +130,48 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
     if (source == null) return;
 
     try {
-      // Pick multiple images
-      final List<XFile> pickedFiles = await _imagePicker.pickMultiImage();
-      if (pickedFiles.isNotEmpty && mounted) {
-        setState(() {
-          _selectedImagePaths.addAll(pickedFiles.map((file) => file.path));
-        });
-      }
-    } catch (e) {
-      // If multi-image fails, try single image as fallback
-      try {
+      if (source == ImageSource.gallery) {
+        // Gallery: allow selecting multiple images.
+        final List<XFile> pickedFiles = await _imagePicker.pickMultiImage();
+        if (pickedFiles.isNotEmpty && mounted) {
+          setState(() {
+            _selectedImagePaths.addAll(pickedFiles.map((file) => file.path));
+          });
+        }
+      } else {
+        // Camera: open camera and capture a single image.
         final XFile? pickedFile = await _imagePicker.pickImage(source: source);
         if (pickedFile != null && mounted) {
           setState(() {
             _selectedImagePaths.add(pickedFile.path);
           });
         }
-      } catch (e2) {
-        if (mounted) {
-          _showMessage('Error picking image: ${e2.toString()}', isError: true);
-        }
       }
+    } catch (e) {
+      if (mounted) {
+        _showMessage('Error picking image: ${e.toString()}', isError: true);
+      }
+    }
+
+    // Automatically open the review modal after selecting images
+    if (mounted && _selectedImagePaths.isNotEmpty) {
+      final screenWidth = MediaQuery.of(context).size.width;
+      final isSmallScreen = screenWidth < 400;
+      final isTablet = screenWidth > 600;
+      _showSelectedImagesModal(
+        isIOS: isIOS,
+        isSmallScreen: isSmallScreen,
+        isTablet: isTablet,
+      );
     }
   }
 
-  Future<void> _uploadImage() async {
+  Future<void> _uploadImage({BuildContext? closeContext}) async {
     if (_selectedImagePaths.isEmpty) return;
 
     setState(() {
       _isUploadingImage = true;
+      _uploadSuccessMessage = null;
     });
 
     try {
@@ -191,9 +206,24 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
         });
         // Fetch updated session details
         await _fetchSessionDetails();
-        // Show success message
+        // Show inline success message and close modal (if any)
         if (allSuccess) {
-          _showMessage('Images uploaded successfully', isError: false);
+          if (mounted) {
+            setState(() {
+              _uploadSuccessMessage = 'Images uploaded successfully';
+            });
+          }
+          if (closeContext != null) {
+            Navigator.of(closeContext).pop();
+          }
+          // Auto-clear the banner after a short delay
+          Future.delayed(const Duration(seconds: 3), () {
+            if (mounted && _uploadSuccessMessage != null) {
+              setState(() {
+                _uploadSuccessMessage = null;
+              });
+            }
+          });
         }
       }
     } catch (e) {
@@ -299,10 +329,11 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
         if (_isLoading) {
           return SafeArea(
             bottom: false,
-            child: Center(
-              child: isIOS
-                  ? const CupertinoActivityIndicator(color: Colors.white)
-                  : const CircularProgressIndicator(color: Colors.white),
+            child: _buildSessionDetailsShimmer(
+              isIOS,
+              isSmallScreen,
+              horizontalPadding,
+              bottomPadding,
             ),
           );
         }
@@ -403,6 +434,134 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSessionDetailsShimmer(
+    bool isIOS,
+    bool isSmallScreen,
+    double horizontalPadding,
+    double bottomPadding,
+  ) {
+    return Shimmer.fromColors(
+      baseColor: AppTheme.shimmerBaseColor,
+      highlightColor: AppTheme.shimmerHighlightColor,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          horizontalPadding,
+          0,
+          horizontalPadding,
+          bottomPadding,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppTheme.shimmerPlaceholderColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: AppTheme.shimmerPlaceholderColor,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: List.generate(
+                4,
+                (_) => Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppTheme.shimmerPlaceholderColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 24),
+            Container(
+              padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+              decoration: BoxDecoration(
+                color: AppTheme.shimmerContainerColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.shimmerPlaceholderColor),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 18,
+                    width: 120,
+                    decoration: BoxDecoration(
+                      color: AppTheme.shimmerPlaceholderColor,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  ...List.generate(3, (_) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      children: [
+                        Container(
+                          height: 14,
+                          width: 70,
+                          decoration: BoxDecoration(
+                            color: AppTheme.shimmerPlaceholderColor,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Container(
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: AppTheme.shimmerPlaceholderColor,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+                ],
+              ),
+            ),
+            SizedBox(height: 24),
+            Container(
+              height: 20,
+              width: 100,
+              decoration: BoxDecoration(
+                color: AppTheme.shimmerPlaceholderColor,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            SizedBox(height: 12),
+            Container(
+              height: 120,
+              decoration: BoxDecoration(
+                color: AppTheme.shimmerContainerColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.shimmerPlaceholderColor),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -676,131 +835,347 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
           ],
         ),
         SizedBox(height: 16),
-        _buildPhotoPlaceholder(isIOS, isSmallScreen, isTablet, images: images),
-        // Show selected images preview and upload button
-        if (_selectedImagePaths.isNotEmpty) ...[
-          SizedBox(height: 16),
-          _buildSelectedImagesPreview(isIOS, isSmallScreen),
-          SizedBox(height: 16),
-          _buildUploadButton(isIOS, isSmallScreen),
+        if (_uploadSuccessMessage != null) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF16A34A).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: const Color(0xFF16A34A).withValues(alpha: 0.8),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Color(0xFF22C55E),
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _uploadSuccessMessage!,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: isSmallScreen ? 11 : 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
         ],
+        // When images are selected: show a separate modal to review & upload
+        if (_selectedImagePaths.isNotEmpty) ...[
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _showSelectedImagesModal(
+                isIOS: isIOS,
+                isSmallScreen: isSmallScreen,
+                isTablet: isTablet,
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFF04CDFE), width: 1.2),
+                foregroundColor: const Color(0xFF04CDFE),
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              icon: const Icon(Icons.photo_library_rounded, size: 20),
+              label: Text(
+                'REVIEW & UPLOAD (${_selectedImagePaths.length})',
+                style: AppTheme.bebasNeue(
+                  fontSize: isSmallScreen ? 13 : 15,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.1,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+        _buildPhotoPlaceholder(isIOS, isSmallScreen, isTablet, images: images),
       ],
     );
   }
 
-  Widget _buildSelectedImagesPreview(bool isIOS, bool isSmallScreen) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1,
+  void _showSelectedImagesModal({
+    required bool isIOS,
+    required bool isSmallScreen,
+    required bool isTablet,
+  }) {
+    if (_selectedImagePaths.isEmpty) return;
+
+    final media = MediaQuery.of(context);
+    // Local copy to drive the modal UI
+    final List<String> modalSelected =
+        List<String>.from(_selectedImagePaths, growable: true);
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.black,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      itemCount: _selectedImagePaths.length,
-      itemBuilder: (context, index) {
-        return Stack(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(isIOS ? 12 : 10),
-                border: Border.all(color: const Color(0xFF04CDFE), width: 1.2),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(isIOS ? 12 : 10),
-                child: Image.file(
-                  File(_selectedImagePaths[index]),
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[900],
-                      child: const Icon(
-                        Icons.broken_image,
-                        color: Colors.grey,
-                        size: 40,
+      builder: (sheetContext) {
+        bool isUploading = false;
+        return StatefulBuilder(
+          builder: (modalContext, modalSetState) {
+            return SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 12,
+                  bottom: media.viewInsets.bottom + 16,
+                ),
+                child: SizedBox(
+                  height: media.size.height * (isTablet ? 0.6 : 0.7),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'REVIEW PHOTOS',
+                            style: AppTheme.bebasNeue(
+                              color: Colors.white,
+                              fontSize: isSmallScreen ? 18 : 20,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            onPressed: () => Navigator.of(sheetContext).pop(),
+                          ),
+                        ],
                       ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            Positioned(
-              top: 4,
-              right: 4,
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedImagePaths.removeAt(index);
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
+                      const SizedBox(height: 6),
+                      Text(
+                        'Tap the X to deselect any photo. When you are ready, press UPLOAD.',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: isSmallScreen ? 11 : 12,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: GridView.builder(
+                          shrinkWrap: true,
+                          physics: const BouncingScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 1,
+                          ),
+                          itemCount: modalSelected.length,
+                          itemBuilder: (context, index) {
+                            final path = modalSelected[index];
+                            return Stack(
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(
+                                      isIOS ? 12 : 10,
+                                    ),
+                                    border: Border.all(
+                                      color: const Color(0xFF04CDFE),
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(
+                                      isIOS ? 12 : 10,
+                                    ),
+                                    child: Image.file(
+                                      File(path),
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return Container(
+                                          color: Colors.grey[900],
+                                          child: const Icon(
+                                            Icons.broken_image,
+                                            color: Colors.grey,
+                                            size: 40,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      modalSetState(() {
+                                        modalSelected.removeAt(index);
+                                      });
+                                      if (mounted) {
+                                        setState(() {
+                                          _selectedImagePaths
+                                            ..clear()
+                                            ..addAll(modalSelected);
+                                        });
+                                      }
+                                      if (modalSelected.isEmpty) {
+                                        Navigator.of(sheetContext).pop();
+                                      }
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.red,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.close,
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildUploadButton(
+                        isIOS,
+                        isSmallScreen,
+                        closeContext: sheetContext,
+                        modalLoading: isUploading,
+                        onUploadStarted: () =>
+                            modalSetState(() => isUploading = true),
+                      ),
+                    ],
                   ),
-                  child: const Icon(Icons.close, color: Colors.white, size: 16),
                 ),
               ),
-            ),
-          ],
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildUploadButton(bool isIOS, bool isSmallScreen) {
-    return Container(
-      width: double.infinity,
-      height: 50,
-      decoration: BoxDecoration(
-        color: const Color(0xFF04CDFE),
-        borderRadius: BorderRadius.circular(isIOS ? 16 : 12),
+  Widget _buildUploadButton(
+    bool isIOS,
+    bool isSmallScreen, {
+    BuildContext? closeContext,
+    bool? modalLoading,
+    VoidCallback? onUploadStarted,
+  }) {
+    final count = _selectedImagePaths.length;
+    final label = count == 1 ? 'UPLOAD IMAGE' : 'UPLOAD $count IMAGES';
+    final isLoading = modalLoading ?? _isUploadingImage;
+
+    void onPressed() {
+      if (closeContext != null && onUploadStarted != null) {
+        onUploadStarted();
+        _uploadImage(closeContext: closeContext);
+      } else {
+        _uploadImage(closeContext: closeContext);
+      }
+    }
+
+    final loadingWidget = SizedBox(
+      width: 24,
+      height: 24,
+      child: CircularProgressIndicator(
+        color: Colors.white,
+        strokeWidth: 2.5,
       ),
-      child: isIOS
-          ? CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: _isUploadingImage ? null : _uploadImage,
-              child: _isUploadingImage
-                  ? const CupertinoActivityIndicator(color: Colors.white)
-                  : Text(
-                      'UPLOAD IMAGE',
-                      style: AppTheme.bebasNeue(
-                        color: Colors.white,
-                        fontSize: isSmallScreen ? 14 : 16,
-                        fontWeight: FontWeight.w400,
-                        letterSpacing: 1.2,
+    );
+
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          color: const Color(0xFF04CDFE),
+          borderRadius: BorderRadius.circular(isIOS ? 16 : 14),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF04CDFE).withValues(alpha: 0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: isIOS
+            ? CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: isLoading ? null : onPressed,
+                child: isLoading
+                    ? loadingWidget
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.cloud_upload_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            label,
+                            style: AppTheme.bebasNeue(
+                              color: Colors.white,
+                              fontSize: isSmallScreen ? 15 : 17,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-            )
-          : ElevatedButton(
-              onPressed: _isUploadingImage ? null : _uploadImage,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF04CDFE),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+              )
+            : ElevatedButton.icon(
+                onPressed: isLoading ? null : onPressed,
+                icon: isLoading
+                    ? loadingWidget
+                    : const Icon(
+                        Icons.cloud_upload_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                label: Text(
+                  label,
+                  style: AppTheme.bebasNeue(
+                    color: Colors.white,
+                    fontSize: isSmallScreen ? 15 : 17,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF04CDFE),
+                  foregroundColor: Colors.white,
+                  elevation: 4,
+                  shadowColor: const Color(0xFF04CDFE).withValues(alpha: 0.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 ),
               ),
-              child: _isUploadingImage
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Text(
-                      'UPLOAD IMAGE',
-                      style: AppTheme.bebasNeue(
-                        color: Colors.white,
-                        fontSize: isSmallScreen ? 14 : 16,
-                        fontWeight: FontWeight.w400,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-            ),
+      ),
     );
   }
 

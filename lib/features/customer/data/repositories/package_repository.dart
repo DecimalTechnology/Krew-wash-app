@@ -24,6 +24,10 @@ class PackageRepository {
       final uri = Uri.parse(
         '$baseurl/buildings/search',
       ).replace(queryParameters: {'search': query});
+      if (kDebugMode) {
+        debugPrint('📞 [searchBuildings] GET ${uri.toString()}');
+        debugPrint('📞 [searchBuildings] query: "$query"');
+      }
       final res = await http.get(
         uri,
         headers: {
@@ -31,12 +35,31 @@ class PackageRepository {
             'Authorization': 'Bearer $token',
         },
       );
+      if (kDebugMode) {
+        debugPrint('📞 [searchBuildings] response status: ${res.statusCode}');
+      }
       if (res.statusCode != 200) return [];
-      final body = jsonDecode(res.body) as Map<String, dynamic>;
-      final list = (body['data'] as List?) ?? [];
-      return list
-          .map((e) => BuildingModel.fromMap(e as Map<String, dynamic>))
-          .toList();
+      final decoded = jsonDecode(res.body);
+      List<dynamic> list = [];
+      if (decoded is Map<String, dynamic>) {
+        list = (decoded['data'] as List?) ?? (decoded['buildings'] as List?) ?? [];
+      } else if (decoded is List) {
+        list = decoded;
+      }
+      final result = <BuildingModel>[];
+      for (final e in list) {
+        if (e is Map<String, dynamic>) {
+          try {
+            result.add(BuildingModel.fromMap(e));
+          } catch (_) {
+            // skip malformed items
+          }
+        }
+      }
+      if (kDebugMode) {
+        debugPrint('📞 [searchBuildings] results count: ${result.length}');
+      }
+      return result;
     } on SocketException catch (e) {
       if (kDebugMode) {
         debugPrint('❌ Network error searching buildings: $e');

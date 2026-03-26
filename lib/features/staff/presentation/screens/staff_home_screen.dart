@@ -429,7 +429,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
               vertical: isSmallScreen ? 20 : 26,
             ),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.12),
+              color: AppTheme.shimmerContainerColor,
               borderRadius: BorderRadius.circular(isIOS ? 26 : 22),
               border: Border.all(
                 color: Colors.white.withValues(alpha: 0.2),
@@ -502,7 +502,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
             vertical: isSmallScreen ? 20 : 26,
           ),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.12),
+            color: AppTheme.shimmerContainerColor,
             borderRadius: BorderRadius.circular(isIOS ? 26 : 22),
             border: Border.all(
               color: Colors.white.withValues(alpha: 0.2),
@@ -815,12 +815,12 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
 
   Widget _buildSummaryCardShimmer(bool isSmallScreen, bool isTablet) {
     return Shimmer.fromColors(
-      baseColor: Colors.white.withValues(alpha: 0.08),
-      highlightColor: Colors.white.withValues(alpha: 0.25),
+      baseColor: AppTheme.shimmerBaseColor,
+      highlightColor: AppTheme.shimmerHighlightColor,
       child: Container(
         height: isSmallScreen ? 110 : 120,
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.1),
+          color: AppTheme.shimmerContainerColor,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.15),
@@ -833,15 +833,15 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
 
   Widget _buildScheduleCardShimmer(bool isIOS, bool isSmallScreen) {
     return Shimmer.fromColors(
-      baseColor: Colors.white.withValues(alpha: 0.08),
-      highlightColor: Colors.white.withValues(alpha: 0.25),
+      baseColor: AppTheme.shimmerBaseColor,
+      highlightColor: AppTheme.shimmerHighlightColor,
       child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: isSmallScreen ? 18 : 24,
           vertical: isSmallScreen ? 20 : 26,
         ),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.12),
+          color: AppTheme.shimmerContainerColor,
           borderRadius: BorderRadius.circular(isIOS ? 26 : 22),
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.2),
@@ -862,7 +862,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                         height: 16,
                         width: 120,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
+                          color: AppTheme.shimmerPlaceholderColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -871,7 +871,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                         height: 14,
                         width: 100,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
+                          color: AppTheme.shimmerPlaceholderColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -880,7 +880,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                         height: 12,
                         width: 80,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
+                          color: AppTheme.shimmerPlaceholderColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -891,14 +891,14 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                   width: 60,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: AppTheme.shimmerPlaceholderColor,
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
               ],
             ),
             SizedBox(height: 18),
-            Container(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+            Container(height: 1, color: AppTheme.shimmerPlaceholderColor),
             SizedBox(height: 18),
             Container(
               height: 14,

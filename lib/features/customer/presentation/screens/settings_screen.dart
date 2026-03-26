@@ -5,7 +5,6 @@ import '../../../../core/constants/route_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/standard_back_button.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../data/repositories/profile_repository.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -328,7 +327,111 @@ class SettingsScreen extends StatelessWidget {
   Future<void> _confirmAndDeleteAccount(BuildContext context) async {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
+    // Shows the OTP dialog. Validates the entered OTP against [sentOtp]
+    // inline — the dialog stays open and shows an error until the correct
+    // code is entered or the user presses Cancel.
+    Future<String?> askOtp(String sentOtp) async {
+      final controller = TextEditingController();
+      String? errorText;
+
+      return await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (otpDialogContext) => StatefulBuilder(
+          builder: (ctx, setOtpState) => AlertDialog(
+            backgroundColor: isIOS ? null : AppTheme.cardColor,
+            title: Text(
+              'Verify OTP',
+              style: isIOS ? null : AppTheme.bebasNeue(color: Colors.white),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Enter the OTP sent to your email.',
+                  style: isIOS
+                      ? null
+                      : AppTheme.bebasNeue(color: Colors.white70),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  keyboardType: TextInputType.number,
+                  style: isIOS ? null : const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: 'Enter OTP',
+                    errorText: errorText,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () =>
+                    Navigator.of(otpDialogContext, rootNavigator: true).pop(),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  final entered = controller.text.trim();
+                  if (entered.isEmpty) {
+                    setOtpState(() => errorText = 'OTP is required');
+                    return;
+                  }
+                  if (sentOtp.isNotEmpty && entered != sentOtp) {
+                    setOtpState(
+                      () => errorText =
+                          'Invalid OTP. Please check the code sent to your email.',
+                    );
+                    return;
+                  }
+                  // OTP is correct (or server didn't return one — let
+                  // the backend validate via the deleteAccount call).
+                  Navigator.of(
+                    otpDialogContext,
+                    rootNavigator: true,
+                  ).pop(entered);
+                },
+                child: const Text('Verify'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     Future<void> runDelete() async {
+      final authProvider = context.read<AuthProvider>();
+      final email = authProvider.user?.email?.trim() ?? '';
+      if (email.isEmpty) {
+        if (!context.mounted) return;
+        if (isIOS) {
+          showCupertinoDialog(
+            context: context,
+            builder: (_) => CupertinoAlertDialog(
+              title: const Text('Error'),
+              content: const Text('Unable to find your email for verification.'),
+              actions: [
+                CupertinoDialogAction(
+                  child: const Text('OK'),
+                  onPressed: () =>
+                      Navigator.of(context, rootNavigator: true).pop(),
+                ),
+              ],
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Unable to find your email for verification.'),
+            ),
+          );
+        }
+        return;
+      }
+
       // show blocking loader
       if (isIOS) {
         showCupertinoDialog(
@@ -356,9 +459,77 @@ class SettingsScreen extends StatelessWidget {
         );
       }
 
-      final repo = const ProfileRepository();
-      final res = await repo.deleteAccount();
+      final otpRes = await authProvider.sendDeleteAccountOtp(email: email);
 
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop(); // close loader
+      }
+
+      if (otpRes['success'] != true) {
+        final msg =
+            otpRes['message']?.toString() ?? 'Failed to send verification OTP';
+        if (isIOS) {
+          showCupertinoDialog(
+            context: context,
+            builder: (_) => CupertinoAlertDialog(
+              title: const Text('OTP Failed'),
+              content: Text(msg),
+              actions: [
+                CupertinoDialogAction(
+                  child: const Text('OK'),
+                  onPressed: () =>
+                      Navigator.of(context, rootNavigator: true).pop(),
+                ),
+              ],
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
+          );
+        }
+        return;
+      }
+
+      // The delete-account send-OTP API returns the OTP as the "otp" key
+      // (extracted in the repository from the raw "data" string field).
+      final sentOtp = otpRes['otp']?.toString().trim() ?? '';
+      debugPrint('Extracted sentOtp: "$sentOtp"');
+
+      // Dialog validates the OTP inline and only closes on correct entry
+      // or Cancel — so if we get back a non-null value it is already correct.
+      final otp = await askOtp(sentOtp);
+      if (otp == null || otp.isEmpty) return;
+
+      if (!context.mounted) return;
+
+      if (isIOS) {
+        showCupertinoDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const CupertinoAlertDialog(
+            title: Text('Deleting...'),
+            content: Padding(
+              padding: EdgeInsets.only(top: 12),
+              child: CupertinoActivityIndicator(),
+            ),
+          ),
+        );
+      } else {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const AlertDialog(
+            title: Text('Deleting...'),
+            content: SizedBox(
+              height: 40,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ),
+        );
+      }
+
+      final res = await authProvider.deleteAccount(email: email);
       if (context.mounted) {
         Navigator.of(context, rootNavigator: true).pop(); // close loader
       }

@@ -920,35 +920,130 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
                   },
                   child: Container(
                     width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(14),
+                    margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
                       color: Colors.black,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isSelected
                             ? const Color(0xFF04CDFE)
-                            : const Color(0xFF04CDFE).withValues(alpha: 0.3),
-                        width: 1,
+                            : Colors.white12,
+                        width: isSelected ? 2 : 1,
                       ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          vehicle['vehicleModel']?.toString() ?? 'VEHICLE',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w400,
-                            fontSize: 15,
+                      boxShadow: [
+                        if (isSelected)
+                          BoxShadow(
+                            color: const Color(
+                              0xFF04CDFE,
+                            ).withValues(alpha: 0.15),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
                           ),
-                        ),
-                        SizedBox(height: 6),
-                        _buildVehicleInfoRow('TYPE', type),
-                        _buildVehicleInfoRow('NUMBER', number),
-                        _buildVehicleInfoRow('COLOR', color),
-                        _buildVehicleInfoRow('PARKING NUMBER', parking),
                       ],
+                    ),
+                    child: IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Left accent bar
+                          Container(
+                            width: 4,
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFF04CDFE)
+                                  : Colors.white12,
+                              borderRadius: const BorderRadius.horizontal(
+                                left: Radius.circular(16),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                14,
+                                12,
+                                14,
+                                12,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Header: model name + selection icon
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          (vehicle['vehicleModel']
+                                                      ?.toString() ??
+                                                  'VEHICLE')
+                                              .toUpperCase(),
+                                          style: AppTheme.bebasNeue(
+                                            color: const Color(0xFF04CDFE),
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w400,
+                                            letterSpacing: 1.0,
+                                          ),
+                                        ),
+                                      ),
+                                      Icon(
+                                        isSelected
+                                            ? Icons.check_circle
+                                            : Icons.radio_button_unchecked,
+                                        color: isSelected
+                                            ? const Color(0xFF04CDFE)
+                                            : Colors.white38,
+                                        size: 24,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  // Two-column detail grid
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            _buildVehicleDetailItem(
+                                              'TYPE',
+                                              type,
+                                            ),
+                                            const SizedBox(height: 6),
+                                            _buildVehicleDetailItem(
+                                              'COLOR',
+                                              color,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            _buildVehicleDetailItem(
+                                              'NUMBER',
+                                              number,
+                                            ),
+                                            const SizedBox(height: 6),
+                                            _buildVehicleDetailItem(
+                                              'PARKING',
+                                              parking,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -960,26 +1055,31 @@ class _PackageDetailsViewState extends State<_PackageDetailsView> {
     );
   }
 
-  Widget _buildVehicleInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white54,
-              fontSize: 13,
-              letterSpacing: 0.5,
-            ),
+  Widget _buildVehicleDetailItem(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: AppTheme.bebasNeue(
+            color: Colors.white38,
+            fontSize: 10,
+            fontWeight: FontWeight.w400,
+            letterSpacing: 0.8,
           ),
-          Text(
-            value,
-            style: const TextStyle(color: Colors.white, fontSize: 13),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value.toUpperCase(),
+          style: AppTheme.bebasNeue(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+            letterSpacing: 0.5,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

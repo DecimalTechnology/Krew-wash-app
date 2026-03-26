@@ -33,7 +33,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _initializeAuth() async {
     // Ensure splash screen shows for minimum duration (1.5 seconds)
     final initializationStart = DateTime.now();
-    
+
     // First, try to restore user from secure storage (stay logged in)
     // Only restore from backend API data, not from Firebase
     await _restoreUserFromStorage();
@@ -41,7 +41,7 @@ class AuthProvider extends ChangeNotifier {
     // Don't listen to Firebase auth state changes
     // Firebase is only used for OTP verification, not for user authentication
     // All user data comes from the backend API only
-    
+
     // Ensure minimum splash screen duration
     final elapsed = DateTime.now().difference(initializationStart);
     const minDuration = Duration(milliseconds: 1500);
@@ -575,6 +575,22 @@ class AuthProvider extends ChangeNotifier {
     return AuthRepository.formatPhoneNumberForApi(phone);
   }
 
+  /// Check which verification method (email/phone) the user used at signup.
+  ///
+  /// Exactly one of [email] or [phone] should be provided.
+  /// Returns backend result with:
+  /// - success: true  -> user exists and method matches
+  /// - success: false -> includes user-friendly message from API
+  Future<Map<String, dynamic>> checkAccountVerificationMethod({
+    String? email,
+    String? phone,
+  }) async {
+    return AuthRepository.checkAccountVerificationMethod(
+      email: email,
+      phone: phone,
+    );
+  }
+
   // Check if user profile is complete
   bool isProfileComplete() {
     if (_user == null) return false;
@@ -622,6 +638,39 @@ class AuthProvider extends ChangeNotifier {
       _setError('Failed to verify email OTP');
       _setLoading(false);
       return {'success': false, 'message': 'Failed to verify email OTP: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> sendDeleteAccountOtp({
+    required String email,
+  }) async {
+    _setLoading(true);
+    _clearError();
+    try {
+      final result = await AuthRepository.sendDeleteAccountOtp(email: email);
+      _setLoading(false);
+      return result;
+    } catch (e) {
+      _setError('Failed to send delete account OTP');
+      _setLoading(false);
+      return {
+        'success': false,
+        'message': 'Failed to send delete account OTP: $e',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteAccount({required String email}) async {
+    _setLoading(true);
+    _clearError();
+    try {
+      final result = await AuthRepository.deleteAccount(email: email);
+      _setLoading(false);
+      return result;
+    } catch (e) {
+      _setError('Failed to delete account');
+      _setLoading(false);
+      return {'success': false, 'message': 'Failed to delete account: $e'};
     }
   }
 }

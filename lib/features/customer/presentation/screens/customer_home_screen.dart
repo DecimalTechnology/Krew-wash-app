@@ -221,16 +221,25 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen>
                           position: _slideAnimation,
                           child: FadeTransition(
                             opacity: _fadeAnimation,
-                            child: SingleChildScrollView(
-                              padding: EdgeInsets.only(
-                                left: 20,
-                                right: 20,
-                                top: 0,
-                                bottom:
-                                    MediaQuery.of(context).padding.bottom +
-                                    150, // Space for floating button - increased to allow content to scroll above
-                              ),
-                              child: Column(
+                            child: RefreshIndicator(
+                              onRefresh: () async {
+                                await context
+                                    .read<CustomerDashboardProvider>()
+                                    .fetchDashboardData(force: true);
+                              },
+                              color: const Color(0xFF04CDFE),
+                              backgroundColor: Colors.white,
+                              child: SingleChildScrollView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: EdgeInsets.only(
+                                  left: 20,
+                                  right: 20,
+                                  top: 0,
+                                  bottom:
+                                      MediaQuery.of(context).padding.bottom +
+                                      150, // Space for floating button - increased to allow content to scroll above
+                                ),
+                                child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const SizedBox(height: 16),
@@ -283,6 +292,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen>
 
                                   const SizedBox(height: 20),
                                 ],
+                                ),
                               ),
                             ),
                           ),

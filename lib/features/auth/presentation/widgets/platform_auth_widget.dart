@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../screens/otp_verification_screen.dart';
 import '../../../../core/widgets/country_code_picker.dart';
+import '../../data/repositories/auth_repository.dart';
 import '../../../../core/constants/route_constants.dart';
 import '../../../../core/utils/network_error_utils.dart';
 
@@ -25,12 +26,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
   bool _isSignUp = true; // Start with sign-up page
 
   bool get isSignUp => _isSignUp;
-  CountryCode _selectedCountryCode = const CountryCode(
-    name: 'United Arab Emirates',
-    code: 'AE',
-    dialCode: '+971',
-    flag: '🇦🇪',
-  );
+  CountryCode _selectedCountryCode = CountryCode.supportedCountries.first;
 
   @override
   void initState() {
@@ -132,6 +128,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
         ? CupertinoTextField(
             controller: _nameController,
             placeholder: 'NAME',
+            placeholderStyle: const TextStyle(color: Colors.white),
             clearButtonMode: OverlayVisibilityMode.editing,
             style: AppTheme.textFieldStyle(color: Colors.white),
             decoration: BoxDecoration(
@@ -146,7 +143,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
             style: AppTheme.textFieldStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'NAME',
-              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+              hintStyle: const TextStyle(color: Colors.white),
               filled: true,
               fillColor: Colors.white.withValues(alpha: 0.1),
               border: OutlineInputBorder(
@@ -187,6 +184,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
         ? CupertinoTextField(
             controller: _emailController,
             placeholder: 'EMAIL',
+            placeholderStyle: const TextStyle(color: Colors.white),
             keyboardType: TextInputType.emailAddress,
             clearButtonMode: OverlayVisibilityMode.editing,
             style: AppTheme.textFieldStyle(color: Colors.white),
@@ -203,7 +201,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
             style: AppTheme.textFieldStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'EMAIL',
-              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+              hintStyle: const TextStyle(color: Colors.white),
               filled: true,
               fillColor: Colors.white.withValues(alpha: 0.1),
               border: OutlineInputBorder(
@@ -256,7 +254,9 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
               ? CupertinoTextField(
                   controller: _phoneController,
                   placeholder: 'PHONE',
+                  placeholderStyle: const TextStyle(color: Colors.white),
                   keyboardType: TextInputType.phone,
+                  maxLength: _selectedCountryCode.maxLength,
                   clearButtonMode: OverlayVisibilityMode.editing,
                   style: AppTheme.textFieldStyle(color: Colors.white),
                   decoration: BoxDecoration(
@@ -274,12 +274,11 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
               : TextField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
+                  maxLength: _selectedCountryCode.maxLength,
                   style: AppTheme.textFieldStyle(color: Colors.white),
                   decoration: InputDecoration(
                     hintText: 'PHONE',
-                    hintStyle: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                    ),
+                    hintStyle: const TextStyle(color: Colors.white),
                     filled: true,
                     fillColor: Colors.white.withValues(alpha: 0.1),
                     border: OutlineInputBorder(
@@ -349,7 +348,9 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                 ? CupertinoTextField(
                     controller: _emailController,
                     placeholder: 'PHONE',
+                    placeholderStyle: const TextStyle(color: Colors.white),
                     keyboardType: TextInputType.phone,
+                    maxLength: _selectedCountryCode.maxLength,
                     clearButtonMode: OverlayVisibilityMode.editing,
                     style: AppTheme.textFieldStyle(color: Colors.white),
                     decoration: BoxDecoration(
@@ -367,12 +368,11 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                 : TextField(
                     controller: _emailController,
                     keyboardType: TextInputType.phone,
+                    maxLength: _selectedCountryCode.maxLength,
                     style: AppTheme.textFieldStyle(color: Colors.white),
                     decoration: InputDecoration(
                       hintText: 'PHONE',
-                      hintStyle: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
-                      ),
+                      hintStyle: const TextStyle(color: Colors.white),
                       filled: true,
                       fillColor: Colors.white.withValues(alpha: 0.1),
                       border: OutlineInputBorder(
@@ -421,6 +421,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
         ? CupertinoTextField(
             controller: _emailController,
             placeholder: 'EMAIL / PHONE',
+            placeholderStyle: const TextStyle(color: Colors.white),
             keyboardType: TextInputType.emailAddress,
             clearButtonMode: OverlayVisibilityMode.editing,
             style: AppTheme.textFieldStyle(color: Colors.white),
@@ -442,7 +443,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
             style: AppTheme.textFieldStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'EMAIL / PHONE',
-              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+              hintStyle: const TextStyle(color: Colors.white),
               filled: true,
               fillColor: Colors.white.withValues(alpha: 0.1),
               border: OutlineInputBorder(
@@ -797,9 +798,20 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
         ? ''
         : _selectedCountryCode.dialCode + _phoneController.text.trim();
 
-    // Validate phone number format
+    // Validate phone number format (E.164) and country-specific length
     if (!authProvider.isValidPhoneNumber(phoneNumber)) {
-      _showErrorMessage('Please enter a valid phone number');
+      _showErrorMessage('Please enter a valid phone number (8–15 digits)');
+      return;
+    }
+    final nationalPart = _phoneController.text.trim();
+    if (!AuthRepository.isValidPhoneNumberForCountry(
+      nationalPart,
+      _selectedCountryCode.minLength,
+      _selectedCountryCode.maxLength,
+    )) {
+      _showErrorMessage(
+        'Phone number for ${_selectedCountryCode.name} must be ${_selectedCountryCode.minLength}–${_selectedCountryCode.maxLength} digits',
+      );
       return;
     }
 
@@ -992,17 +1004,34 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
     }
 
     if (!isEmail && !isPhone) {
-      _showErrorMessage('Please enter a valid email or phone number');
+      _showErrorMessage(
+        'Please enter a valid email or phone number (phone: 8–15 digits)',
+      );
       return;
     }
 
-    // For phone sign-in, check if user exists
+    // For phone sign-in, check verification method and if user exists
     if (isPhone) {
       try {
         // If input already has country code, use it; otherwise prepend selected country code
         final phoneNumber = input.trim().startsWith('+')
             ? input.trim()
             : _selectedCountryCode.dialCode + input.trim();
+
+        // Validate country-specific length for national part
+        final nationalPart = input.trim().startsWith(_selectedCountryCode.dialCode)
+            ? input.trim().substring(_selectedCountryCode.dialCode.length).trim()
+            : input.trim();
+        if (!AuthRepository.isValidPhoneNumberForCountry(
+          nationalPart,
+          _selectedCountryCode.minLength,
+          _selectedCountryCode.maxLength,
+        )) {
+          _showErrorMessage(
+            'Phone number for ${_selectedCountryCode.name} must be ${_selectedCountryCode.minLength}–${_selectedCountryCode.maxLength} digits',
+          );
+          return;
+        }
 
         // Format to E.164 for Firebase
         final formattedPhone = authProvider.formatPhoneNumber(phoneNumber);
@@ -1073,12 +1102,28 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
           return;
         }
 
-        // If phone exists, proceed with OTP for sign-in
+        // If phone exists, proceed to verification-method check before OTP
         if (phoneRegistered || is409Error || messageIndicatesExists) {
-          // Phone is registered (409 or "already exists" message means phone exists) - proceed with OTP for login
+          // Check account verification method (phone vs email) before sending OTP
+          final methodResult = await authProvider
+              .checkAccountVerificationMethod(phone: formattedPhone);
+
+          if (kDebugMode) {
+            print('📱 Verification method check (phone): $methodResult');
+          }
+
+          if (methodResult['success'] != true) {
+            final msg =
+                methodResult['message']?.toString() ??
+                'Unable to verify account. Please try again.';
+            _showErrorMessage(msg);
+            return;
+          }
+
+          // Phone is registered and verification method matches -> proceed with OTP
           if (kDebugMode) {
             print(
-              '✅ Phone exists (409 or "already exists" message), proceeding with OTP for sign-in',
+              '✅ Phone exists and verification method is phone, proceeding with OTP for sign-in',
             );
           }
           await _sendPhoneOtpForSignIn(input);
@@ -1121,12 +1166,27 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
         }
       }
     } else if (isEmail) {
-      // For email sign-in, send OTP directly (API will handle email lookup)
+      // For email sign-in, first check account verification method, then send OTP
       // Print email being used for sign-in
       if (kDebugMode) {
         print('📧 Email Sign-In:');
         print('   Email: $input');
       }
+
+      final methodResult = await authProvider.checkAccountVerificationMethod(
+        email: input,
+      );
+      if (kDebugMode) {
+        print('📧 Verification method check (email): $methodResult');
+      }
+      if (methodResult['success'] != true) {
+        final msg =
+            methodResult['message']?.toString() ??
+            'Unable to verify account. Please try again.';
+        _showErrorMessage(msg);
+        return;
+      }
+
       await _sendEmailOtpForSignIn(input);
     }
 

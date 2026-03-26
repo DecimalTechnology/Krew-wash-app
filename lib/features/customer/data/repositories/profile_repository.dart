@@ -197,7 +197,11 @@ class ProfileRepository {
 
       if (res.statusCode == 200 || res.statusCode == 201) {
         try {
-          return jsonDecode(res.body) as Map<String, dynamic>;
+          final data = jsonDecode(res.body) as Map<String, dynamic>;
+          if (kDebugMode) {
+            debugPrint('📥 [getProfile] API response: $data');
+          }
+          return data;
         } catch (_) {
           return {
             'success': false,

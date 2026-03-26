@@ -6,13 +6,165 @@ class CountryCode {
   final String code;
   final String dialCode;
   final String flag;
+  final int minLength;
+  final int maxLength;
 
   const CountryCode({
     required this.name,
     required this.code,
     required this.dialCode,
     required this.flag,
+    required this.minLength,
+    required this.maxLength,
   });
+
+  /// Supported countries with per-country min/max length for national number.
+  static const List<CountryCode> supportedCountries = [
+    CountryCode(
+      name: 'United Arab Emirates',
+      code: 'AE',
+      dialCode: '+971',
+      flag: '🇦🇪',
+      minLength: 9,
+      maxLength: 9,
+    ),
+    CountryCode(
+      name: 'Saudi Arabia',
+      code: 'SA',
+      dialCode: '+966',
+      flag: '🇸🇦',
+      minLength: 9,
+      maxLength: 9,
+    ),
+    CountryCode(
+      name: 'Kuwait',
+      code: 'KW',
+      dialCode: '+965',
+      flag: '🇰🇼',
+      minLength: 8,
+      maxLength: 8,
+    ),
+    CountryCode(
+      name: 'Qatar',
+      code: 'QA',
+      dialCode: '+974',
+      flag: '🇶🇦',
+      minLength: 8,
+      maxLength: 8,
+    ),
+    CountryCode(
+      name: 'Bahrain',
+      code: 'BH',
+      dialCode: '+973',
+      flag: '🇧🇭',
+      minLength: 8,
+      maxLength: 8,
+    ),
+    CountryCode(
+      name: 'Oman',
+      code: 'OM',
+      dialCode: '+968',
+      flag: '🇴🇲',
+      minLength: 8,
+      maxLength: 8,
+    ),
+    CountryCode(
+      name: 'India',
+      code: 'IN',
+      dialCode: '+91',
+      flag: '🇮🇳',
+      minLength: 10,
+      maxLength: 10,
+    ),
+    CountryCode(
+      name: 'United States',
+      code: 'US',
+      dialCode: '+1',
+      flag: '🇺🇸',
+      minLength: 10,
+      maxLength: 10,
+    ),
+    CountryCode(
+      name: 'United Kingdom',
+      code: 'GB',
+      dialCode: '+44',
+      flag: '🇬🇧',
+      minLength: 10,
+      maxLength: 11,
+    ),
+    CountryCode(
+      name: 'Canada',
+      code: 'CA',
+      dialCode: '+1',
+      flag: '🇨🇦',
+      minLength: 10,
+      maxLength: 10,
+    ),
+    CountryCode(
+      name: 'Australia',
+      code: 'AU',
+      dialCode: '+61',
+      flag: '🇦🇺',
+      minLength: 9,
+      maxLength: 9,
+    ),
+    CountryCode(
+      name: 'Pakistan',
+      code: 'PK',
+      dialCode: '+92',
+      flag: '🇵🇰',
+      minLength: 10,
+      maxLength: 10,
+    ),
+    CountryCode(
+      name: 'Bangladesh',
+      code: 'BD',
+      dialCode: '+880',
+      flag: '🇧🇩',
+      minLength: 10,
+      maxLength: 10,
+    ),
+    CountryCode(
+      name: 'Philippines',
+      code: 'PH',
+      dialCode: '+63',
+      flag: '🇵🇭',
+      minLength: 10,
+      maxLength: 10,
+    ),
+    CountryCode(
+      name: 'Egypt',
+      code: 'EG',
+      dialCode: '+20',
+      flag: '🇪🇬',
+      minLength: 10,
+      maxLength: 10,
+    ),
+    CountryCode(
+      name: 'Jordan',
+      code: 'JO',
+      dialCode: '+962',
+      flag: '🇯🇴',
+      minLength: 9,
+      maxLength: 9,
+    ),
+    CountryCode(
+      name: 'Lebanon',
+      code: 'LB',
+      dialCode: '+961',
+      flag: '🇱🇧',
+      minLength: 7,
+      maxLength: 8,
+    ),
+    CountryCode(
+      name: 'Turkey',
+      code: 'TR',
+      dialCode: '+90',
+      flag: '🇹🇷',
+      minLength: 10,
+      maxLength: 10,
+    ),
+  ];
 }
 
 class CountryCodePicker extends StatefulWidget {
@@ -31,96 +183,7 @@ class CountryCodePicker extends StatefulWidget {
 
 class _CountryCodePickerState extends State<CountryCodePicker> {
   CountryCode? _selectedCountry;
-  final List<CountryCode> _countries = [
-    const CountryCode(
-      name: 'United Arab Emirates',
-      code: 'AE',
-      dialCode: '+971',
-      flag: '🇦🇪',
-    ),
-    const CountryCode(
-      name: 'Saudi Arabia',
-      code: 'SA',
-      dialCode: '+966',
-      flag: '🇸🇦',
-    ),
-    const CountryCode(
-      name: 'Kuwait',
-      code: 'KW',
-      dialCode: '+965',
-      flag: '🇰🇼',
-    ),
-    const CountryCode(
-      name: 'Qatar',
-      code: 'QA',
-      dialCode: '+974',
-      flag: '🇶🇦',
-    ),
-    const CountryCode(
-      name: 'Bahrain',
-      code: 'BH',
-      dialCode: '+973',
-      flag: '🇧🇭',
-    ),
-    const CountryCode(name: 'Oman', code: 'OM', dialCode: '+968', flag: '🇴🇲'),
-    const CountryCode(name: 'India', code: 'IN', dialCode: '+91', flag: '🇮🇳'),
-    const CountryCode(
-      name: 'United States',
-      code: 'US',
-      dialCode: '+1',
-      flag: '🇺🇸',
-    ),
-    const CountryCode(
-      name: 'United Kingdom',
-      code: 'GB',
-      dialCode: '+44',
-      flag: '🇬🇧',
-    ),
-    const CountryCode(name: 'Canada', code: 'CA', dialCode: '+1', flag: '🇨🇦'),
-    const CountryCode(
-      name: 'Australia',
-      code: 'AU',
-      dialCode: '+61',
-      flag: '🇦🇺',
-    ),
-    const CountryCode(
-      name: 'Pakistan',
-      code: 'PK',
-      dialCode: '+92',
-      flag: '🇵🇰',
-    ),
-    const CountryCode(
-      name: 'Bangladesh',
-      code: 'BD',
-      dialCode: '+880',
-      flag: '🇧🇩',
-    ),
-    const CountryCode(
-      name: 'Philippines',
-      code: 'PH',
-      dialCode: '+63',
-      flag: '🇵🇭',
-    ),
-    const CountryCode(name: 'Egypt', code: 'EG', dialCode: '+20', flag: '🇪🇬'),
-    const CountryCode(
-      name: 'Jordan',
-      code: 'JO',
-      dialCode: '+962',
-      flag: '🇯🇴',
-    ),
-    const CountryCode(
-      name: 'Lebanon',
-      code: 'LB',
-      dialCode: '+961',
-      flag: '🇱🇧',
-    ),
-    const CountryCode(
-      name: 'Turkey',
-      code: 'TR',
-      dialCode: '+90',
-      flag: '🇹🇷',
-    ),
-  ];
+  List<CountryCode> get _countries => CountryCode.supportedCountries;
 
   @override
   void initState() {

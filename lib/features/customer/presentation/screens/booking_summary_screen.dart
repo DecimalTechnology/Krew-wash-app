@@ -205,13 +205,14 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
                       subtotal,
                       vat,
                       total,
+                      package: package,
                     ),
                     SizedBox(height: 32),
                   ],
                 ),
               ),
             ),
-            _buildIOSConfirmButton(context, total),
+            _buildIOSConfirmButton(context, subtotal, vat, total),
           ],
         ),
       ),
@@ -281,13 +282,14 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
                       subtotal,
                       vat,
                       total,
+                      package: package,
                     ),
                     SizedBox(height: 32),
                   ],
                 ),
               ),
             ),
-            _buildConfirmButton(context, total),
+            _buildConfirmButton(context, subtotal, vat, total),
           ],
         ),
       ),
@@ -571,8 +573,12 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
     int dateCount,
     double subtotal,
     double vat,
-    double total,
-  ) {
+    double total, {
+    Map<String, dynamic>? package,
+  }) {
+    final packageLabel = package != null
+        ? (package['name'] ?? 'Package').toString().toUpperCase()
+        : 'PACKAGE (BASE)';
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -595,7 +601,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
           ),
           SizedBox(height: 16),
           _buildPriceRow(
-            'MONTHLY WASH (BASE)',
+            packageLabel,
             '${basePrice.toStringAsFixed(0)} AED',
           ),
           if (addOns.isNotEmpty) ...[
@@ -610,14 +616,16 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
               final addOnName = (addOn['name'] ?? 'INTERIOR CLEANING')
                   .toString()
                   .toUpperCase();
-              final dateText = dateCount > 0
-                  ? 'X $dateCount DAYS X 1 VEHICLE'
-                  : 'X 1 VEHICLE';
+              final dateText =
+                  dateCount > 0 ? 'X $dateCount DAYS' : '';
+              final priceText = dateText.isNotEmpty
+                  ? '${addOnPrice.toStringAsFixed(0)} AED $dateText'
+                  : '${addOnPrice.toStringAsFixed(0)} AED';
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: _buildPriceRow(
                   '$addOnName ADD-ON',
-                  '${addOnPrice.toStringAsFixed(0)} AED $dateText',
+                  priceText,
                   isSecondary: true,
                 ),
               );
@@ -679,7 +687,12 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
     );
   }
 
-  Widget _buildConfirmButton(BuildContext context, double total) {
+  Widget _buildConfirmButton(
+    BuildContext context,
+    double subtotal,
+    double vat,
+    double total,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -704,7 +717,12 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
             ),
           ),
           onPressed: () {
-            _navigateToPayment(context, total);
+            _navigateToPayment(
+              context,
+              total,
+              subtotal: subtotal,
+              vat: vat,
+            );
           },
           child: Text(
             'CONFIRM & PROCEED TO PAYMENT',
@@ -719,7 +737,12 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
     );
   }
 
-  Widget _buildIOSConfirmButton(BuildContext context, double total) {
+  Widget _buildIOSConfirmButton(
+    BuildContext context,
+    double subtotal,
+    double vat,
+    double total,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -740,7 +763,12 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
           color: const Color(0xFF04CDFE),
           borderRadius: BorderRadius.circular(20),
           onPressed: () {
-            _navigateToPayment(context, total);
+            _navigateToPayment(
+              context,
+              total,
+              subtotal: subtotal,
+              vat: vat,
+            );
           },
           child: Text(
             'CONFIRM & PROCEED TO PAYMENT',
@@ -791,7 +819,12 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
     return '$day $month $year';
   }
 
-  void _navigateToPayment(BuildContext context, double total) {
+  void _navigateToPayment(
+    BuildContext context,
+    double total, {
+    double? subtotal,
+    double? vat,
+  }) {
     if (widget.arguments == null) {
       return;
     }
@@ -839,6 +872,8 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen>
           selectedAddOns: addOns,
           selectedDates: dates,
           selectedVehicle: vehicle,
+          subtotal: subtotal,
+          vat: vat,
         ),
       );
     } catch (e) {

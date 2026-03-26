@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../auth/data/repositories/auth_repository.dart';
+import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/edit_profile_provider.dart';
 import '../widgets/edit_profile_otp_dialog.dart';
@@ -48,27 +50,46 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final ImagePicker _imagePicker = ImagePicker();
 
   // Country code for phone number
-  CountryCode _selectedCountryCode = const CountryCode(
-    name: 'United Arab Emirates',
-    code: 'AE',
-    dialCode: '+971',
-    flag: '🇦🇪',
-  );
+  CountryCode _selectedCountryCode = CountryCode.supportedCountries.first;
+
+  /// Tracks whether we've loaded the current user into the form (avoids overwriting edits).
+  bool _userDataLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    // Delay loading user data until widget tree is built
+    // Load user data after first frame (when context is ready)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _loadUserData();
-      }
+      if (mounted) _loadUserData();
     });
   }
 
-  void _loadUserData() {
+  Future<void> _loadUserData() async {
     final authProvider = context.read<AuthProvider>();
-    final user = authProvider.user;
+    UserModel? user = authProvider.user;
+
+    // Prefer fresh profile from API so email/phone are present (login response may omit them)
+    try {
+      final profileRepo = const ProfileRepository();
+      final profileResponse = await profileRepo.getProfile();
+      if (profileResponse['success'] != false) {
+        final raw = profileResponse['data'] ?? profileResponse;
+        final Map<String, dynamic>? profileMap =
+            raw is Map<String, dynamic>
+                ? (raw['user'] is Map<String, dynamic>
+                    ? raw['user'] as Map<String, dynamic>
+                    : raw)
+                : null;
+        if (profileMap != null && profileMap.isNotEmpty) {
+          user = UserModel.fromMap(profileMap);
+          authProvider.setUser(user);
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('EditProfileScreen: getProfile failed, using auth user: $e');
+      }
+    }
 
     if (user != null) {
       _nameController.text = user.name ?? '';
@@ -79,7 +100,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (phoneStr.startsWith('+')) {
         // Get all available country codes and sort by length (longest first)
         // This ensures we match +971 before +9, +91 before +9, etc.
-        final allCountries = _getAllCountryCodes();
+        final allCountries = List<CountryCode>.from(_getAllCountryCodes());
         allCountries.sort(
           (a, b) => b.dialCode.length.compareTo(a.dialCode.length),
         );
@@ -121,7 +142,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       } else {
         // If phone doesn't start with +, try to detect country code
         // Get all country codes and try matching from longest to shortest
-        final allCountries = _getAllCountryCodes();
+        final allCountries = List<CountryCode>.from(_getAllCountryCodes());
         allCountries.sort(
           (a, b) => b.dialCode.length.compareTo(a.dialCode.length),
         );
@@ -156,6 +177,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         // Fetch building name to display in the field
         _fetchBuildingName(user.buildingId!);
       }
+
+      _userDataLoaded = true;
+      if (mounted) setState(() {});
+    } else {
+      _userDataLoaded = false;
     }
   }
 
@@ -288,6 +314,53 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  String _userFriendlyPhoneError(String message) {
+    final m = message.toLowerCase();
+    if (m.contains('too_short') || m.contains('too short')) {
+      return 'Phone number is too short. Please enter the full number for your country (e.g. 10 digits for India).';
+    }
+    if (m.contains('invalid') && m.contains('phone')) {
+      return 'Invalid phone number. Please check the number and try again.';
+    }
+    return message;
+  }
+
+  void _showErrorDialog(String title, String message) {
+    if (!mounted) return;
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    if (isIOS) {
+      showCupertinoDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => CupertinoAlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('OK'),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _searchDebounce?.cancel();
@@ -306,7 +379,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     return ChangeNotifierProvider(
       create: (_) => EditProfileProvider(const ProfileRepository()),
-      child: isIOS ? _buildIOSScreen() : _buildAndroidScreen(),
+      child: Builder(
+        builder: (context) {
+          // Rebuild when auth changes so we load user when they become available
+          final authProvider = context.watch<AuthProvider>();
+          final user = authProvider.user;
+          if (user == null) {
+            _userDataLoaded = false;
+          } else if (!_userDataLoaded) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted &&
+                  context.read<AuthProvider>().user != null &&
+                  !_userDataLoaded) {
+                _loadUserData();
+              }
+            });
+          }
+          return isIOS ? _buildIOSScreen() : _buildAndroidScreen();
+        },
+      ),
     );
   }
 
@@ -922,117 +1013,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   List<CountryCode> _getAllCountryCodes() {
-    // List of common country codes matching the CountryCodePicker
-    return [
-      const CountryCode(
-        name: 'United Arab Emirates',
-        code: 'AE',
-        dialCode: '+971',
-        flag: '🇦🇪',
-      ),
-      const CountryCode(
-        name: 'Saudi Arabia',
-        code: 'SA',
-        dialCode: '+966',
-        flag: '🇸🇦',
-      ),
-      const CountryCode(
-        name: 'Kuwait',
-        code: 'KW',
-        dialCode: '+965',
-        flag: '🇰🇼',
-      ),
-      const CountryCode(
-        name: 'Qatar',
-        code: 'QA',
-        dialCode: '+974',
-        flag: '🇶🇦',
-      ),
-      const CountryCode(
-        name: 'Bahrain',
-        code: 'BH',
-        dialCode: '+973',
-        flag: '🇧🇭',
-      ),
-      const CountryCode(
-        name: 'Oman',
-        code: 'OM',
-        dialCode: '+968',
-        flag: '🇴🇲',
-      ),
-      const CountryCode(
-        name: 'India',
-        code: 'IN',
-        dialCode: '+91',
-        flag: '🇮🇳',
-      ),
-      const CountryCode(
-        name: 'United States',
-        code: 'US',
-        dialCode: '+1',
-        flag: '🇺🇸',
-      ),
-      const CountryCode(
-        name: 'United Kingdom',
-        code: 'GB',
-        dialCode: '+44',
-        flag: '🇬🇧',
-      ),
-      const CountryCode(
-        name: 'Canada',
-        code: 'CA',
-        dialCode: '+1',
-        flag: '🇨🇦',
-      ),
-      const CountryCode(
-        name: 'Australia',
-        code: 'AU',
-        dialCode: '+61',
-        flag: '🇦🇺',
-      ),
-      const CountryCode(
-        name: 'Pakistan',
-        code: 'PK',
-        dialCode: '+92',
-        flag: '🇵🇰',
-      ),
-      const CountryCode(
-        name: 'Bangladesh',
-        code: 'BD',
-        dialCode: '+880',
-        flag: '🇧🇩',
-      ),
-      const CountryCode(
-        name: 'Philippines',
-        code: 'PH',
-        dialCode: '+63',
-        flag: '🇵🇭',
-      ),
-      const CountryCode(
-        name: 'Egypt',
-        code: 'EG',
-        dialCode: '+20',
-        flag: '🇪🇬',
-      ),
-      const CountryCode(
-        name: 'Jordan',
-        code: 'JO',
-        dialCode: '+962',
-        flag: '🇯🇴',
-      ),
-      const CountryCode(
-        name: 'Lebanon',
-        code: 'LB',
-        dialCode: '+961',
-        flag: '🇱🇧',
-      ),
-      const CountryCode(
-        name: 'Turkey',
-        code: 'TR',
-        dialCode: '+90',
-        flag: '🇹🇷',
-      ),
-    ];
+    return CountryCode.supportedCountries;
   }
 
   CountryCode? _findCountryByDialCode(String dialCode) {
@@ -1077,6 +1058,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             keyboardType: TextInputType.phone,
             hintText: 'PHONE',
             isIOS: isIOS,
+            maxLength: _selectedCountryCode.maxLength,
             onChanged: (_) => _syncPhoneDisplay(),
           ),
         ),
@@ -1129,7 +1111,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           children: [
             _buildLabelWithAsterisk('BUILDING NAME *'),
             GestureDetector(
-              onTap: () {
+              onTap: () async {
                 if (_isEditingBuilding) {
                   setState(() {
                     _isEditingBuilding = false;
@@ -1145,7 +1127,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   setState(() {
                     _isEditingBuilding = true;
                   });
-                  _showBuildingSuggestions(isIOS: isIOS);
+                  // Load buildings and show dropdown when opening for edit
+                  await context.read<PackageProvider>().searchBuildings('');
+                  if (mounted) _showBuildingSuggestions(isIOS: isIOS);
                 }
               },
               child: Text(
@@ -1168,13 +1152,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             hintText: 'Search the building',
             isIOS: isIOS,
             onChanged: (value) {
+              // Ensure overlay is visible when user types so results can be shown
+              if (_isEditingBuilding && _buildingSuggestionsOverlay == null) {
+                _showBuildingSuggestions(isIOS: isIOS);
+              }
               _searchDebounce?.cancel();
               _searchDebounce = Timer(
                 const Duration(milliseconds: 300),
                 () async {
                   await context.read<PackageProvider>().searchBuildings(value);
                   if (_isEditingBuilding && mounted) {
-                    // Update existing overlay instead of recreating
                     _buildingSuggestionsOverlay?.markNeedsBuild();
                   }
                 },
@@ -1378,6 +1365,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     String? hintText,
     TextInputType? keyboardType,
     required bool isIOS,
+    int? maxLength,
     Function(String)? onChanged,
     VoidCallback? onTap,
     Widget? suffixIcon,
@@ -1388,6 +1376,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         enabled: enabled,
         placeholder: hintText,
         keyboardType: keyboardType,
+        maxLength: maxLength,
         style: const TextStyle(color: Colors.white),
         placeholderStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
         decoration: BoxDecoration(
@@ -1409,6 +1398,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         controller: controller,
         enabled: enabled,
         keyboardType: keyboardType,
+        maxLength: maxLength,
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           hintText: hintText,
@@ -1617,6 +1607,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       return;
     }
 
+    // Validate phone length/format when phone was changed (country-specific + E.164)
+    if (phoneChanged) {
+      final fullPhone = newPhone.trim();
+      if (!authProvider.isValidPhoneNumber(fullPhone)) {
+        if (!mounted) return;
+        _showErrorDialog(
+          'Invalid phone number',
+          'Please enter a valid phone number (8–15 digits including country code).',
+        );
+        return;
+      }
+      final nationalPart = fullPhone.startsWith(_selectedCountryCode.dialCode)
+          ? fullPhone.substring(_selectedCountryCode.dialCode.length).trim()
+          : fullPhone.replaceAll(RegExp(r'[^\d]'), '');
+      if (!AuthRepository.isValidPhoneNumberForCountry(
+        nationalPart,
+        _selectedCountryCode.minLength,
+        _selectedCountryCode.maxLength,
+      )) {
+        if (!mounted) return;
+        _showErrorDialog(
+          'Invalid phone number',
+          'Phone number for ${_selectedCountryCode.name} must be ${_selectedCountryCode.minLength}–${_selectedCountryCode.maxLength} digits.',
+        );
+        return;
+      }
+    }
+
     Future<void> doSaveContact({bool skipPhoneVerification = false}) async {
       try {
         // If phone also changed and we haven't verified it yet, verify phone first
@@ -1637,10 +1655,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
             // If navigation occurred or user is no longer authenticated, don't proceed
             if (routeBeforeCall != routeAfterCall ||
-                routeAfterCall != Routes.customerEditProfile ||
                 !isStillAuthenticated ||
                 !wasAuthenticated) {
-              // Navigation has occurred or auth state changed, don't show dialog or errors
               return;
             }
 
@@ -1680,30 +1696,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             } else {
               final msg = phoneOtp.errorMessage ?? 'Failed to send phone OTP';
               if (!mounted) return;
-              // Check if it's a network error
+              if (routeAfterCall != Routes.customerEditProfile &&
+                  routeAfterCall != null) {
+                return;
+              }
               if (NetworkErrorUtils.isNetworkErrorString(msg)) {
                 NetworkErrorDialog.show(context);
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(msg),
-                    backgroundColor: Colors.red[700],
-                  ),
+                _showErrorDialog(
+                  'Phone verification failed',
+                  _userFriendlyPhoneError(msg),
                 );
               }
               return;
             }
           } catch (e) {
             if (!mounted) return;
-            // Check if it's a network error
             if (NetworkErrorUtils.isNetworkErrorString(e.toString())) {
               NetworkErrorDialog.show(context);
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Error sending phone OTP: ${e.toString()}'),
-                  backgroundColor: Colors.red[700],
-                ),
+              _showErrorDialog(
+                'Error',
+                _userFriendlyPhoneError('Error sending phone OTP: ${e.toString()}'),
               );
             }
             return;
@@ -2134,27 +2148,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
           // If navigation occurred or user is no longer authenticated, don't proceed
           if (routeBeforeCall != routeAfterCall ||
-              routeAfterCall != Routes.customerEditProfile ||
               !isStillAuthenticated ||
               !wasAuthenticated) {
-            // Navigation has occurred or auth state changed, don't show dialog or errors
             return;
           }
 
           if (phoneOtp.isSuccess && phoneOtp.verificationId != null) {
             if (!mounted) return;
-            // Verify we're still on the edit profile screen before showing dialog
             final currentRoute = ModalRoute.of(context)?.settings.name;
             if (currentRoute != Routes.customerEditProfile &&
                 currentRoute != null) {
-              // Navigation has occurred, don't show dialog
               return;
             }
-            // Verify user is still authenticated
             if (!authProvider.isAuthenticated) {
               return;
             }
-            // Show OTP dialog instead of full screen navigation
             showDialog(
               context: context,
               barrierDismissible: false,
@@ -2175,46 +2183,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           } else {
             final msg = phoneOtp.errorMessage ?? 'Failed to send phone OTP';
             if (!mounted) return;
-            // Double-check we're still on edit profile screen before showing error
-            final currentRoute = ModalRoute.of(context)?.settings.name;
-            if (currentRoute != Routes.customerEditProfile &&
-                currentRoute != null) {
-              // Navigation has occurred, don't show error
-              return;
-            }
-            // Check if it's a network error
             if (NetworkErrorUtils.isNetworkErrorString(msg)) {
               NetworkErrorDialog.show(context);
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(msg), backgroundColor: Colors.red[700]),
+              _showErrorDialog(
+                'Phone verification failed',
+                _userFriendlyPhoneError(msg),
               );
             }
           }
           return;
         } catch (e) {
           if (!mounted) return;
-          // Check if navigation occurred before showing error
-          final currentRoute = ModalRoute.of(context)?.settings.name;
-          if (currentRoute != Routes.customerEditProfile &&
-              currentRoute != null) {
-            // Navigation has occurred, don't show error
-            return;
-          }
-          // Verify user is still authenticated before showing error
-          if (!authProvider.isAuthenticated) {
-            // Don't show error if user is no longer authenticated (navigation likely occurred)
-            return;
-          }
-          // Check if it's a network error
           if (NetworkErrorUtils.isNetworkErrorString(e.toString())) {
             NetworkErrorDialog.show(context);
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error sending phone OTP: ${e.toString()}'),
-                backgroundColor: Colors.red[700],
-              ),
+            _showErrorDialog(
+              'Error',
+              _userFriendlyPhoneError('Error sending phone OTP: ${e.toString()}'),
             );
           }
           return;

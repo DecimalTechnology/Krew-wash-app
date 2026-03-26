@@ -139,6 +139,28 @@ class MyPackageScreen extends StatelessWidget {
             ? 20.0
             : 12.0,
       ),
+      padding: EdgeInsets.all(
+        isVeryLargeScreen
+            ? 28.0
+            : isLargeScreen
+            ? 24.0
+            : 18.0,
+      ),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(isVeryLargeScreen ? 20 : 16),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF04CDFE).withValues(alpha: 0.1),
+            blurRadius: isVeryLargeScreen ? 15 : 10,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
       child: Column(
         children: [
           // Car Illustration with Clock

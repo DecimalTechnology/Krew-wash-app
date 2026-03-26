@@ -53,6 +53,11 @@ class CustomerDashboardRepository {
 
       final responseData = jsonDecode(res.body) as Map<String, dynamic>;
 
+      // Support both top-level and data-wrapped response (e.g. { data: { packages, ... } })
+      final Map<String, dynamic> data = responseData['data'] is Map<String, dynamic>
+          ? responseData['data'] as Map<String, dynamic>
+          : responseData;
+
       if (kDebugMode) {
         debugPrint(
           '\n📊 ========== CUSTOMER DASHBOARD API RESPONSE ==========',
@@ -61,7 +66,7 @@ class CustomerDashboardRepository {
         debugPrint('📝 Message: ${responseData['message'] ?? 'N/A'}');
 
         // Print Services
-        final services = responseData['services'] as List? ?? [];
+        final services = (data['services'] as List?) ?? (responseData['services'] as List?) ?? [];
         debugPrint('\n📦 SERVICES (${services.length}):');
         for (var i = 0; i < services.length; i++) {
           final service = services[i] as Map<String, dynamic>;
@@ -70,9 +75,10 @@ class CustomerDashboardRepository {
           );
         }
 
-        // Print Packages
-        final packages = responseData['packages'] as List? ?? [];
-        debugPrint('\n📋 PACKAGES (${packages.length}):');
+        // Print Packages (from data or top-level)
+        final packages = (data['packages'] as List?) ?? (responseData['packages'] as List?) ?? [];
+        debugPrint('\n📋 PACKAGES from API: ${packages.length}');
+        debugPrint('📋 PACKAGES list:');
         for (var i = 0; i < packages.length; i++) {
           final package = packages[i] as Map<String, dynamic>;
           debugPrint('   [$i] ${package['name'] ?? 'N/A'}');
@@ -95,7 +101,7 @@ class CustomerDashboardRepository {
         }
 
         // Print Buildings
-        final buildings = responseData['buildings'] as List? ?? [];
+        final buildings = (data['buildings'] as List?) ?? (responseData['buildings'] as List?) ?? [];
         debugPrint('\n🏢 BUILDINGS (${buildings.length}):');
         for (var i = 0; i < buildings.length; i++) {
           final building = buildings[i] as Map<String, dynamic>;
@@ -106,12 +112,15 @@ class CustomerDashboardRepository {
       }
 
       if (res.statusCode == 200 && responseData['success'] == true) {
+        final servicesList = (data['services'] as List?) ?? (responseData['services'] as List?) ?? [];
+        final packagesList = (data['packages'] as List?) ?? (responseData['packages'] as List?) ?? [];
+        final buildingsList = (data['buildings'] as List?) ?? (responseData['buildings'] as List?) ?? [];
         return {
           'success': true,
           'message': responseData['message'] ?? '',
-          'services': responseData['services'] ?? [],
-          'packages': responseData['packages'] ?? [],
-          'buildings': responseData['buildings'] ?? [],
+          'services': servicesList,
+          'packages': packagesList,
+          'buildings': buildingsList,
         };
       } else {
         return {

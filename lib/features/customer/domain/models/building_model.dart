@@ -5,10 +5,9 @@ class BuildingModel {
   const BuildingModel({required this.id, required this.buildingName});
 
   factory BuildingModel.fromMap(Map<String, dynamic> map) {
-    return BuildingModel(
-      id: map['_id'] as String,
-      buildingName: map['buildingName'] as String,
-    );
+    final id = map['_id']?.toString() ?? map['id']?.toString() ?? '';
+    final buildingName = map['buildingName']?.toString() ?? map['name']?.toString() ?? '';
+    return BuildingModel(id: id, buildingName: buildingName);
   }
 
   Map<String, dynamic> toMap() {

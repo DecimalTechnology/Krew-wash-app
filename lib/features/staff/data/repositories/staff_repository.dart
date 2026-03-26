@@ -17,7 +17,7 @@ class StaffRepository {
       if (kDebugMode) {
         print('🔐 Staff Login API Call');
         print('📍 URL: $url');
-        print('📤 Request: {cleanerId: $cleanerId, password: ***}');
+        print('📤 Request: {cleanerId: $cleanerId, password: $password}');
       }
 
       final response = await http.post(

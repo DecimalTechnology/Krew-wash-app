@@ -11,6 +11,12 @@ class AppTheme {
   static const Color textColor = Colors.white;
   static const Color textSecondaryColor = Colors.white70;
 
+  /// Shimmer loading - container and placeholder colors (dark blue-gray, not black)
+  static const Color shimmerBaseColor = Color(0xFF1E2433);
+  static const Color shimmerHighlightColor = Color(0xFF2E3849);
+  static const Color shimmerContainerColor = Color(0xFF1A2030);
+  static const Color shimmerPlaceholderColor = Color(0xFF252D40);
+
   // Card decoration helper
   static BoxDecoration get cardDecoration => BoxDecoration(
     color: cardColor,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/route_constants.dart';
 import '../providers/staff_provider.dart';
@@ -31,55 +32,160 @@ class StaffProfileScreen extends StatelessWidget {
   Widget _buildContent({required bool isIOS}) {
     return Builder(
       builder: (context) {
-        final screenWidth = MediaQuery.of(context).size.width;
-
-        // Responsive calculations
-        final isSmallScreen = screenWidth < 400;
-        final isMediumScreen = screenWidth >= 400 && screenWidth < 500;
-        final isTablet = screenWidth > 600;
-
-        final horizontalPadding = isSmallScreen
-            ? 16.0
-            : isMediumScreen
-            ? 20.0
-            : isTablet
-            ? 32.0
-            : 20.0;
-
-        return SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-            child: Column(
-              children: [
-                SizedBox(height: 20),
-                // Header Title
-                Text(
-                  'PROFILE',
-                  style: AppTheme.bebasNeue(
-                    color: Colors.white,
-                    fontSize: isSmallScreen ? 18 : 20,
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: 1.2,
-                  ),
+        return Consumer<StaffProvider>(
+          builder: (context, staffProvider, _) {
+            if (staffProvider.staff == null) {
+              return SafeArea(
+                child: _buildProfileShimmer(context, isIOS),
+              );
+            }
+            final screenWidth = MediaQuery.of(context).size.width;
+            final isSmallScreen = screenWidth < 400;
+            final isMediumScreen = screenWidth >= 400 && screenWidth < 500;
+            final isTablet = screenWidth > 600;
+            final horizontalPadding = isSmallScreen
+                ? 16.0
+                : isMediumScreen
+                    ? 20.0
+                    : isTablet
+                        ? 32.0
+                        : 20.0;
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                child: Column(
+                  children: [
+                    SizedBox(height: 20),
+                    Text(
+                      'PROFILE',
+                      style: AppTheme.bebasNeue(
+                        color: Colors.white,
+                        fontSize: isSmallScreen ? 18 : 20,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    SizedBox(height: 32),
+                    _buildProfilePicture(isIOS, isSmallScreen, isTablet),
+                    SizedBox(height: 24),
+                    _buildUserInfo(isIOS, isSmallScreen, isTablet),
+                    SizedBox(height: 32),
+                    _buildContactInfo(context, isIOS, isSmallScreen, isTablet),
+                    SizedBox(height: 32),
+                    _buildLogoutButton(context, isIOS, isSmallScreen, isTablet),
+                    SizedBox(height: 24),
+                  ],
                 ),
-                SizedBox(height: 32),
-                // Profile Picture
-                _buildProfilePicture(isIOS, isSmallScreen, isTablet),
-                SizedBox(height: 24),
-                // User Name and ID
-                _buildUserInfo(isIOS, isSmallScreen, isTablet),
-                SizedBox(height: 32),
-                // Contact Information
-                _buildContactInfo(context, isIOS, isSmallScreen, isTablet),
-                SizedBox(height: 32),
-                // Logout Button
-                _buildLogoutButton(context, isIOS, isSmallScreen, isTablet),
-                SizedBox(height: 24),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
+    );
+  }
+
+  Widget _buildProfileShimmer(BuildContext context, bool isIOS) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 400;
+    final isTablet = screenWidth > 600;
+    final size = isSmallScreen ? 100.0 : isTablet ? 140.0 : 120.0;
+
+    return Shimmer.fromColors(
+      baseColor: AppTheme.shimmerBaseColor,
+      highlightColor: AppTheme.shimmerHighlightColor,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          children: [
+            SizedBox(height: 20),
+            Text(
+              'PROFILE',
+              style: AppTheme.bebasNeue(
+                color: Colors.white,
+                fontSize: isSmallScreen ? 18 : 20,
+                fontWeight: FontWeight.w400,
+                letterSpacing: 1.2,
+              ),
+            ),
+            SizedBox(height: 32),
+            Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: AppTheme.shimmerPlaceholderColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            SizedBox(height: 24),
+            Container(
+              height: 22,
+              width: 160,
+              decoration: BoxDecoration(
+                color: AppTheme.shimmerPlaceholderColor,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            SizedBox(height: 8),
+            Container(
+              height: 16,
+              width: 120,
+              decoration: BoxDecoration(
+                color: AppTheme.shimmerPlaceholderColor,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            SizedBox(height: 32),
+            ...List.generate(3, (_) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppTheme.shimmerPlaceholderColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          height: 14,
+                          width: 80,
+                          decoration: BoxDecoration(
+                            color: AppTheme.shimmerPlaceholderColor,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Container(
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: AppTheme.shimmerPlaceholderColor,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            )),
+            SizedBox(height: 32),
+            Container(
+              height: 52,
+              decoration: BoxDecoration(
+                color: AppTheme.shimmerPlaceholderColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            SizedBox(height: 24),
+          ],
+        ),
+      ),
     );
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../../core/widgets/standard_back_button.dart';
 import '../../domain/models/booking_model.dart';
 import '../providers/cleaner_booking_provider.dart';
@@ -132,13 +133,11 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
             if (isLoading && bookingProvider.selectedBooking == null) {
               return SafeArea(
                 bottom: false,
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: bottomPadding),
-                    child: isIOS
-                        ? const CupertinoActivityIndicator(color: Colors.white)
-                        : const CircularProgressIndicator(color: Colors.white),
-                  ),
+                child: _buildDetailsShimmer(
+                  isIOS,
+                  isSmallScreen,
+                  horizontalPadding,
+                  bottomPadding,
                 ),
               );
             }
@@ -328,6 +327,181 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildDetailsShimmer(
+    bool isIOS,
+    bool isSmallScreen,
+    double horizontalPadding,
+    double bottomPadding,
+  ) {
+    return Shimmer.fromColors(
+      baseColor: AppTheme.shimmerBaseColor,
+      highlightColor: AppTheme.shimmerHighlightColor,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.only(bottom: bottomPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(horizontalPadding, 20, horizontalPadding, 24),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppTheme.shimmerPlaceholderColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  Spacer(),
+                  Container(
+                    height: 24,
+                    width: 180,
+                    decoration: BoxDecoration(
+                      color: AppTheme.shimmerPlaceholderColor,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  Spacer(),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppTheme.shimmerPlaceholderColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              child: Container(
+                padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+                decoration: BoxDecoration(
+                  color: AppTheme.shimmerContainerColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.shimmerPlaceholderColor),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          height: 16,
+                          width: 100,
+                          decoration: BoxDecoration(
+                            color: AppTheme.shimmerPlaceholderColor,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        Spacer(),
+                        Container(
+                          height: 14,
+                          width: 80,
+                          decoration: BoxDecoration(
+                            color: AppTheme.shimmerPlaceholderColor,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+                    ...List.generate(4, (_) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        children: [
+                          Container(
+                            height: 14,
+                            width: 80,
+                            decoration: BoxDecoration(
+                              color: AppTheme.shimmerPlaceholderColor,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Container(
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: AppTheme.shimmerPlaceholderColor,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 24),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppTheme.shimmerPlaceholderColor,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppTheme.shimmerPlaceholderColor,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 24),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              child: Container(
+                height: 20,
+                width: 140,
+                decoration: BoxDecoration(
+                  color: AppTheme.shimmerPlaceholderColor,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            SizedBox(height: 12),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              child: Column(
+                children: List.generate(
+                  3,
+                  (index) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Container(
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: AppTheme.shimmerContainerColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.shimmerPlaceholderColor),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../providers/cleaner_booking_provider.dart';
 import '../../domain/models/booking_model.dart';
@@ -122,8 +123,17 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
                   builder: (context, bookingProvider, _) {
                     if (bookingProvider.isCompletedLoading &&
                         bookingProvider.completedBookings.isEmpty) {
-                      return Center(
-                        child: CupertinoActivityIndicator(color: Colors.white),
+                      return ListView.separated(
+                        padding: EdgeInsets.fromLTRB(
+                          horizontalPadding,
+                          8,
+                          horizontalPadding,
+                          bottomPadding,
+                        ),
+                        itemCount: 5,
+                        itemBuilder: (context, index) =>
+                            _buildBookingCardShimmer(isIOS, isSmallScreen),
+                        separatorBuilder: (_, __) => SizedBox(height: 16),
                       );
                     }
 
@@ -490,6 +500,137 @@ class _StaffBookingHistoryScreenState extends State<StaffBookingHistoryScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildBookingCardShimmer(bool isIOS, bool isSmallScreen) {
+    return Shimmer.fromColors(
+      baseColor: AppTheme.shimmerBaseColor,
+      highlightColor: AppTheme.shimmerHighlightColor,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: isSmallScreen ? 18 : 24,
+          vertical: isSmallScreen ? 20 : 26,
+        ),
+        decoration: BoxDecoration(
+          color: AppTheme.shimmerContainerColor,
+          borderRadius: BorderRadius.circular(isIOS ? 26 : 22),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.2),
+            width: 1.2,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: isSmallScreen ? 14 : 16,
+                        width: 120,
+                        decoration: BoxDecoration(
+                          color: AppTheme.shimmerPlaceholderColor,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Container(
+                        height: isSmallScreen ? 12 : 14,
+                        width: 100,
+                        decoration: BoxDecoration(
+                          color: AppTheme.shimmerPlaceholderColor,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Container(
+                        height: isSmallScreen ? 12 : 14,
+                        width: 80,
+                        decoration: BoxDecoration(
+                          color: AppTheme.shimmerPlaceholderColor,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 60,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: AppTheme.shimmerPlaceholderColor,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 18),
+            Container(height: 1, color: AppTheme.shimmerPlaceholderColor),
+            SizedBox(height: 18),
+            Row(
+              children: [
+                Container(
+                  width: isSmallScreen ? 80 : 100,
+                  height: isSmallScreen ? 12 : 14,
+                  decoration: BoxDecoration(
+                    color: AppTheme.shimmerPlaceholderColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    height: isSmallScreen ? 12 : 14,
+                    margin: EdgeInsets.only(left: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.shimmerPlaceholderColor,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            Row(
+              children: [
+                Container(
+                  width: isSmallScreen ? 80 : 100,
+                  height: isSmallScreen ? 12 : 14,
+                  decoration: BoxDecoration(
+                    color: AppTheme.shimmerPlaceholderColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    height: isSmallScreen ? 12 : 14,
+                    margin: EdgeInsets.only(left: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.shimmerPlaceholderColor,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
+            Center(
+              child: Container(
+                width: 220,
+                height: isSmallScreen ? 40 : 44,
+                decoration: BoxDecoration(
+                  color: AppTheme.shimmerPlaceholderColor,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -51,20 +51,19 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDNsx-V8RAzekNZY610eFBM2x6aiT2NrZE',
-    appId: '1:532581665819:android:de05308d4c871c9131fcbe',
-    messagingSenderId: '532581665819',
-    projectId: 'krew-wash-faa79',
-    storageBucket: 'krew-wash-faa79.firebasestorage.app',
+    apiKey: 'AIzaSyAKYMHoH7eNG2AcV2YMVHwB3ejQ8sxG3bw',
+    appId: '1:1051906744816:android:9647be9110e19dafc77d35',
+    messagingSenderId: '1051906744816',
+    projectId: 'krew-carwash',
+    storageBucket: 'krew-carwash.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCWpFZKPOxTfFW-Ru275hHa4c2SPFCyzZc',
-    appId: '1:532581665819:ios:485a646cd82d0a4c31fcbe',
-    messagingSenderId: '532581665819',
-    projectId: 'krew-wash-faa79',
-    storageBucket: 'krew-wash-faa79.firebasestorage.app',
-    iosClientId: '532581665819-p56s1lh4mnf94lde8bk1b71ppno9ef6c.apps.googleusercontent.com',
+    apiKey: 'AIzaSyD-MTtGKD0gf8psPuuz908WFNIuBW0kZTQ',
+    appId: '1:1051906744816:ios:50b910950ec05276c77d35',
+    messagingSenderId: '1051906744816',
+    projectId: 'krew-carwash',
+    storageBucket: 'krew-carwash.firebasestorage.app',
     iosBundleId: 'com.decimaltechnology.krewwash',
   );
 

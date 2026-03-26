@@ -776,15 +776,15 @@ class _StaffUpcomingBookingsScreenState
 
   Widget _buildBookingCardShimmer(bool isIOS, bool isSmallScreen) {
     return Shimmer.fromColors(
-      baseColor: Colors.white.withValues(alpha: 0.08),
-      highlightColor: Colors.white.withValues(alpha: 0.25),
+      baseColor: AppTheme.shimmerBaseColor,
+      highlightColor: AppTheme.shimmerHighlightColor,
       child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: isSmallScreen ? 18 : 24,
           vertical: isSmallScreen ? 20 : 26,
         ),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.12),
+          color: AppTheme.shimmerContainerColor,
           borderRadius: BorderRadius.circular(isIOS ? 26 : 22),
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.2),
@@ -806,7 +806,7 @@ class _StaffUpcomingBookingsScreenState
                         height: isSmallScreen ? 14 : 16,
                         width: 120,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
+                          color: AppTheme.shimmerPlaceholderColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -815,7 +815,7 @@ class _StaffUpcomingBookingsScreenState
                         height: isSmallScreen ? 12 : 14,
                         width: 100,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
+                          color: AppTheme.shimmerPlaceholderColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -824,7 +824,7 @@ class _StaffUpcomingBookingsScreenState
                         height: isSmallScreen ? 12 : 14,
                         width: 80,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
+                          color: AppTheme.shimmerPlaceholderColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -835,14 +835,14 @@ class _StaffUpcomingBookingsScreenState
                   width: 60,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: AppTheme.shimmerPlaceholderColor,
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
               ],
             ),
             SizedBox(height: 18),
-            Container(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+            Container(height: 1, color: AppTheme.shimmerPlaceholderColor),
             SizedBox(height: 18),
             // Service details shimmer
             Row(
@@ -852,7 +852,7 @@ class _StaffUpcomingBookingsScreenState
                   width: isSmallScreen ? 80 : 100,
                   height: isSmallScreen ? 12 : 14,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: AppTheme.shimmerPlaceholderColor,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -861,7 +861,7 @@ class _StaffUpcomingBookingsScreenState
                     height: isSmallScreen ? 12 : 14,
                     margin: EdgeInsets.only(left: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: AppTheme.shimmerPlaceholderColor,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -876,7 +876,7 @@ class _StaffUpcomingBookingsScreenState
                   width: isSmallScreen ? 80 : 100,
                   height: isSmallScreen ? 12 : 14,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: AppTheme.shimmerPlaceholderColor,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -885,7 +885,7 @@ class _StaffUpcomingBookingsScreenState
                     height: isSmallScreen ? 12 : 14,
                     margin: EdgeInsets.only(left: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: AppTheme.shimmerPlaceholderColor,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -900,7 +900,7 @@ class _StaffUpcomingBookingsScreenState
                   width: isSmallScreen ? 80 : 100,
                   height: isSmallScreen ? 12 : 14,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: AppTheme.shimmerPlaceholderColor,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -909,7 +909,7 @@ class _StaffUpcomingBookingsScreenState
                     height: isSmallScreen ? 12 : 14,
                     margin: EdgeInsets.only(left: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: AppTheme.shimmerPlaceholderColor,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -924,7 +924,7 @@ class _StaffUpcomingBookingsScreenState
                   width: isSmallScreen ? 80 : 100,
                   height: isSmallScreen ? 12 : 14,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: AppTheme.shimmerPlaceholderColor,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -933,7 +933,7 @@ class _StaffUpcomingBookingsScreenState
                     height: isSmallScreen ? 12 : 14,
                     margin: EdgeInsets.only(left: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: AppTheme.shimmerPlaceholderColor,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -948,7 +948,7 @@ class _StaffUpcomingBookingsScreenState
                   width: isSmallScreen ? 80 : 100,
                   height: isSmallScreen ? 12 : 14,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: AppTheme.shimmerPlaceholderColor,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -957,7 +957,7 @@ class _StaffUpcomingBookingsScreenState
                     height: isSmallScreen ? 12 : 14,
                     margin: EdgeInsets.only(left: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: AppTheme.shimmerPlaceholderColor,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -971,7 +971,7 @@ class _StaffUpcomingBookingsScreenState
                 width: isSmallScreen ? 200 : 220,
                 height: isSmallScreen ? 40 : 44,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: AppTheme.shimmerPlaceholderColor,
                   borderRadius: BorderRadius.circular(24),
                 ),
               ),

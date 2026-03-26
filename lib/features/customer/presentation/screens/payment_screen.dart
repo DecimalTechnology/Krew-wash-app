@@ -25,6 +25,8 @@ class PaymentScreenArguments {
     required this.selectedAddOns,
     required this.selectedDates,
     required this.selectedVehicle,
+    this.subtotal,
+    this.vat,
   });
 
   final double amount;
@@ -34,6 +36,10 @@ class PaymentScreenArguments {
   final List<Map<String, dynamic>> selectedAddOns;
   final List<DateTime> selectedDates;
   final Map<String, dynamic> selectedVehicle;
+  /// Subtotal before VAT (optional). When set with [vat], enables VAT breakdown in UI.
+  final double? subtotal;
+  /// VAT amount (optional). When set with [subtotal], shows VAT row in payment/verification UI.
+  final double? vat;
 }
 
 class PaymentScreen extends StatefulWidget {
@@ -617,6 +623,14 @@ class _PaymentScreenState extends State<PaymentScreen>
         currency: widget.arguments!.currency,
         bookingId: bookingId,
       );
+
+      if (kDebugMode) {
+        print('═══════════════════════════════════════════════════════════');
+        print('📥 [PaymentScreen] INITIATE PAYMENT RESPONSE (full)');
+        print('═══════════════════════════════════════════════════════════');
+        print('$response');
+        print('═══════════════════════════════════════════════════════════');
+      }
 
       if (!mounted) {
         return;
@@ -1727,6 +1741,13 @@ class _PaymentScreenState extends State<PaymentScreen>
   }
 
   void _showPaymentStatusDialog(Map<String, dynamic> statusResponse) {
+    if (kDebugMode) {
+      print('═══════════════════════════════════════════════════════════');
+      print('📥 [PaymentScreen] PAYMENT CONFIRMATION / VERIFICATION RESPONSE (full)');
+      print('═══════════════════════════════════════════════════════════');
+      print('$statusResponse');
+      print('═══════════════════════════════════════════════════════════');
+    }
     final bookingStatus = statusResponse['bookingStatus']?.toString() ?? '';
     final paymentData = statusResponse['data'] as Map<String, dynamic>?;
     final paymentStatus = paymentData?['status'] as Map<String, dynamic>?;
@@ -1754,12 +1775,21 @@ class _PaymentScreenState extends State<PaymentScreen>
     // Gateway status response may differ (or may even return another payment if ref is wrong),
     // so we show gateway amount only as a secondary field when it differs.
     final expectedAmountText =
-        '${widget.arguments!.amount.toStringAsFixed(0)} ${widget.arguments!.currency}';
+        '${widget.arguments!.amount.toStringAsFixed(2)} ${widget.arguments!.currency}';
     final gatewayAmountText = gatewayAmountRaw.isNotEmpty
         ? '$gatewayAmountRaw ${gatewayCurrency.isNotEmpty ? gatewayCurrency : widget.arguments!.currency}'
         : '';
     final showGatewayAmount =
         gatewayAmountText.isNotEmpty && gatewayAmountText != expectedAmountText;
+
+    if (kDebugMode) {
+      print('📥 [PaymentScreen] Payment verification dialog amounts:');
+      print('   expectedAmountText (screen): $expectedAmountText');
+      print('   gatewayAmountRaw (from API data.amount): $gatewayAmountRaw');
+      print('   gatewayCurrency (from API data.currency): $gatewayCurrency');
+      print('   gatewayAmountText: $gatewayAmountText');
+      print('   showGatewayAmount: $showGatewayAmount');
+    }
 
     final isSuccess =
         statusText.toLowerCase() == 'paid' ||
@@ -1892,29 +1922,104 @@ class _PaymentScreenState extends State<PaymentScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           ...[
-                            Row(
-                              children: [
-                                Text(
-                                  'AMOUNT',
-                                  style: AppTheme.bebasNeue(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 1.4,
-                                    color: AppTheme.textSecondaryColor,
+                            if (widget.arguments!.subtotal != null &&
+                                widget.arguments!.vat != null) ...[
+                              Row(
+                                children: [
+                                  Text(
+                                    'SUBTOTAL',
+                                    style: AppTheme.bebasNeue(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 1.2,
+                                      color: AppTheme.textSecondaryColor,
+                                    ),
                                   ),
-                                ),
-                                const Spacer(),
-                                Text(
-                                  expectedAmountText,
-                                  style: AppTheme.bebasNeue(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 1.0,
-                                    color: AppTheme.textColor,
+                                  const Spacer(),
+                                  Text(
+                                    '${widget.arguments!.subtotal!.toStringAsFixed(2)} ${widget.arguments!.currency}',
+                                    style: AppTheme.bebasNeue(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 1.0,
+                                      color: AppTheme.textColor,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Text(
+                                    'VAT (5%)',
+                                    style: AppTheme.bebasNeue(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 1.2,
+                                      color: AppTheme.textSecondaryColor,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    '${widget.arguments!.vat!.toStringAsFixed(2)} ${widget.arguments!.currency}',
+                                    style: AppTheme.bebasNeue(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 1.0,
+                                      color: AppTheme.textColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Text(
+                                    'TOTAL',
+                                    style: AppTheme.bebasNeue(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 1.4,
+                                      color: AppTheme.textSecondaryColor,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    expectedAmountText,
+                                    style: AppTheme.bebasNeue(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.0,
+                                      color: AppTheme.textColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ] else ...[
+                              Row(
+                                children: [
+                                  Text(
+                                    'TOTAL AMOUNT',
+                                    style: AppTheme.bebasNeue(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 1.4,
+                                      color: AppTheme.textSecondaryColor,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    expectedAmountText,
+                                    style: AppTheme.bebasNeue(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.0,
+                                      color: AppTheme.textColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                             const SizedBox(height: 10),
                           ],
                           if (showGatewayAmount) ...[
@@ -2704,6 +2809,39 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   Widget _buildPaymentReadyView() {
     final accent = AppTheme.primaryColor;
+    final statusLower = _statusMessage.toLowerCase();
+    final isVerifyingStatus = statusLower.contains('verifying');
+    final isErrorStatus = statusLower.startsWith('error');
+
+    Future<void> handlePrimaryAction() async {
+      if (_initInProgress) return;
+
+      // If we already reached the verification step (or got stuck showing it),
+      // don't create a new payment session. Just re-check the existing reference.
+      if (isVerifyingStatus) {
+        final paymentProvider = Provider.of<PaymentProvider>(
+          context,
+          listen: false,
+        );
+        final reference = paymentProvider.reference;
+
+        if (reference != null && reference.isNotEmpty) {
+          await _handlePaymentSuccess('Checking payment status...', reference);
+          return;
+        }
+
+        if (mounted) {
+          _showErrorWithRetry(
+            'Payment reference not found. Please try starting the payment again.',
+          );
+        }
+        return;
+      }
+
+      // For errors (or first-time entry), start/restart payment initialization.
+      _initializePayment();
+    }
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -2754,8 +2892,31 @@ class _PaymentScreenState extends State<PaymentScreen>
                     ),
                   ),
                   const SizedBox(height: 4),
+                  if (widget.arguments!.subtotal != null &&
+                      widget.arguments!.vat != null) ...[
+                    Text(
+                      'Subtotal: ${widget.arguments!.subtotal!.toStringAsFixed(2)} ${widget.arguments!.currency}',
+                      style: AppTheme.bebasNeue(
+                        color: AppTheme.textSecondaryColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'VAT (5%): ${widget.arguments!.vat!.toStringAsFixed(2)} ${widget.arguments!.currency}',
+                      style: AppTheme.bebasNeue(
+                        color: AppTheme.textSecondaryColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
                   Text(
-                    '${widget.arguments!.amount.toStringAsFixed(0)} ${widget.arguments!.currency}',
+                    '${widget.arguments!.amount.toStringAsFixed(2)} ${widget.arguments!.currency}',
                     style: AppTheme.bebasNeue(
                       color: Colors.white,
                       fontSize: 30,
@@ -2763,6 +2924,20 @@ class _PaymentScreenState extends State<PaymentScreen>
                       letterSpacing: 1.0,
                     ),
                   ),
+                  if (widget.arguments!.subtotal != null &&
+                      widget.arguments!.vat != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        'TOTAL',
+                        style: AppTheme.bebasNeue(
+                          color: AppTheme.textSecondaryColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 12),
                   Text(
                     _statusMessage,
@@ -2802,7 +2977,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () => _initializePayment(),
+                          onPressed: _initInProgress ? null : handlePrimaryAction,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryColor,
                             foregroundColor: Colors.white,
@@ -2812,7 +2987,11 @@ class _PaymentScreenState extends State<PaymentScreen>
                             ),
                           ),
                           child: Text(
-                            'START PAYMENT',
+                            isErrorStatus
+                                ? 'RETRY PAYMENT'
+                                : (isVerifyingStatus
+                                    ? 'CHECK STATUS'
+                                    : 'START PAYMENT'),
                             style: AppTheme.bebasNeue(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
