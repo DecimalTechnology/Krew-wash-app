@@ -396,7 +396,8 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
     return GestureDetector(
       onTap: () => _showCountryCodePicker(isIOS),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(isIOS ? 16 : 12),
@@ -404,6 +405,7 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
               _selectedCountry?.flag ?? '🇦🇪',

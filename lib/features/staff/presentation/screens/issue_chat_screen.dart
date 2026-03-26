@@ -176,6 +176,12 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
     return false;
   }
 
+  // Check if booking is completed
+  bool get _isBookingCompleted {
+    final status = widget.booking.status.trim().toLowerCase();
+    return status == 'completed';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -776,14 +782,16 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
                   ),
                 // Messages
                 Expanded(child: _buildMessagesList(isIOS, isSmallScreen)),
-                // Message input (only show if issue is not resolved)
-                if (!_isIssueResolved)
+                // Message input (hidden when issue is resolved or booking is completed)
+                if (!_isIssueResolved && !_isBookingCompleted)
                   _buildMessageInput(
                     context,
                     isIOS,
                     isSmallScreen,
                     horizontalPadding,
                   ),
+                if (_isBookingCompleted)
+                  _buildClosedBanner(isSmallScreen, horizontalPadding),
               ],
             ),
           ),
@@ -1001,13 +1009,17 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
     final stableBottomPadding =
         _cachedBottomPadding ?? MediaQuery.of(context).viewPadding.bottom;
 
+    final bottomListPadding = (_isIssueResolved || _isBookingCompleted)
+        ? 16 + stableBottomPadding
+        : 110 + stableBottomPadding;
+
     return ListView.builder(
       controller: _scrollController,
       padding: EdgeInsets.fromLTRB(
         isSmallScreen ? 16 : 20,
         14,
         isSmallScreen ? 16 : 20,
-        110 + stableBottomPadding,
+        bottomListPadding,
       ),
       itemCount: _messages.length,
       itemBuilder: (context, index) {
@@ -1088,6 +1100,48 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildClosedBanner(bool isSmallScreen, double horizontalPadding) {
+    final systemBottomPadding = MediaQuery.of(context).viewPadding.bottom;
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        14,
+        horizontalPadding,
+        14 + systemBottomPadding,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFF071B22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.lock_outline,
+            color: Colors.white38,
+            size: isSmallScreen ? 14 : 16,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'BOOKING COMPLETED — CHAT CLOSED',
+            style: AppTheme.bebasNeue(
+              color: Colors.white38,
+              fontSize: isSmallScreen ? 12 : 13,
+              letterSpacing: 1.0,
+            ),
+          ),
+        ],
       ),
     );
   }

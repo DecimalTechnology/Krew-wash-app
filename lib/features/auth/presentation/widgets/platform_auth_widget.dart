@@ -238,101 +238,9 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
   }
 
   Widget _buildPhoneField(bool isIOS) {
-    return Row(
-      children: [
-        CountryCodePicker(
-          onChanged: (country) {
-            setState(() {
-              _selectedCountryCode = country;
-            });
-          },
-          initialSelection: _selectedCountryCode,
-        ),
-        SizedBox(width: 12),
-        Expanded(
-          child: isIOS
-              ? CupertinoTextField(
-                  controller: _phoneController,
-                  placeholder: 'PHONE',
-                  placeholderStyle: const TextStyle(color: Colors.white),
-                  keyboardType: TextInputType.phone,
-                  maxLength: _selectedCountryCode.maxLength,
-                  clearButtonMode: OverlayVisibilityMode.editing,
-                  style: AppTheme.textFieldStyle(color: Colors.white),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                )
-              : TextField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  maxLength: _selectedCountryCode.maxLength,
-                  style: AppTheme.textFieldStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: 'PHONE',
-                    hintStyle: const TextStyle(color: Colors.white),
-                    filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.1),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppTheme.primaryColor,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    suffixIcon: _phoneController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(
-                              Icons.clear,
-                              color: Colors.white70,
-                            ),
-                            onPressed: () {
-                              _phoneController.clear();
-                              setState(() {});
-                            },
-                          )
-                        : null,
-                  ),
-                ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEmailOrPhoneField(bool isIOS) {
-    // Check if the input looks like a phone number (starts with + or is all digits)
-    final input = _emailController.text.trim();
-    final looksLikePhone =
-        input.isNotEmpty &&
-        (input.startsWith('+') ||
-            (RegExp(r'^[0-9]+$').hasMatch(input) && input.length >= 8));
-
-    // Show country code picker if it looks like phone input
-    if (looksLikePhone) {
-      return Row(
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           CountryCodePicker(
             onChanged: (country) {
@@ -346,7 +254,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
           Expanded(
             child: isIOS
                 ? CupertinoTextField(
-                    controller: _emailController,
+                    controller: _phoneController,
                     placeholder: 'PHONE',
                     placeholderStyle: const TextStyle(color: Colors.white),
                     keyboardType: TextInputType.phone,
@@ -366,7 +274,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                     ),
                   )
                 : TextField(
-                    controller: _emailController,
+                    controller: _phoneController,
                     keyboardType: TextInputType.phone,
                     maxLength: _selectedCountryCode.maxLength,
                     style: AppTheme.textFieldStyle(color: Colors.white),
@@ -375,6 +283,7 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                       hintStyle: const TextStyle(color: Colors.white),
                       filled: true,
                       fillColor: Colors.white.withValues(alpha: 0.1),
+                      counterText: '',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
@@ -397,14 +306,14 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                         horizontal: 16,
                         vertical: 12,
                       ),
-                      suffixIcon: _emailController.text.isNotEmpty
+                      suffixIcon: _phoneController.text.isNotEmpty
                           ? IconButton(
                               icon: const Icon(
                                 Icons.clear,
                                 color: Colors.white70,
                               ),
                               onPressed: () {
-                                _emailController.clear();
+                                _phoneController.clear();
                                 setState(() {});
                               },
                             )
@@ -413,6 +322,105 @@ class _PlatformAuthWidgetState extends State<PlatformAuthWidget> {
                   ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEmailOrPhoneField(bool isIOS) {
+    // Check if the input looks like a phone number (starts with + or is all digits)
+    final input = _emailController.text.trim();
+    final looksLikePhone =
+        input.isNotEmpty &&
+        (input.startsWith('+') ||
+            (RegExp(r'^[0-9]+$').hasMatch(input) && input.length >= 8));
+
+    // Show country code picker if it looks like phone input
+    if (looksLikePhone) {
+      return IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CountryCodePicker(
+              onChanged: (country) {
+                setState(() {
+                  _selectedCountryCode = country;
+                });
+              },
+              initialSelection: _selectedCountryCode,
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: isIOS
+                  ? CupertinoTextField(
+                      controller: _emailController,
+                      placeholder: 'PHONE',
+                      placeholderStyle: const TextStyle(color: Colors.white),
+                      keyboardType: TextInputType.phone,
+                      maxLength: _selectedCountryCode.maxLength,
+                      clearButtonMode: OverlayVisibilityMode.editing,
+                      style: AppTheme.textFieldStyle(color: Colors.white),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    )
+                  : TextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.phone,
+                      maxLength: _selectedCountryCode.maxLength,
+                      style: AppTheme.textFieldStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'PHONE',
+                        hintStyle: const TextStyle(color: Colors.white),
+                        filled: true,
+                        fillColor: Colors.white.withValues(alpha: 0.1),
+                        counterText: '',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        suffixIcon: _emailController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(
+                                  Icons.clear,
+                                  color: Colors.white70,
+                                ),
+                                onPressed: () {
+                                  _emailController.clear();
+                                  setState(() {});
+                                },
+                              )
+                            : null,
+                      ),
+                    ),
+            ),
+          ],
+        ),
       );
     }
 

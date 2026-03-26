@@ -130,7 +130,7 @@ class _StaffBookingDetailsScreenState extends State<StaffBookingDetailsScreen> {
             final isLoading = bookingProvider.isDetailsLoading;
             final error = bookingProvider.detailsError;
 
-            if (isLoading && bookingProvider.selectedBooking == null) {
+            if ((isLoading || bookingProvider.selectedBooking == null) && error == null) {
               return SafeArea(
                 bottom: false,
                 child: _buildDetailsShimmer(
