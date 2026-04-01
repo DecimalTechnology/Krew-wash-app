@@ -375,12 +375,11 @@ class _MyBookingsViewState extends State<_MyBookingsView> {
         if (isIOS)
           CupertinoButton(
             padding: EdgeInsets.zero,
-            minSize: 0,
             onPressed: provider.isLoading
                 ? null
                 : () {
                     provider.fetchBookings(force: true);
-                  },
+                  }, minimumSize: Size(0, 0),
             child: Container(
               width: 40,
               height: 40,

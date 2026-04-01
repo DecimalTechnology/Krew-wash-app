@@ -283,12 +283,11 @@ class _CleanerLoginScreenState extends State<CleanerLoginScreen> {
                 padding: fieldPadding,
                 suffix: CupertinoButton(
                   padding: EdgeInsets.zero,
-                  minSize: 0,
                   onPressed: () {
                     setState(() {
                       _obscurePassword = !_obscurePassword;
                     });
-                  },
+                  }, minimumSize: Size(0, 0),
                   child: Icon(
                     _obscurePassword
                         ? CupertinoIcons.eye_slash

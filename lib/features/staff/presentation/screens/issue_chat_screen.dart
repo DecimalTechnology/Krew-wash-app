@@ -90,7 +90,7 @@ class ChatMessage {
           parsed = DateTime.parse(timestampStr);
         } else {
           // No timezone info - assume UTC (backend standard) and append Z
-          parsed = DateTime.parse(timestampStr + 'Z');
+          parsed = DateTime.parse('${timestampStr}Z');
         }
 
         // Convert UTC to local time for display
@@ -117,7 +117,7 @@ class ChatMessage {
             parsed = DateTime.parse(timestampStr);
           } else {
             // No timezone info - assume UTC and append Z
-            parsed = DateTime.parse(timestampStr + 'Z');
+            parsed = DateTime.parse('${timestampStr}Z');
           }
 
           timestamp = parsed.isUtc ? parsed.toLocal() : parsed;
@@ -439,7 +439,7 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
                 parsed = DateTime.parse(timestampStr);
               } else {
                 // No timezone info - assume UTC (backend standard) and append Z
-                parsed = DateTime.parse(timestampStr + 'Z');
+                parsed = DateTime.parse('${timestampStr}Z');
               }
 
               // Convert UTC to local time for display
@@ -472,7 +472,7 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
         });
 
         // Scroll to bottom after loading messages
-        _scrollToBottom();
+        _scrollToBottom(animate: false);
       } else {
         debugPrint('❌ Failed to load messages: ${result['message']}');
         setState(() {
@@ -653,16 +653,22 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
     _scrollToBottom();
   }
 
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+  void _scrollToBottom({bool animate = true}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Need a slight delay to ensure ListView has calculated maxScrollExtent properly
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (!mounted || !_scrollController.hasClients) return;
+        if (animate) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        } else {
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        }
       });
-    }
+    });
   }
 
   @override
@@ -926,16 +932,16 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
         : widget.issueType.toUpperCase();
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(horizontalPadding, 10, horizontalPadding, 6),
+      padding: EdgeInsets.fromLTRB(horizontalPadding, 6, horizontalPadding, 4),
       child: Container(
         width: double.infinity,
         padding: EdgeInsets.symmetric(
-          horizontal: isSmallScreen ? 18 : 22,
-          vertical: isSmallScreen ? 18 : 20,
+          horizontal: isSmallScreen ? 12 : 16,
+          vertical: isSmallScreen ? 8 : 10,
         ),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.14),
             width: 1,
@@ -948,18 +954,18 @@ class _IssueChatScreenState extends State<IssueChatScreen> {
               textAlign: TextAlign.center,
               style: AppTheme.bebasNeue(
                 color: Colors.white,
-                fontSize: isSmallScreen ? 16 : 18,
+                fontSize: isSmallScreen ? 12 : 14,
                 fontWeight: FontWeight.w400,
                 letterSpacing: 1.1,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 2),
             Text(
               issueText,
               textAlign: TextAlign.center,
               style: AppTheme.bebasNeue(
                 color: const Color(0xFF04CDFE),
-                fontSize: isSmallScreen ? 18 : 22,
+                fontSize: isSmallScreen ? 14 : 16,
                 fontWeight: FontWeight.w400,
                 letterSpacing: 0.9,
               ),

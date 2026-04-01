@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import '../../data/repositories/customer_dashboard_repository.dart';
 
 class CustomerDashboardProvider extends ChangeNotifier {
@@ -96,7 +95,7 @@ class CustomerDashboardProvider extends ChangeNotifier {
             result['message'] ?? 'Failed to fetch dashboard data';
         _isNetworkError = result['isNetworkError'] == true;
         if (kDebugMode) {
-          debugPrint('❌ Failed to fetch dashboard: ${_dashboardErrorMessage}');
+          debugPrint('❌ Failed to fetch dashboard: $_dashboardErrorMessage');
           debugPrint('🌐 Is network error: $_isNetworkError');
         }
       }

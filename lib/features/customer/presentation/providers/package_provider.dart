@@ -18,6 +18,7 @@ class PackageProvider extends ChangeNotifier {
   // Vehicle types
   List<Map<String, String>> _vehicleTypes = [];
   bool _isFetchingVehicleTypes = false;
+  Future<void>? _vehicleTypesFuture;
 
   // Building search state
   List<BuildingModel> _buildingResults = [];
@@ -52,8 +53,22 @@ class PackageProvider extends ChangeNotifier {
 
   Future<void> loadVehicleTypes() async {
     if (_vehicleTypes.isNotEmpty) return;
+    if (_vehicleTypesFuture != null) {
+      return _vehicleTypesFuture;
+    }
+
     _isFetchingVehicleTypes = true;
     notifyListeners();
+    
+    _vehicleTypesFuture = _loadVehicleTypesInternal();
+    await _vehicleTypesFuture;
+    
+    _isFetchingVehicleTypes = false;
+    _vehicleTypesFuture = null;
+    notifyListeners();
+  }
+
+  Future<void> _loadVehicleTypesInternal() async {
     try {
       final types = await _repo.getVehicleTypes();
       _vehicleTypes = types;
@@ -63,28 +78,13 @@ class PackageProvider extends ChangeNotifier {
         _selectedCarTypeName = first['name'];
       }
     } on TimeoutException {
-      // Network timeout - keep existing types if any, otherwise empty
-      if (_vehicleTypes.isEmpty) {
-        _vehicleTypes = [];
-      }
+      if (_vehicleTypes.isEmpty) _vehicleTypes = [];
     } on SocketException {
-      // Network error - keep existing types if any, otherwise empty
-      if (_vehicleTypes.isEmpty) {
-        _vehicleTypes = [];
-      }
+      if (_vehicleTypes.isEmpty) _vehicleTypes = [];
     } on http.ClientException {
-      // Network error - keep existing types if any, otherwise empty
-      if (_vehicleTypes.isEmpty) {
-        _vehicleTypes = [];
-      }
+      if (_vehicleTypes.isEmpty) _vehicleTypes = [];
     } catch (e) {
-      // Other errors - keep existing types if any, otherwise empty
-      if (_vehicleTypes.isEmpty) {
-        _vehicleTypes = [];
-      }
-    } finally {
-      _isFetchingVehicleTypes = false;
-      notifyListeners();
+      if (_vehicleTypes.isEmpty) _vehicleTypes = [];
     }
   }
 

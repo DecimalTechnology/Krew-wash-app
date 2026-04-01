@@ -49,19 +49,19 @@ class AuthRepository {
           'message': 'Failed to register user: ${response.statusCode}',
         };
       }
-    } on SocketException catch (e) {
+    } on SocketException {
       return {
         'success': false,
         'message': 'Network error: Please check your internet connection',
         'isNetworkError': true,
       };
-    } on TimeoutException catch (e) {
+    } on TimeoutException {
       return {
         'success': false,
         'message': 'Network error: Request timeout. Please try again',
         'isNetworkError': true,
       };
-    } on http.ClientException catch (e) {
+    } on http.ClientException {
       return {
         'success': false,
         'message': 'Network error: Please check your internet connection',
@@ -103,11 +103,11 @@ class AuthRepository {
       } else {
         throw Exception('Failed to load data: ${response.statusCode}');
       }
-    } on SocketException catch (e) {
+    } on SocketException {
       throw Exception('Network error: Please check your internet connection');
-    } on TimeoutException catch (e) {
+    } on TimeoutException {
       throw Exception('Network error: Request timeout. Please try again');
-    } on http.ClientException catch (e) {
+    } on http.ClientException {
       throw Exception('Network error: Please check your internet connection');
     } catch (e) {
       throw Exception('GET request error: $e');
@@ -203,19 +203,19 @@ class AuthRepository {
               'Email login failed: ${response.statusCode}',
         };
       }
-    } on SocketException catch (e) {
+    } on SocketException {
       return {
         'success': false,
         'message': 'Network error: Please check your internet connection',
         'isNetworkError': true,
       };
-    } on TimeoutException catch (e) {
+    } on TimeoutException {
       return {
         'success': false,
         'message': 'Network error: Request timeout. Please try again',
         'isNetworkError': true,
       };
-    } on http.ClientException catch (e) {
+    } on http.ClientException {
       return {
         'success': false,
         'message': 'Network error: Please check your internet connection',
@@ -266,19 +266,19 @@ class AuthRepository {
               errorData['message'] ?? 'Login failed: ${response.statusCode}',
         };
       }
-    } on SocketException catch (e) {
+    } on SocketException {
       return {
         'success': false,
         'message': 'Network error: Please check your internet connection',
         'isNetworkError': true,
       };
-    } on TimeoutException catch (e) {
+    } on TimeoutException {
       return {
         'success': false,
         'message': 'Network error: Request timeout. Please try again',
         'isNetworkError': true,
       };
-    } on http.ClientException catch (e) {
+    } on http.ClientException {
       return {
         'success': false,
         'message': 'Network error: Please check your internet connection',
@@ -373,19 +373,19 @@ class AuthRepository {
           'message': errorData['message'] ?? 'Failed to send email OTP',
         };
       }
-    } on SocketException catch (e) {
+    } on SocketException {
       return {
         'success': false,
         'message': 'Network error: Please check your internet connection',
         'isNetworkError': true,
       };
-    } on TimeoutException catch (e) {
+    } on TimeoutException {
       return {
         'success': false,
         'message': 'Network error: Request timeout. Please try again',
         'isNetworkError': true,
       };
-    } on http.ClientException catch (e) {
+    } on http.ClientException {
       return {
         'success': false,
         'message': 'Network error: Please check your internet connection',
@@ -525,19 +525,19 @@ class AuthRepository {
           'message': errorData['message'] ?? 'Invalid OTP',
         };
       }
-    } on SocketException catch (e) {
+    } on SocketException {
       return {
         'success': false,
         'message': 'Network error: Please check your internet connection',
         'isNetworkError': true,
       };
-    } on TimeoutException catch (e) {
+    } on TimeoutException {
       return {
         'success': false,
         'message': 'Network error: Request timeout. Please try again',
         'isNetworkError': true,
       };
-    } on http.ClientException catch (e) {
+    } on http.ClientException {
       return {
         'success': false,
         'message': 'Network error: Please check your internet connection',

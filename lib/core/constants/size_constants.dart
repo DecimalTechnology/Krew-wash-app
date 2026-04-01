@@ -101,8 +101,9 @@ class SizeConstants {
     if (screenWidth < smallScreenBreakpoint) return smallPadding;
     if (screenWidth < mediumScreenBreakpoint) return mediumPadding;
     if (screenWidth < largeScreenBreakpoint) return largePadding;
-    if (screenWidth >= ipad13Breakpoint)
+    if (screenWidth >= ipad13Breakpoint) {
       return hugePadding * ipadContentScaleFactor;
+    }
     return extraLargePadding;
   }
 
@@ -111,10 +112,12 @@ class SizeConstants {
     if (screenWidth < mediumScreenBreakpoint) return baseSize * 0.9;
     if (screenWidth < largeScreenBreakpoint) return baseSize;
     // iPad 13": scale up for readability and prominence
-    if (screenWidth >= ipad13Breakpoint)
+    if (screenWidth >= ipad13Breakpoint) {
       return baseSize * ipadContentScaleFactor;
-    if (screenWidth >= 800)
+    }
+    if (screenWidth >= 800) {
       return baseSize * 0.75; // 25% reduction on extra large (non‑iPad) screens
+    }
     return baseSize * 0.85; // 15% reduction on large screens
   }
 
@@ -123,10 +126,12 @@ class SizeConstants {
     if (screenWidth < mediumScreenBreakpoint) return baseSize * 0.9;
     if (screenWidth < largeScreenBreakpoint) return baseSize;
     // iPad 13": scale up for touch targets and clarity
-    if (screenWidth >= ipad13Breakpoint)
+    if (screenWidth >= ipad13Breakpoint) {
       return baseSize * ipadContentScaleFactor;
-    if (screenWidth >= 800)
+    }
+    if (screenWidth >= 800) {
       return baseSize * 0.75; // 25% reduction on extra large (non‑iPad) screens
+    }
     return baseSize * 0.85; // 15% reduction on large screens
   }
 
@@ -135,8 +140,9 @@ class SizeConstants {
     if (screenWidth < mediumScreenBreakpoint) return mediumButtonHeight;
     if (screenWidth < largeScreenBreakpoint) return largeButtonHeight;
     // iPad 13": larger tap targets
-    if (screenWidth >= ipad13Breakpoint)
+    if (screenWidth >= ipad13Breakpoint) {
       return extraLargeButtonHeight * ipadContentScaleFactor;
+    }
     return extraLargeButtonHeight;
   }
 
@@ -144,8 +150,9 @@ class SizeConstants {
     if (screenWidth < smallScreenBreakpoint) return smallBorderRadius;
     if (screenWidth < mediumScreenBreakpoint) return mediumBorderRadius;
     if (screenWidth < largeScreenBreakpoint) return largeBorderRadius;
-    if (screenWidth >= ipad13Breakpoint)
+    if (screenWidth >= ipad13Breakpoint) {
       return hugeBorderRadius * (ipadContentScaleFactor * 0.9); // Slightly scaled
+    }
     return extraLargeBorderRadius;
   }
 
@@ -153,8 +160,9 @@ class SizeConstants {
     if (screenWidth < smallScreenBreakpoint) return smallSpacing;
     if (screenWidth < mediumScreenBreakpoint) return mediumSpacing;
     if (screenWidth < largeScreenBreakpoint) return largeSpacing;
-    if (screenWidth >= ipad13Breakpoint)
+    if (screenWidth >= ipad13Breakpoint) {
       return hugeSpacing * (ipadContentScaleFactor * 0.85);
+    }
     return extraLargeSpacing;
   }
 

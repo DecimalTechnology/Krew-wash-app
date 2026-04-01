@@ -20,7 +20,7 @@ class _FullScreenMapPageState extends State<FullScreenMapPage> {
       Completer<GoogleMapController>();
   final TextEditingController _searchController = TextEditingController();
 
-  Set<Marker> _markers = {};
+  final Set<Marker> _markers = {};
   LatLng? _currentLocation;
   List<CarWashStation> _stations = [];
   List<CarWashStation> _filteredStations = [];

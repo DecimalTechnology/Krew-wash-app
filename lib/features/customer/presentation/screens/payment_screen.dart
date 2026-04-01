@@ -239,15 +239,15 @@ class _PaymentScreenState extends State<PaymentScreen>
         print('   ⚠️ _id is null, trying fallback fields...');
         final idField = widget.arguments!.selectedVehicle['id'];
         final vehicleIdField = widget.arguments!.selectedVehicle['vehicleId'];
-        final vehicle_idField = widget.arguments!.selectedVehicle['vehicle_id'];
+        final vehicleIdfield = widget.arguments!.selectedVehicle['vehicle_id'];
         print('   📦 id field: $idField');
         print('   📦 vehicleId field: $vehicleIdField');
-        print('   📦 vehicle_id field: $vehicle_idField');
+        print('   📦 vehicle_id field: $vehicleIdfield');
 
         vehicleId =
             idField?.toString().trim() ??
             vehicleIdField?.toString().trim() ??
-            vehicle_idField?.toString().trim();
+            vehicleIdfield?.toString().trim();
         print('   ✅ Using fallback: $vehicleId');
       }
 
@@ -259,7 +259,7 @@ class _PaymentScreenState extends State<PaymentScreen>
       final typeIdField = widget.arguments!.selectedVehicle['typeId'];
       final vehicleTypeIdField =
           widget.arguments!.selectedVehicle['vehicleTypeId'];
-      final vehicle_type_idField =
+      final vehicleTypeIdfield =
           widget.arguments!.selectedVehicle['vehicle_type_id'];
       final typeField = widget.arguments!.selectedVehicle['type'];
 
@@ -284,9 +284,9 @@ class _PaymentScreenState extends State<PaymentScreen>
           vehicleTypeIdField.toString().trim().isNotEmpty) {
         vehicleTypeId = vehicleTypeIdField.toString().trim();
         print('   ✅ Using vehicleTypeId field: $vehicleTypeId');
-      } else if (vehicle_type_idField != null &&
-          vehicle_type_idField.toString().trim().isNotEmpty) {
-        vehicleTypeId = vehicle_type_idField.toString().trim();
+      } else if (vehicleTypeIdfield != null &&
+          vehicleTypeIdfield.toString().trim().isNotEmpty) {
+        vehicleTypeId = vehicleTypeIdfield.toString().trim();
         print('   ✅ Using vehicle_type_id field: $vehicleTypeId');
       } else if (typeIdFromObject != null &&
           typeIdFromObject.trim().isNotEmpty) {
@@ -908,7 +908,7 @@ class _PaymentScreenState extends State<PaymentScreen>
     Map<String, dynamic> statusResponse = await paymentProvider
         .checkPaymentStatus(reference: reference);
 
-    bool _isPendingPaymentResponse(Map<String, dynamic> resp) {
+    bool isPendingPaymentResponse(Map<String, dynamic> resp) {
       final message = (resp['message'] ?? '').toString().toLowerCase();
       final statusCode = resp['statusCode'];
       // Backend commonly returns 400 + "Payment not completed" while gateway is still processing.
@@ -917,7 +917,7 @@ class _PaymentScreenState extends State<PaymentScreen>
           statusCode == 400;
     }
 
-    Future<Map<String, dynamic>> _checkWithRetries({
+    Future<Map<String, dynamic>> checkWithRetries({
       required String reference,
       int maxAttempts = 6,
       Duration delay = const Duration(seconds: 2),
@@ -931,7 +931,7 @@ class _PaymentScreenState extends State<PaymentScreen>
         if (last['isNetworkError'] == true) return last;
 
         // If it's not "pending", stop retrying and use the response.
-        if (!_isPendingPaymentResponse(last)) return last;
+        if (!isPendingPaymentResponse(last)) return last;
 
         if (kDebugMode) {
           print(
@@ -968,8 +968,8 @@ class _PaymentScreenState extends State<PaymentScreen>
     // Retry briefly first so Android matches iOS flow (gateway often finalizes after a delay).
     if (statusResponse['success'] != true &&
         statusResponse['isNetworkError'] != true &&
-        _isPendingPaymentResponse(statusResponse)) {
-      statusResponse = await _checkWithRetries(reference: reference);
+        isPendingPaymentResponse(statusResponse)) {
+      statusResponse = await checkWithRetries(reference: reference);
     }
 
     // Process success API call even if widget is unmounted (backend confirmation)
@@ -1060,8 +1060,8 @@ class _PaymentScreenState extends State<PaymentScreen>
 
       // If status API succeeded but payment is NOT verified/paid,
       // retry briefly (do NOT auto-cancel; let user decide).
-      if (!isVerified && _isPendingPaymentResponse(statusResponse)) {
-        statusResponse = await _checkWithRetries(reference: reference);
+      if (!isVerified && isPendingPaymentResponse(statusResponse)) {
+        statusResponse = await checkWithRetries(reference: reference);
 
         final bookingStatus2 =
             statusResponse['bookingStatus']?.toString() ?? '';
@@ -2574,8 +2574,9 @@ class _PaymentScreenState extends State<PaymentScreen>
     if (m.contains('connecting')) return 0;
     if (m.contains('requesting') || m.contains('booking')) return 1;
     if (m.contains('initializ') || m.contains('session')) return 2;
-    if (m.contains('opening') || m.contains('loading payment gateway'))
+    if (m.contains('opening') || m.contains('loading payment gateway')) {
       return 3;
+    }
     if (m.contains('verifying')) return 4;
     return 2;
   }

@@ -543,7 +543,7 @@ class _ChooseSlotScreenState extends State<ChooseSlotScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Slot booked for ${selectedDate} at ${selectedSlots.join(', ')}',
+          'Slot booked for $selectedDate at ${selectedSlots.join(', ')}',
         ),
         backgroundColor: const Color(0xFF04CDFE),
       ),

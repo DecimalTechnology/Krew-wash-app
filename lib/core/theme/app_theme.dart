@@ -111,11 +111,9 @@ class AppTheme {
         primary: primaryColor,
         secondary: primaryColor,
         surface: cardColor,
-        background: backgroundColor,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: textColor,
-        onBackground: textColor,
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: backgroundColor,

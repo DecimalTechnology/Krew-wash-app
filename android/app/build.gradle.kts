@@ -28,7 +28,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         // Telr Payment SDK requires minSdkVersion 21, targetSdkVersion 35
-        minSdk = flutter.minSdkVersion  // Updated to 23 to support Firebase Auth 23.2.1 (meets Telr requirement of >= 21)
+        minSdk = 23  // Required by Firebase Auth 23.2.1; still meets Telr requirement (>= 21)
         targetSdk = 35  // Updated to API level 35 for Play Store requirements
         versionCode = flutter.versionCode
         versionName = flutter.versionName

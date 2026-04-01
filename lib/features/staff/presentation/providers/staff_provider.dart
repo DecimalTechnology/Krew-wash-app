@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import '../../../../core/services/secure_storage_service.dart';
 import '../../domain/models/staff_model.dart';
 import '../../data/repositories/staff_repository.dart';
@@ -238,7 +237,7 @@ class StaffProvider extends ChangeNotifier {
         _dashboardErrorMessage =
             result['message'] ?? 'Failed to fetch dashboard data';
         if (kDebugMode) {
-          print('❌ Failed to fetch dashboard: ${_dashboardErrorMessage}');
+          print('❌ Failed to fetch dashboard: $_dashboardErrorMessage');
         }
       }
     } catch (e) {

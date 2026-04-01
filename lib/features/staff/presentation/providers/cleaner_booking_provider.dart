@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 
 import '../../../../core/services/secure_storage_service.dart';
 import '../../data/repositories/cleaner_booking_repository.dart';
@@ -88,8 +87,9 @@ class CleanerBookingProvider extends ChangeNotifier {
     final searchChanged = normalizedSearch != _assignedSearch;
 
     // Only skip if already loaded, not forcing, and search hasn't changed
-    if (_hasLoadedAssigned && !force && !searchChanged && !_isAssignedLoading)
+    if (_hasLoadedAssigned && !force && !searchChanged && !_isAssignedLoading) {
       return;
+    }
 
     // If already loading and search hasn't changed, skip (unless forced)
     if (_isAssignedLoading && !force && !searchChanged) {
@@ -150,7 +150,7 @@ class CleanerBookingProvider extends ChangeNotifier {
         );
         if (dataList.isNotEmpty && _assignedSearch.isNotEmpty) {
           print(
-            '🔍 [PROVIDER] Search results for "${_assignedSearch}": ${dataList.length} found',
+            '🔍 [PROVIDER] Search results for "$_assignedSearch": ${dataList.length} found',
           );
         }
       }
@@ -198,8 +198,9 @@ class CleanerBookingProvider extends ChangeNotifier {
     final searchChanged = normalizedSearch != _completedSearch;
 
     // Only skip if already loaded, not forcing, and search hasn't changed
-    if (_hasLoadedCompleted && !force && !searchChanged && !_isCompletedLoading)
+    if (_hasLoadedCompleted && !force && !searchChanged && !_isCompletedLoading) {
       return;
+    }
 
     // If already loading and search hasn't changed, skip (unless forced)
     if (_isCompletedLoading && !force && !searchChanged) {

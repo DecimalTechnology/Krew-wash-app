@@ -298,7 +298,7 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        builder: (context) => Container(
+        builder: (context) => SizedBox(
           height: 400,
           child: Column(
             children: [

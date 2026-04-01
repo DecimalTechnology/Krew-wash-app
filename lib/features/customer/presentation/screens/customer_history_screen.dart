@@ -151,7 +151,7 @@ class CustomerHistoryScreen extends StatelessWidget {
           // History Items
           ...historyItems
               .map((item) => _buildHistoryItem(item, screenWidth))
-              .toList(),
+              ,
         ],
       ),
     );

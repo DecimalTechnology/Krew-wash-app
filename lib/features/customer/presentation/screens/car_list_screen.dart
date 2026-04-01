@@ -269,12 +269,11 @@ class _CarListViewState extends State<_CarListView> {
           if (isIOS)
             CupertinoButton(
               padding: EdgeInsets.zero,
-              minSize: 0,
               onPressed: isLoading
                   ? null
                   : () {
                       provider.loadVehicles();
-                    },
+                    }, minimumSize: Size(0, 0),
               child: Container(
                 width: 40,
                 height: 40,

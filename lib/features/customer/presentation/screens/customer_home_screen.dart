@@ -240,58 +240,58 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen>
                                       150, // Space for floating button - increased to allow content to scroll above
                                 ),
                                 child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 16),
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 16),
 
-                                  // User Info Section with animation
-                                  _buildAnimatedSection(
-                                    delay: 0,
-                                    child: _buildUserInfo(context),
-                                  ),
+                                    // User Info Section with animation
+                                    _buildAnimatedSection(
+                                      delay: 0,
+                                      child: _buildUserInfo(context),
+                                    ),
 
-                                  const SizedBox(height: 60),
+                                    const SizedBox(height: 60),
 
-                                  // WE OFFER SERVICES Section with animation
-                                  _buildAnimatedSection(
-                                    delay: 100,
-                                    child: _buildWeOfferServices(),
-                                  ),
+                                    // WE OFFER SERVICES Section with animation
+                                    _buildAnimatedSection(
+                                      delay: 100,
+                                      child: _buildWeOfferServices(),
+                                    ),
 
-                                  const SizedBox(height: 16),
+                                    const SizedBox(height: 16),
 
-                                  // Promotional Banner with animation - Full width
-                                  _buildAnimatedSection(
-                                    delay: 200,
-                                    child: _buildPromotionalBanner(),
-                                  ),
+                                    // Promotional Banner with animation - Full width
+                                    _buildAnimatedSection(
+                                      delay: 200,
+                                      child: _buildPromotionalBanner(),
+                                    ),
 
-                                  const SizedBox(height: 16),
+                                    const SizedBox(height: 16),
 
-                                  // OUR PACKAGES Section with animation
-                                  _buildAnimatedSection(
-                                    delay: 300,
-                                    child: _buildOurPackages(),
-                                  ),
+                                    // OUR PACKAGES Section with animation
+                                    _buildAnimatedSection(
+                                      delay: 300,
+                                      child: _buildOurPackages(),
+                                    ),
 
-                                  const SizedBox(height: 16),
+                                    const SizedBox(height: 16),
 
-                                  // Rating Section with animation
-                                  _buildAnimatedSection(
-                                    delay: 400,
-                                    child: _buildRatingSection(),
-                                  ),
+                                    // // Rating Section with animation
+                                    // _buildAnimatedSection(
+                                    //   delay: 400,
+                                    //   child: _buildRatingSection(),
+                                    // ),
 
-                                  const SizedBox(height: 16),
+                                    // const SizedBox(height: 16),
 
-                                  // WE ARE AVAILABLE AT Section with animation
-                                  _buildAnimatedSection(
-                                    delay: 500,
-                                    child: _buildWeAreAvailableAt(),
-                                  ),
+                                    // WE ARE AVAILABLE AT Section with animation
+                                    _buildAnimatedSection(
+                                      delay: 500,
+                                      child: _buildWeAreAvailableAt(),
+                                    ),
 
-                                  const SizedBox(height: 20),
-                                ],
+                                    const SizedBox(height: 20),
+                                  ],
                                 ),
                               ),
                             ),
@@ -378,7 +378,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen>
               child: const Icon(
                 Icons.person_outline,
                 color: Colors.white,
-              size: 24,
+                size: 24,
               ),
             ),
           ),

@@ -83,6 +83,9 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
         });
       }
 
+      // Ensure vehicle types are fully loaded before trying to fetch packages
+      await packageProvider.loadVehicleTypes();
+
       String? vehicleId = packageProvider.selectedVehicleTypeId;
       if (vehicleId == null && packageProvider.vehicleTypes.isNotEmpty) {
         final firstType = packageProvider.vehicleTypes.first;
@@ -139,16 +142,18 @@ class _PackageSelectionScreenState extends State<PackageSelectionScreen> {
         final currentBuildingId = user?.buildingId;
 
         // Check if buildingId changed and update if needed
-        if (currentBuildingId != _lastBuildingId &&
-            currentBuildingId != null &&
-            currentBuildingId.isNotEmpty) {
+        if (currentBuildingId != _lastBuildingId) {
+          final wasNull = _lastBuildingId == null;
           _lastBuildingId = currentBuildingId;
-          // Update building selection when buildingId changes
-          WidgetsBinding.instance.addPostFrameCallback((_) async {
-            if (mounted) {
-              await _initializeWithSavedBuilding(force: true);
-            }
-          });
+          
+          if (!wasNull && currentBuildingId != null && currentBuildingId.isNotEmpty) {
+            // Update building selection when buildingId changes from a valid state
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              if (mounted) {
+                await _initializeWithSavedBuilding(force: true);
+              }
+            });
+          }
         }
 
         return _buildContent(context);

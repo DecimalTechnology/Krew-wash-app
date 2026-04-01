@@ -224,8 +224,7 @@ class _StaffUpcomingBookingsScreenState
               padding: const EdgeInsets.only(right: 8),
               child: CupertinoButton(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                minSize: 0,
-                onPressed: handleSearch,
+                onPressed: handleSearch, minimumSize: Size(0, 0),
                 child: const Icon(
                   CupertinoIcons.search,
                   color: Color(0xFF04CDFE),

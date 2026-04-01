@@ -42,7 +42,7 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
   String? _error;
   final ImagePicker _imagePicker = ImagePicker();
   bool _isUploadingImage = false;
-  List<String> _selectedImagePaths =
+  final List<String> _selectedImagePaths =
       []; // Store selected image paths before upload
   String? _uploadSuccessMessage;
 
@@ -1298,6 +1298,6 @@ class _StaffSessionDetailsScreenState extends State<StaffSessionDetailsScreen> {
     final hour = d.hour > 12 ? d.hour - 12 : (d.hour == 0 ? 12 : d.hour);
     final minute = d.minute.toString().padLeft(2, '0');
     final amPm = d.hour >= 12 ? 'PM' : 'AM';
-    return '${months[(d.month - 1).clamp(0, 11)]} ${d.day}, ${d.year} ${hour}:$minute $amPm';
+    return '${months[(d.month - 1).clamp(0, 11)]} ${d.day}, ${d.year} $hour:$minute $amPm';
   }
 }
